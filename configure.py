@@ -136,7 +136,7 @@ def main(args):
                 (build, build.deps.cpuinfo, build.deps.clog, build.deps.pthreadpool, build.deps.FP16, build.deps.googlebenchmark): any,
                 "log": build.target.is_android},
             isa=benchmark_isa,
-            extra_include_dirs=["src", "third-party"]):
+            extra_include_dirs="src"):
 
         build.benchmark("convolution-bench", build.cxx("convolution.cc"))
         build.benchmark("q8gemm-bench", build.cxx("q8gemm.cc"))
