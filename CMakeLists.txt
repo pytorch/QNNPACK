@@ -135,7 +135,8 @@ ENDIF()
 SET(QNNPACK_INIT_SRCS src/init.c)
 SET(QNNPACK_OPERATOR_SRCS
   src/convolution.c
-  src/deconvolution.c)
+  src/deconvolution.c
+  src/fully-connected.c)
 
 SET(QNNPACK_PSIMD_UKERNELS
   src/sgemm/6x8-psimd.c)
@@ -308,6 +309,15 @@ IF(QNNPACK_BUILD_TESTS)
   TARGET_INCLUDE_DIRECTORIES(deconvolution-test PRIVATE src test)
   TARGET_LINK_LIBRARIES(deconvolution-test PRIVATE qnnpack cpuinfo gtest gtest_main)
   ADD_TEST(deconvolution-test deconvolution-test)
+
+  ADD_EXECUTABLE(fully-connected-test test/fully-connected.cc)
+  SET_TARGET_PROPERTIES(fully-connected-test PROPERTIES
+    CXX_STANDARD 11
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO)
+  TARGET_INCLUDE_DIRECTORIES(fully-connected-test PRIVATE src test)
+  TARGET_LINK_LIBRARIES(fully-connected-test PRIVATE qnnpack cpuinfo gtest gtest_main)
+  ADD_TEST(fully-connected-test fully-connected-test)
 
   # ---[ Build unit tests for micro-kernels
   ADD_EXECUTABLE(q8gemm-test test/q8gemm.cc)
