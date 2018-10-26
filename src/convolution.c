@@ -186,25 +186,17 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
   if (flags & QNNP_CONVOLUTION_FLAG_DW) {
     const uint32_t cr = qnnp_params.q8dw9.cr;
     const uint32_t c_stride = (groups + (cr - 1)) & -cr;
-    convolution->packed_kernel = malloc(sizeof(uint8_t) * kernel_size * c_stride);
+    const size_t packed_weights_size = (sizeof(uint8_t) * kernel_size + sizeof(int32_t)) * c_stride;
+    convolution->packed_kernel = malloc(packed_weights_size);
     if (convolution->packed_kernel == NULL) {
-      qnnp_log_error("failed to allocate %zu bytes for packed kernel data",
-        sizeof(uint8_t) * kernel_size * c_stride);
+      qnnp_log_error("failed to allocate %zu bytes for packed kernel data", packed_weights_size);
       goto error;
     }
-    memset(convolution->packed_kernel, kernel_zero_point, sizeof(uint8_t) * kernel_size * c_stride);
 
-    pack_q8dw_b(
+    pack_q8dw_w(
       kernel_height, kernel_width,
       groups, cr,
-      kernel, convolution->packed_kernel);
-
-    convolution->bias = malloc(sizeof(int32_t) * c_stride);
-    if (convolution->bias == NULL) {
-      qnnp_log_error("failed to allocate %zu bytes for packed bias data", sizeof(int32_t) * c_stride);
-      goto error;
-    }
-    memcpy(convolution->bias, bias, sizeof(int32_t) * groups);
+      kernel, bias, convolution->packed_kernel);
 
     if (flags & QNNP_CONVOLUTION_FLAG_ZERO) {
       const size_t zero_size = sizeof(uint8_t) * c_stride + (groups >= 8 ? 0 : 8);
@@ -815,7 +807,6 @@ static void compute_q8dw(
     context->output_width,
     context->im2col_buffer + (image * output_height + output_y) * context->im2col_row_stride,
     context->packed_kernel,
-    context->bias,
     context->output + (image * output_height + output_y) * context->output_row_stride,
     context->im2col_col_stride,
     context->output_col_increment,

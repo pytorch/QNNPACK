@@ -22,8 +22,7 @@ extern "C" {
     size_t channels,                                                    \
     size_t output_width,                                                \
     const uint8_t** input,                                              \
-    const uint8_t* kernel,                                              \
-    const int32_t* bias,                                                \
+    const void* weights,                                                \
     uint8_t* output,                                                    \
     size_t input_stride,                                                \
     size_t output_increment,                                            \

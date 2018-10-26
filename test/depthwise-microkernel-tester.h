@@ -158,7 +158,7 @@ class DepthwiseMicrokernelTester {
 
     std::vector<uint8_t> input((kernelSize() + (width() - 1) * kernelHeight() * subsampling() - 1) * inputStride() + channels() + 8);
     std::vector<uint8_t> kernel(channels() * kernelSize());
-    std::vector<uint8_t, AlignedAllocator<uint8_t, 32>> packedKernel(kernelSize() * packedChannels());
+    std::vector<uint8_t, AlignedAllocator<uint8_t, 32>> packedWeights((kernelSize() + sizeof(int32_t) / sizeof(uint8_t)) * packedChannels());
     std::vector<int32_t> bias(packedChannels());
     std::vector<int32_t> accumulators(width() * channels());
     std::vector<uint8_t> output((width() - 1) * outputStride() + channels());
@@ -177,11 +177,10 @@ class DepthwiseMicrokernelTester {
       ASSERT_NE(*std::max_element(input.cbegin(), input.cend()), *std::min_element(input.cbegin(), input.cend()));
       ASSERT_NE(*std::max_element(kernel.cbegin(), kernel.cend()), *std::min_element(kernel.cbegin(), kernel.cend()));
 
-      std::fill(packedKernel.begin(), packedKernel.end(), kernelZeroPoint);
-      pack_q8gemm_b(
-        channels(), kernelSize(),
-        cr(), 1,
-        kernel.data(), packedKernel.data());
+      std::fill(packedWeights.begin(), packedWeights.end(), 0xA5);
+      pack_q8dw_w(
+        kernelHeight(), kernelWidth(), channels(), cr(),
+        kernel.data(), bias.data(), packedWeights.data());
 
       for (size_t i = 0; i < kernelSize() + (width() - 1) * kernelHeight() * subsampling(); i++) {
         indirectInput[i] = inputPtr + i * inputStride();
@@ -191,10 +190,12 @@ class DepthwiseMicrokernelTester {
       for (size_t x = 0; x < width(); x++) {
         for (size_t c = 0; c < channels(); c++) {
           int32_t acc = bias[c];
-          for (size_t k = 0; k < kernelSize(); k++) {
-            acc +=
-              (int32_t(indirectInput[x * kernelHeight() * subsampling() + k][c]) - int32_t(inputZeroPoint)) *
-              (int32_t(kernel[c * kernelSize() + k]) - int32_t(kernelZeroPoint));
+          for (size_t kx = 0; kx < kernelWidth(); kx++) {
+            for (size_t ky = 0; ky < kernelHeight(); ky++) {
+              acc +=
+                (int32_t(indirectInput[(x * subsampling() + kx) * kernelHeight() + ky][c]) - int32_t(inputZeroPoint)) *
+                (int32_t(kernel[(c * kernelHeight() + ky) * kernelWidth() + kx]) - int32_t(kernelZeroPoint));
+            }
           }
           accumulators[x * channels() + c] = acc;
         }
@@ -219,7 +220,7 @@ class DepthwiseMicrokernelTester {
 
       q8dw(
         channels(), width(),
-        indirectInput.data(), packedKernel.data(), bias.data(), output.data(),
+        indirectInput.data(), packedWeights.data(), output.data(),
         kernelHeight() * subsampling() * sizeof(void*),
         (outputStride() - channels()) * sizeof(uint8_t),
         inputZeroPoint, kernelZeroPoint, &requantizationParams);
