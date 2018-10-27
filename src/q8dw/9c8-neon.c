@@ -19,17 +19,15 @@ void q8dw_ukernel_9c8__neon(
     uint8_t* output,
     size_t input_stride,
     size_t output_increment,
-    uint8_t input_zero_point,
-    uint8_t kernel_zero_point,
-    const union qnnp_q31_requantization_params requantization_params[restrict static 1])
+    const union qnnp_conv_quantization_params quantization_params[restrict static 1])
 {
-  const uint8x8_t vinput_zero_point = vdup_n_u8(input_zero_point);
-  const uint8x8_t vkernel_zero_point = vdup_n_u8(kernel_zero_point);
-  const int32x4_t vmultiplier = vld1q_dup_s32(&requantization_params->neon.multiplier);
-  const int32x4_t vright_shift = vld1q_dup_s32(&requantization_params->neon.right_shift);
-  const int16x8_t vzero_point = vld1q_dup_s16(&requantization_params->neon.zero_point);
-  const uint8x8_t vmin = vld1_dup_u8(&requantization_params->neon.min);
-  const uint8x8_t vmax = vld1_dup_u8(&requantization_params->neon.max);
+  const uint8x8_t vinput_zero_point = vld1_dup_u8((const uint8_t*) &quantization_params->neon.input_zero_point);
+  const uint8x8_t vkernel_zero_point = vld1_dup_u8((const uint8_t*) &quantization_params->neon.kernel_zero_point);
+  const int32x4_t vmultiplier = vld1q_dup_s32(&quantization_params->neon.multiplier);
+  const int32x4_t vright_shift = vld1q_dup_s32(&quantization_params->neon.right_shift);
+  const int16x8_t voutput_zero_point = vld1q_dup_s16(&quantization_params->neon.output_zero_point);
+  const uint8x8_t voutput_min = vld1_dup_u8(&quantization_params->neon.output_min);
+  const uint8x8_t voutput_max = vld1_dup_u8(&quantization_params->neon.output_max);
 
 #ifdef __aarch64__
   /* Larger number of registers on AArch64 make it possible to process few pixels at a time */
@@ -200,18 +198,18 @@ void q8dw_ukernel_9c8__neon(
         vacc2_lo = vrshlq_s32(vacc2_lo, vright_shift);
         vacc2_hi = vrshlq_s32(vacc2_hi, vright_shift);
 
-        const int16x8_t vacc0 = vqaddq_s16(vqmovn_high_s32(vqmovn_s32(vacc0_lo), vacc0_hi), vzero_point);
-        const int16x8_t vacc1 = vqaddq_s16(vqmovn_high_s32(vqmovn_s32(vacc1_lo), vacc1_hi), vzero_point);
-        const int16x8_t vacc2 = vqaddq_s16(vqmovn_high_s32(vqmovn_s32(vacc2_lo), vacc2_hi), vzero_point);
+        const int16x8_t vacc0 = vqaddq_s16(vqmovn_high_s32(vqmovn_s32(vacc0_lo), vacc0_hi), voutput_zero_point);
+        const int16x8_t vacc1 = vqaddq_s16(vqmovn_high_s32(vqmovn_s32(vacc1_lo), vacc1_hi), voutput_zero_point);
+        const int16x8_t vacc2 = vqaddq_s16(vqmovn_high_s32(vqmovn_s32(vacc2_lo), vacc2_hi), voutput_zero_point);
         uint8x8_t vout0 = vqmovun_s16(vacc0);
         uint8x8_t vout1 = vqmovun_s16(vacc1);
         uint8x8_t vout2 = vqmovun_s16(vacc2);
-        vout0 = vmax_u8(vout0, vmin);
-        vout1 = vmax_u8(vout1, vmin);
-        vout2 = vmax_u8(vout2, vmin);
-        vout0 = vmin_u8(vout0, vmax);
-        vout1 = vmin_u8(vout1, vmax);
-        vout2 = vmin_u8(vout2, vmax);
+        vout0 = vmax_u8(vout0, voutput_min);
+        vout1 = vmax_u8(vout1, voutput_min);
+        vout2 = vmax_u8(vout2, voutput_min);
+        vout0 = vmin_u8(vout0, voutput_max);
+        vout1 = vmin_u8(vout1, voutput_max);
+        vout2 = vmin_u8(vout2, voutput_max);
 
         vst1_u8(output0, vout0); output0 += 8;
         vst1_u8(output1, vout1); output1 += 8;
@@ -376,18 +374,18 @@ void q8dw_ukernel_9c8__neon(
         vacc2_lo = vrshlq_s32(vacc2_lo, vright_shift);
         vacc2_hi = vrshlq_s32(vacc2_hi, vright_shift);
 
-        const int16x8_t vacc0 = vqaddq_s16(vqmovn_high_s32(vqmovn_s32(vacc0_lo), vacc0_hi), vzero_point);
-        const int16x8_t vacc1 = vqaddq_s16(vqmovn_high_s32(vqmovn_s32(vacc1_lo), vacc1_hi), vzero_point);
-        const int16x8_t vacc2 = vqaddq_s16(vqmovn_high_s32(vqmovn_s32(vacc2_lo), vacc2_hi), vzero_point);
+        const int16x8_t vacc0 = vqaddq_s16(vqmovn_high_s32(vqmovn_s32(vacc0_lo), vacc0_hi), voutput_zero_point);
+        const int16x8_t vacc1 = vqaddq_s16(vqmovn_high_s32(vqmovn_s32(vacc1_lo), vacc1_hi), voutput_zero_point);
+        const int16x8_t vacc2 = vqaddq_s16(vqmovn_high_s32(vqmovn_s32(vacc2_lo), vacc2_hi), voutput_zero_point);
         uint8x8_t vout0 = vqmovun_s16(vacc0);
         uint8x8_t vout1 = vqmovun_s16(vacc1);
         uint8x8_t vout2 = vqmovun_s16(vacc2);
-        vout0 = vmax_u8(vout0, vmin);
-        vout1 = vmax_u8(vout1, vmin);
-        vout2 = vmax_u8(vout2, vmin);
-        vout0 = vmin_u8(vout0, vmax);
-        vout1 = vmin_u8(vout1, vmax);
-        vout2 = vmin_u8(vout2, vmax);
+        vout0 = vmax_u8(vout0, voutput_min);
+        vout1 = vmax_u8(vout1, voutput_min);
+        vout2 = vmax_u8(vout2, voutput_min);
+        vout0 = vmin_u8(vout0, voutput_max);
+        vout1 = vmin_u8(vout1, voutput_max);
+        vout2 = vmin_u8(vout2, voutput_max);
 
         if (c & 4) {
           vst1_lane_u32(__builtin_assume_aligned(output0, 1), vreinterpret_u32_u8(vout0), 0); output0 += 4;
@@ -516,13 +514,13 @@ void q8dw_ukernel_9c8__neon(
       vacc_hi = vrshlq_s32(vacc_hi, vright_shift);
 
 #ifdef __aarch64__
-      const int16x8_t vacc = vqaddq_s16(vqmovn_high_s32(vqmovn_s32(vacc_lo), vacc_hi), vzero_point);
+      const int16x8_t vacc = vqaddq_s16(vqmovn_high_s32(vqmovn_s32(vacc_lo), vacc_hi), voutput_zero_point);
 #else
-      const int16x8_t vacc = vqaddq_s16(vcombine_s16(vqmovn_s32(vacc_lo), vqmovn_s32(vacc_hi)), vzero_point);
+      const int16x8_t vacc = vqaddq_s16(vcombine_s16(vqmovn_s32(vacc_lo), vqmovn_s32(vacc_hi)), voutput_zero_point);
 #endif
       uint8x8_t vout = vqmovun_s16(vacc);
-      vout = vmax_u8(vout, vmin);
-      vout = vmin_u8(vout, vmax);
+      vout = vmax_u8(vout, voutput_min);
+      vout = vmin_u8(vout, voutput_max);
 
       vst1_u8(output, vout); output += 8;
     }
@@ -619,13 +617,13 @@ void q8dw_ukernel_9c8__neon(
       vacc_hi = vrshlq_s32(vacc_hi, vright_shift);
 
 #ifdef __aarch64__
-      const int16x8_t vacc = vqaddq_s16(vqmovn_high_s32(vqmovn_s32(vacc_lo), vacc_hi), vzero_point);
+      const int16x8_t vacc = vqaddq_s16(vqmovn_high_s32(vqmovn_s32(vacc_lo), vacc_hi), voutput_zero_point);
 #else
-      const int16x8_t vacc = vqaddq_s16(vcombine_s16(vqmovn_s32(vacc_lo), vqmovn_s32(vacc_hi)), vzero_point);
+      const int16x8_t vacc = vqaddq_s16(vcombine_s16(vqmovn_s32(vacc_lo), vqmovn_s32(vacc_hi)), voutput_zero_point);
 #endif
       uint8x8_t vout = vqmovun_s16(vacc);
-      vout = vmax_u8(vout, vmin);
-      vout = vmin_u8(vout, vmax);
+      vout = vmax_u8(vout, voutput_min);
+      vout = vmin_u8(vout, voutput_max);
 
       if (c & 4) {
         vst1_lane_u32(__builtin_assume_aligned(output, 1), vreinterpret_u32_u8(vout), 0); output += 4;

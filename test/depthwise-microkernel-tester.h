@@ -211,8 +211,9 @@ class DepthwiseMicrokernelTester {
         long(std::numeric_limits<uint8_t>::max())), long(std::numeric_limits<uint8_t>::min())));
 
       const float requantizationScale = 1.0f / float(outputScale);
-      const union qnnp_q31_requantization_params requantizationParams =
-        qnnp_compute_requantization_params(
+      const union qnnp_conv_quantization_params quantizationParams =
+        qnnp_compute_conv_quantization_params(
+          inputZeroPoint, kernelZeroPoint,
           requantizationScale, outputZeroPoint, qmin(), qmax());
       const union qnnp_q31_requantization_params scalarRequantizationParams =
         qnnp_compute_scalar_requantization_params(
@@ -223,7 +224,7 @@ class DepthwiseMicrokernelTester {
         indirectInput.data(), packedWeights.data(), output.data(),
         kernelHeight() * subsampling() * sizeof(void*),
         (outputStride() - channels()) * sizeof(uint8_t),
-        inputZeroPoint, kernelZeroPoint, &requantizationParams);
+        &quantizationParams);
 
       for (size_t x = 0; x < width(); x++) {
         for (size_t c = 0; c < channels(); c++) {

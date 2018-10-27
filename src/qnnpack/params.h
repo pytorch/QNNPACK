@@ -124,6 +124,45 @@ union qnnp_q31_requantization_params {
 #endif /* CPUINFO_ARCH_X86 || CPUINFO_ARCH_X86_64 */
 };
 
+union qnnp_conv_quantization_params {
+  struct {
+    int32_t input_zero_point;
+    int32_t kernel_zero_point;
+    int32_t multiplier;
+    int32_t remainder_mask;
+    int32_t remainder_threshold;
+    uint32_t shift;
+    int32_t output_min_less_zero_point;
+    int32_t output_max_less_zero_point;
+    int32_t output_zero_point;
+  } scalar;
+#if CPUINFO_ARCH_ARM || CPUINFO_ARCH_ARM64
+  struct {
+    int16_t input_zero_point;
+    int16_t kernel_zero_point;
+    int32_t multiplier;
+    int32_t right_shift;
+    int16_t output_zero_point;
+    uint8_t output_max;
+    uint8_t output_min;
+  } neon;
+#endif /* CPUINFO_ARCH_ARM || CPUINFO_ARCH_ARM64 */
+#if CPUINFO_ARCH_X86 || CPUINFO_ARCH_X86_64
+  struct {
+    QNNP_ALIGN(16) int16_t input_zero_point[8];
+    QNNP_ALIGN(16) int16_t kernel_zero_point[8];
+    QNNP_ALIGN(16) uint32_t multiplier[4];
+    QNNP_ALIGN(16) uint64_t rounding[2];
+    QNNP_ALIGN(16) int32_t remainder_mask[4];
+    QNNP_ALIGN(16) int32_t remainder_threshold[4];
+    QNNP_ALIGN(16) uint64_t shift[2];
+    QNNP_ALIGN(16) int16_t output_zero_point[8];
+    QNNP_ALIGN(16) uint8_t output_max[16];
+    QNNP_ALIGN(16) uint8_t output_min[16];
+  } sse2;
+#endif /* CPUINFO_ARCH_X86 || CPUINFO_ARCH_X86_64 */
+};
+
 union qnnp_requantization_params {
   union qnnp_precise_requantization_params precise;
   union qnnp_fp32_requantization_params fp32;
@@ -211,9 +250,7 @@ typedef void (*q8dw_ukernel_function)(
     uint8_t* output,
     size_t input_stride,
     size_t output_increment,
-    uint8_t input_zero_point,
-    uint8_t kernel_zero_point,
-    const union qnnp_q31_requantization_params* requantization_params);
+    const union qnnp_conv_quantization_params* quantization_params);
 
 struct q8conv_parameters {
   q8gemm_ukernel_function gemm;

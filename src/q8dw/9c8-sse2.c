@@ -19,12 +19,10 @@ void q8dw_ukernel_9c8__sse2(
     uint8_t* output,
     size_t input_stride,
     size_t output_increment,
-    uint8_t input_zero_point,
-    uint8_t kernel_zero_point,
-    const union qnnp_q31_requantization_params requantization_params[restrict static 1])
+    const union qnnp_conv_quantization_params quantization_params[restrict static 1])
 {
-  const __m128i vinput_zero_point = _mm_set1_epi16((short) (uint16_t) input_zero_point);
-  const __m128i vkernel_zero_point = _mm_set1_epi16((short) (uint16_t) kernel_zero_point);
+  const __m128i vinput_zero_point = _mm_load_si128((const __m128i*) quantization_params->sse2.input_zero_point);
+  const __m128i vkernel_zero_point = _mm_load_si128((const __m128i*) quantization_params->sse2.kernel_zero_point);
   const __m128i vzero = _mm_setzero_si128();
 
   do {
@@ -129,8 +127,8 @@ void q8dw_ukernel_9c8__sse2(
 
       w = (void*) ((uintptr_t) w + 104);
 
-      const __m128i vmultiplier = _mm_load_si128((const __m128i*) requantization_params->sse2.multiplier);
-      const __m128i vrounding = _mm_load_si128((const __m128i*) requantization_params->sse2.rounding);
+      const __m128i vmultiplier = _mm_load_si128((const __m128i*) quantization_params->sse2.multiplier);
+      const __m128i vrounding = _mm_load_si128((const __m128i*) quantization_params->sse2.rounding);
 
       const __m128i vnmask_lo0123 = _mm_cmpgt_epi32(_mm_setzero_si128(), vacc_lo);
       const __m128i vnmask_hi0123 = _mm_cmpgt_epi32(_mm_setzero_si128(), vacc_hi);
@@ -173,24 +171,24 @@ void q8dw_ukernel_9c8__sse2(
       const __m128i vq31prod_lo0123 = _mm_shuffle_epi32(vq31prod_lo0213, _MM_SHUFFLE(3, 1, 2, 0));
       const __m128i vq31prod_hi0123 = _mm_shuffle_epi32(vq31prod_hi0213, _MM_SHUFFLE(3, 1, 2, 0));
 
-      const __m128i vremainder_mask = _mm_load_si128((const __m128i*) requantization_params->sse2.remainder_mask);
+      const __m128i vremainder_mask = _mm_load_si128((const __m128i*) quantization_params->sse2.remainder_mask);
 
       const __m128i vrem_lo0123 =
         _mm_add_epi32(_mm_and_si128(vq31prod_lo0123, vremainder_mask), _mm_cmpgt_epi32(_mm_setzero_si128(), vq31prod_lo0123));
       const __m128i vrem_hi0123 =
         _mm_add_epi32(_mm_and_si128(vq31prod_hi0123, vremainder_mask), _mm_cmpgt_epi32(_mm_setzero_si128(), vq31prod_hi0123));
 
-      const __m128i vremainder_threshold = _mm_load_si128((const __m128i*) requantization_params->sse2.remainder_threshold);
-      const __m128i vshift = _mm_load_si128((const __m128i*) requantization_params->sse2.shift);
+      const __m128i vremainder_threshold = _mm_load_si128((const __m128i*) quantization_params->sse2.remainder_threshold);
+      const __m128i vshift = _mm_load_si128((const __m128i*) quantization_params->sse2.shift);
 
       const __m128i vout_lo = _mm_sub_epi32(_mm_sra_epi32(vq31prod_lo0123, vshift), _mm_cmpgt_epi32(vrem_lo0123, vremainder_threshold));
       const __m128i vout_hi = _mm_sub_epi32(_mm_sra_epi32(vq31prod_hi0123, vshift), _mm_cmpgt_epi32(vrem_hi0123, vremainder_threshold));
 
-      const __m128i vzero_point = _mm_load_si128((const __m128i*) requantization_params->sse2.zero_point);
-      __m128i vout = _mm_adds_epi16(_mm_packs_epi32(vout_lo, vout_hi), vzero_point);
+      const __m128i voutput_zero_point = _mm_load_si128((const __m128i*) quantization_params->sse2.output_zero_point);
+      __m128i vout = _mm_adds_epi16(_mm_packs_epi32(vout_lo, vout_hi), voutput_zero_point);
       vout = _mm_packus_epi16(vout, vout);
-      vout = _mm_max_epu8(vout, _mm_load_si128((const __m128i*) requantization_params->sse2.min));
-      vout = _mm_min_epu8(vout, _mm_load_si128((const __m128i*) requantization_params->sse2.max));
+      vout = _mm_max_epu8(vout, _mm_load_si128((const __m128i*) quantization_params->sse2.output_min));
+      vout = _mm_min_epu8(vout, _mm_load_si128((const __m128i*) quantization_params->sse2.output_max));
 
       _mm_storel_epi64((__m128i*) output, vout); output += 8;
     }
@@ -292,8 +290,8 @@ void q8dw_ukernel_9c8__sse2(
       vacc_hi = _mm_add_epi32(vacc_hi, _mm_unpackhi_epi16(vprod22_odd, vprod22_even));
 
 
-      const __m128i vmultiplier = _mm_load_si128((const __m128i*) requantization_params->sse2.multiplier);
-      const __m128i vrounding = _mm_load_si128((const __m128i*) requantization_params->sse2.rounding);
+      const __m128i vmultiplier = _mm_load_si128((const __m128i*) quantization_params->sse2.multiplier);
+      const __m128i vrounding = _mm_load_si128((const __m128i*) quantization_params->sse2.rounding);
 
       const __m128i vnmask_lo0123 = _mm_cmpgt_epi32(_mm_setzero_si128(), vacc_lo);
       const __m128i vnmask_hi0123 = _mm_cmpgt_epi32(_mm_setzero_si128(), vacc_hi);
@@ -336,24 +334,24 @@ void q8dw_ukernel_9c8__sse2(
       const __m128i vq31prod_lo0123 = _mm_shuffle_epi32(vq31prod_lo0213, _MM_SHUFFLE(3, 1, 2, 0));
       const __m128i vq31prod_hi0123 = _mm_shuffle_epi32(vq31prod_hi0213, _MM_SHUFFLE(3, 1, 2, 0));
 
-      const __m128i vremainder_mask = _mm_load_si128((const __m128i*) requantization_params->sse2.remainder_mask);
+      const __m128i vremainder_mask = _mm_load_si128((const __m128i*) quantization_params->sse2.remainder_mask);
 
       const __m128i vrem_lo0123 =
         _mm_add_epi32(_mm_and_si128(vq31prod_lo0123, vremainder_mask), _mm_cmpgt_epi32(_mm_setzero_si128(), vq31prod_lo0123));
       const __m128i vrem_hi0123 =
         _mm_add_epi32(_mm_and_si128(vq31prod_hi0123, vremainder_mask), _mm_cmpgt_epi32(_mm_setzero_si128(), vq31prod_hi0123));
 
-      const __m128i vremainder_threshold = _mm_load_si128((const __m128i*) requantization_params->sse2.remainder_threshold);
-      const __m128i vshift = _mm_load_si128((const __m128i*) requantization_params->sse2.shift);
+      const __m128i vremainder_threshold = _mm_load_si128((const __m128i*) quantization_params->sse2.remainder_threshold);
+      const __m128i vshift = _mm_load_si128((const __m128i*) quantization_params->sse2.shift);
 
       const __m128i vout_lo = _mm_sub_epi32(_mm_sra_epi32(vq31prod_lo0123, vshift), _mm_cmpgt_epi32(vrem_lo0123, vremainder_threshold));
       const __m128i vout_hi = _mm_sub_epi32(_mm_sra_epi32(vq31prod_hi0123, vshift), _mm_cmpgt_epi32(vrem_hi0123, vremainder_threshold));
 
-      const __m128i vzero_point = _mm_load_si128((const __m128i*) requantization_params->sse2.zero_point);
-      __m128i vout = _mm_adds_epi16(_mm_packs_epi32(vout_lo, vout_hi), vzero_point);
+      const __m128i voutput_zero_point = _mm_load_si128((const __m128i*) quantization_params->sse2.output_zero_point);
+      __m128i vout = _mm_adds_epi16(_mm_packs_epi32(vout_lo, vout_hi), voutput_zero_point);
       vout = _mm_packus_epi16(vout, vout);
-      vout = _mm_max_epu8(vout, _mm_load_si128((const __m128i*) requantization_params->sse2.min));
-      vout = _mm_min_epu8(vout, _mm_load_si128((const __m128i*) requantization_params->sse2.max));
+      vout = _mm_max_epu8(vout, _mm_load_si128((const __m128i*) quantization_params->sse2.output_min));
+      vout = _mm_min_epu8(vout, _mm_load_si128((const __m128i*) quantization_params->sse2.output_max));
 
       if (c & 4) {
         *((uint32_t*) output) = (uint32_t) _mm_cvtsi128_si32(vout);

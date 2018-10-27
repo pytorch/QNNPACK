@@ -327,9 +327,16 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
   convolution->input_zero_point = input_zero_point;
   convolution->kernel_zero_point = kernel_zero_point;
 
-  convolution->requantization_params =
-    qnnp_compute_requantization_params(
-      convolution_scale, output_zero_point, output_min, output_max);
+  if (flags & QNNP_CONVOLUTION_FLAG_DW) {
+    convolution->conv_quantization_params =
+      qnnp_compute_conv_quantization_params(
+        input_zero_point, kernel_zero_point,
+        convolution_scale, output_zero_point, output_min, output_max);
+  } else {
+    convolution->requantization_params =
+      qnnp_compute_requantization_params(
+        convolution_scale, output_zero_point, output_min, output_max);
+  }
 
   convolution->format = qnnp_format_quint8;
   convolution->flags = flags;
@@ -789,9 +796,7 @@ struct q8dw_context {
   size_t output_width;
   size_t output_row_stride;
   size_t output_col_increment;
-  uint8_t input_zero_point;
-  uint8_t kernel_zero_point;
-  union qnnp_q31_requantization_params requantization_params;
+  union qnnp_conv_quantization_params quantization_params;
   const q8dw_ukernel_function ukernel;
 };
 
@@ -810,9 +815,7 @@ static void compute_q8dw(
     context->output + (image * output_height + output_y) * context->output_row_stride,
     context->im2col_col_stride,
     context->output_col_increment,
-    context->input_zero_point,
-    context->kernel_zero_point,
-    &context->requantization_params);
+    &context->quantization_params);
 }
 
 enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
@@ -839,9 +842,7 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
         .output_width = output_width,
         .output_row_stride = output_width * op->output_pixel_stride,
         .output_col_increment = (op->output_pixel_stride - groups) * sizeof(uint8_t),
-        .input_zero_point = op->input_zero_point,
-        .kernel_zero_point = op->kernel_zero_point,
-        .requantization_params = op->requantization_params,
+        .quantization_params = op->conv_quantization_params,
         .ukernel = qnnp_params.q8dw9.dw,
     };
     pthreadpool_compute_2d(

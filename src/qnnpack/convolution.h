@@ -62,7 +62,10 @@ struct qnnp_operator {
   void* bias;
   void* zero;
 
-  union qnnp_q31_requantization_params requantization_params;
+  union {
+    union qnnp_q31_requantization_params requantization_params;
+    union qnnp_conv_quantization_params conv_quantization_params;
+  };
   enum qnnp_format format;
   uint32_t flags;
 };

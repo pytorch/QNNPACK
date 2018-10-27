@@ -26,9 +26,7 @@ extern "C" {
     uint8_t* output,                                                    \
     size_t input_stride,                                                \
     size_t output_increment,                                            \
-    uint8_t input_zero_point,                                           \
-    uint8_t kernel_zero_point,                                          \
-    const union qnnp_q31_requantization_params* requantization_params);
+    const union qnnp_conv_quantization_params* quantization_params);
 
 DECLARE_Q8DW_FUNCTION(q8dw_ukernel_9c8__neon)
 DECLARE_Q8DW_FUNCTION(q8dw_ukernel_9c8__sse2)

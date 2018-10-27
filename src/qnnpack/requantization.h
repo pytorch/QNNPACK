@@ -90,7 +90,7 @@ static inline union qnnp_q31_requantization_params qnnp_compute_requantization_p
     params.sse2.shift[0] = (uint64_t) (uint32_t) shift;
     params.sse2.shift[1] = (uint64_t) (uint32_t) shift;
     for (uint32_t i = 0; i < 8; i++) {
-      params.sse2.zero_point[i] = (int16_t) (uint16_t) zero_point;  
+      params.sse2.zero_point[i] = (int16_t) (uint16_t) zero_point;
     }
     for (uint32_t i = 0; i < 16; i++) {
       params.sse2.max[i] = max;
@@ -112,6 +112,84 @@ static inline union qnnp_q31_requantization_params qnnp_compute_requantization_p
     params.scalar.min_less_zero_point = (int32_t) (uint32_t) min - (int32_t) (uint32_t) zero_point;
     params.scalar.max_less_zero_point = (int32_t) (uint32_t) max - (int32_t) (uint32_t) zero_point;
     params.scalar.zero_point = (int32_t) (uint32_t) zero_point;
+  #endif
+  return params;
+}
+
+static inline union qnnp_conv_quantization_params qnnp_compute_conv_quantization_params(
+  uint8_t input_zero_point,
+  uint8_t kernel_zero_point,
+  float scale,
+  uint8_t output_zero_point,
+  uint8_t output_min,
+  uint8_t output_max)
+{
+  /* Compute requantization parameters */
+  const uint32_t scale_bits = fp32_to_bits(scale);
+
+  /* Multiplier is in [0x40000000, 0x7FFFFF80] range */
+  const int32_t multiplier = (int32_t)(((scale_bits & UINT32_C(0x007FFFFF)) | UINT32_C(0x00800000)) << 7);
+  assert(multiplier >= INT32_C(0x40000000));
+  assert(multiplier <= INT32_C(0x7FFFFF80));
+
+  /* Shift is in [0, 31] range */
+  const int32_t shift = 127 + 31 - 32 - (fp32_to_bits(scale) >> 23);
+  assert(shift >= 0);
+  assert(shift < 32);
+
+  union qnnp_conv_quantization_params params;
+  #if CPUINFO_ARCH_X86 || CPUINFO_ARCH_X86_64
+    const uint32_t remainder_mask = (UINT32_C(1) << shift) - UINT32_C(1);
+    const uint32_t remainder_threshold = remainder_mask >> 1;
+    for (uint32_t i = 0; i < 8; i++) {
+      params.sse2.input_zero_point[i] = (int16_t) (uint16_t) input_zero_point;
+      params.sse2.kernel_zero_point[i] = (int16_t) (uint16_t) kernel_zero_point;
+    }
+    params.sse2.multiplier[0] = multiplier;
+    params.sse2.multiplier[1] = multiplier;
+    params.sse2.multiplier[2] = multiplier;
+    params.sse2.multiplier[3] = multiplier;
+    params.sse2.rounding[0] = UINT64_C(0x40000000);
+    params.sse2.rounding[1] = UINT64_C(0x40000000);
+    params.sse2.remainder_mask[0] = (int32_t) remainder_mask;
+    params.sse2.remainder_mask[1] = (int32_t) remainder_mask;
+    params.sse2.remainder_mask[2] = (int32_t) remainder_mask;
+    params.sse2.remainder_mask[3] = (int32_t) remainder_mask;
+    params.sse2.remainder_threshold[0] = (int32_t) remainder_threshold;
+    params.sse2.remainder_threshold[1] = (int32_t) remainder_threshold;
+    params.sse2.remainder_threshold[2] = (int32_t) remainder_threshold;
+    params.sse2.remainder_threshold[3] = (int32_t) remainder_threshold;
+    params.sse2.shift[0] = (uint64_t) (uint32_t) shift;
+    params.sse2.shift[1] = (uint64_t) (uint32_t) shift;
+    for (uint32_t i = 0; i < 8; i++) {
+      params.sse2.output_zero_point[i] = (int16_t) (uint16_t) output_zero_point;
+    }
+    for (uint32_t i = 0; i < 16; i++) {
+      params.sse2.output_max[i] = output_max;
+      params.sse2.output_min[i] = output_min;
+    }
+  #elif CPUINFO_ARCH_ARM || CPUINFO_ARCH_ARM64
+    params.neon.input_zero_point = (int16_t) (uint16_t) input_zero_point;
+    params.neon.kernel_zero_point = (int16_t) (uint16_t) kernel_zero_point;
+    params.neon.multiplier = multiplier;
+    params.neon.right_shift = -shift;
+    params.neon.output_zero_point = (int16_t) (uint16_t) output_zero_point;
+    params.neon.output_max = output_max;
+    params.neon.output_min = output_min;
+  #else
+    const uint32_t remainder_mask = (UINT32_C(1) << shift) - UINT32_C(1);
+    const uint32_t remainder_threshold = remainder_mask >> 1;
+    params.scalar.input_zero_point = (int32_t) (uint32_t) input_zero_point;
+    params.scalar.kernel_zero_point = (int32_t) (uint32_t) kernel_zero_point;
+    params.scalar.multiplier = multiplier;
+    params.scalar.remainder_mask = (int32_t) remainder_mask;
+    params.scalar.remainder_threshold = (int32_t) remainder_threshold;
+    params.scalar.shift = (uint32_t) shift;
+    params.scalar.output_min_less_zero_point =
+      (int32_t) (uint32_t) output_min - (int32_t) (uint32_t) output_zero_point;
+    params.scalar.output_max_less_zero_point =
+      (int32_t) (uint32_t) output_max - (int32_t) (uint32_t) output_zero_point;
+    params.scalar.output_zero_point = (int32_t) (uint32_t) output_zero_point;
   #endif
   return params;
 }
