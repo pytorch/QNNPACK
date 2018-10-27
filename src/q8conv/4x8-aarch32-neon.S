@@ -20,9 +20,7 @@
 #     const int32_t*restrict bias,
 #     uint8_t*restrict c,
 #     size_t c_stride,
-#     const uint8_t a_offset,
-#     const uint8_t b_offset,
-#     const union qnnp_q31_requantization_params requantization_params[restrict static 1])
+#     const union qnnp_conv_quantization_params quantization_params[restrict static 1])
 BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 	.arm
 #ifndef __APPLE__
@@ -35,43 +33,36 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 	PUSH {r4, r5, r6, r7, r8, r9, r10, r11}
 
 	VPUSH {d8-d15}
-	ADD r4, sp, 116
 
 	# Load bias0123, bias4567
-	VLD1.8 {d16-d19}, [ip]
-	ADD r5, sp, 120
-
-	# Load a
-	# - r8 = a
-	LDR r8, [sp, 96]
-
-	# Load b
-	# - r9 = b
-	LDR r9, [sp, 100]
-
-	# Load a_offset:
-	# - d14 = a_offset
-	VLD1.8 {d14[]}, [r4]
-
-	# Load b_offset:
-	# - d15 = b_offset	
-	VLD1.8 {d15[]}, [r5]
-
-
+	VLDM ip, {d16-d19}
 	# Load params:
 	# - ip = params
-	LDR ip, [sp, 124]
+	LDR ip, [sp, 116]
 
 	# q10 := vacc1x0123
 	VMOV.I32 q10, q8
+	MOV r4, 2
 	# q11 := vacc1x4567
 	VMOV.I32 q11, q9
+	# Load a
+	# - r8 = a
+	LDR r8, [sp, 96]
 	# q12 := vacc2x0123
 	VMOV.I32 q12, q8
+	# Load b
+	# - r9 = b
+	LDR r9, [sp, 100]
 	# q13 := vacc2x4567
 	VMOV.I32 q13, q9
+	# Load a_zero_point:
+	# - d14 = a_zero_point
+	VLD1.8 {d14[]}, [ip], r4
 	# q14 := vacc3x0123
 	VMOV.I32 q14, q8
+	# Load b_zero_point:
+	# - d15 = b_zero_point	
+	VLD1.8 {d15[]}, [ip], r4
 	# q15 := vacc3x4567
 	VMOV.I32 q15, q9
 	# Load multiplier:
@@ -108,24 +99,24 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 	# - d5 = va2
 	VLD1.8 {d5}, [r6]!
 
-	# q0 = va0 = a0 - a_offset
+	# q0 = va0 = a0 - va_zero_point
 	VSUBL.U8 q0, d1, d14
 
 	# Load va3
 	# - d7 = va3
 	VLD1.8 {d7}, [r7]!
 
-	# q1 = va1 = a1 - a_offset
+	# q1 = va1 = a1 - va_zero_point
 	VSUBL.U8 q1, d3, d14
 
-	# q4 = b0:7 - b_offset
+	# q4 = b0:7 - vb_zero_point
 	# - d8 = vb0123 (channel 0)
 	# - d9 = vb4567 (channel 0)
 	VSUBL.U8 q4, d9, d15
 
-	# q2 = va2 = a2 - a_offset
+	# q2 = va2 = a2 - va_zero_point
 	VSUBL.U8 q2, d5, d14
-	# q3 = va3 = a3 - a_offset
+	# q3 = va3 = a3 - va_zero_point
 	VSUBL.U8 q3, d7, d14
 
 	### Channel 0 ###
@@ -149,7 +140,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 	# vacc2x4567 += vb4567 * va2[0]
 	VMLAL.S16 q13, d9, d4[0]
 
-	# q5 = b0:7 - b_offset
+	# q5 = b0:7 - vb_zero_point
 	# - d10 = vb0123 (channel 1)
 	# - d11 = vb4567 (channel 1)
 	VSUBL.U8 q5, d11, d15
@@ -180,7 +171,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 	# vacc2x4567 += vb4567 * va2[1]
 	VMLAL.S16 q13, d11, d4[1]
 
-	# q4 = b0:7 - b_offset
+	# q4 = b0:7 - vb_zero_point
 	# - d8 = vb0123 (channel 2)
 	# - d9 = vb4567 (channel 2)
 	VSUBL.U8 q4, d9, d15
@@ -211,7 +202,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 	# vacc2x4567 += vb4567 * va2[2]
 	VMLAL.S16 q13, d9, d4[2]
 
-	# q5 = b0:7 - b_offset
+	# q5 = b0:7 - vb_zero_point
 	# - d10 = vb0123 (channel 3)
 	# - d11 = vb4567 (channel 3)
 	VSUBL.U8 q5, d11, d15
@@ -242,7 +233,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 	# vacc2x4567 += vb4567 * va2[3]
 	VMLAL.S16 q13, d11, d4[3]
 
-	# q5 = b0:7 - b_offset
+	# q5 = b0:7 - vb_zero_point
 	# - d10 = vb0123 (channel 4)
 	# - d11 = vb4567 (channel 4)
 	VSUBL.U8 q4, d9, d15
@@ -273,7 +264,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 	# vacc2x4567 += vb4567 * va2[4]
 	VMLAL.S16 q13, d9, d5[0]
 
-	# q4 = b0:7 - b_offset
+	# q4 = b0:7 - vb_zero_point
 	# - d8 = vb0123 (channel 5)
 	# - d9 = vb4567 (channel 5)
 	VSUBL.U8 q5, d11, d15
@@ -304,7 +295,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 	# vacc2x4567 += vb4567 * va2[5]
 	VMLAL.S16 q13, d11, d5[1]
 
-	# q4 = b0:7 - b_offset
+	# q4 = b0:7 - vb_zero_point
 	# - d8 = vb0123 (channel 6)
 	# - d9 = vb4567 (channel 6)
 	VSUBL.U8 q4, d9, d15
@@ -333,7 +324,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 	# vacc2x0123 += vb0123 * va2[6]
 	VMLAL.S16 q12, d8, d5[2]
 
-	# q5 = b0:7 - b_offset
+	# q5 = b0:7 - vb_zero_point
 	# - d10 = vb0123 (channel 7)
 	# - d11 = vb4567 (channel 7)
 	VSUBL.U8 q5, d11, d15
@@ -401,7 +392,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 	# - d5 = a2
 	VLD1.8 {d5}, [r6]
 
-	# q0 = va0 = a0 - a_offset
+	# q0 = va0 = a0 - va_zero_point
 	VSHL.U64 d1, d1, d13
 	VSUBL.U8 q0, d1, d14
 
@@ -409,19 +400,19 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 	# - d7 = a3
 	VLD1.8 {d7}, [r7]
 
-	# q1 = va1 = a1 - a_offset
+	# q1 = va1 = a1 - va_zero_point
 	VSHL.U64 d3, d3, d13
 	VSUBL.U8 q1, d3, d14
 
-	# q4 = b0:7 - b_offset
+	# q4 = b0:7 - vb_zero_point
 	# - d8 = vb0123 (channel 0)
 	# - d9 = vb4567 (channel 0)
 	VSUBL.U8 q4, d9, d15
 
-	# q2 = va2 = a2 - a_offset
+	# q2 = va2 = a2 - va_zero_point
 	VSHL.U64 d5, d5, d13
 	VSUBL.U8 q2, d5, d14
-	# q3 = va3 = a3 - a_offset
+	# q3 = va3 = a3 - va_zero_point
 	VSHL.U64 d7, d7, d13
 	VSUBL.U8 q3, d7, d14
 
@@ -456,7 +447,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 	# - d11 = b0-b7
 	VLD1.8 {d11}, [r9:64]!
 
-	# q5 = b0:7 - b_offset
+	# q5 = b0:7 - vb_zero_point
 	# - d10 = vb0123 (channel 1)
 	# - d11 = vb4567 (channel 1)
 	VSUBL.U8 q5, d11, d15
@@ -488,7 +479,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 	# - d9 = b0-b7
 	VLD1.8 {d9}, [r9:64]!
 
-	# q4 = b0:7 - b_offset
+	# q4 = b0:7 - vb_zero_point
 	# - d8 = vb0123 (channel 2)
 	# - d9 = vb4567 (channel 2)
 	VSUBL.U8 q4, d9, d15
@@ -521,7 +512,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 	# - d9 = b0-b7
 	VLD1.8 {d11}, [r9:64]!
 
-	# q4 = b0:7 - b_offset
+	# q4 = b0:7 - vb_zero_point
 	# - d8 = vb0123 (channel 3)
 	# - d9 = vb4567 (channel 3)
 	VSUBL.U8 q5, d11, d15
@@ -553,7 +544,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 	# - d11 = b0-b7
 	VLD1.8 {d9}, [r9:64]!
 
-	# q5 = b0:7 - b_offset
+	# q5 = b0:7 - vb_zero_point
 	# - d10 = vb0123 (channel 4)
 	# - d11 = vb4567 (channel 4)
 	VSUBL.U8 q4, d9, d15
@@ -586,7 +577,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 	# - d13 = b0-b7
 	VLD1.8 {d11}, [r9:64]!
 
-	# q5 = b0:7 - b_offset
+	# q5 = b0:7 - vb_zero_point
 	# - d10 = vb0123 (channel 5)
 	# - d11 = vb4567 (channel 5)
 	VSUBL.U8 q5, d11, d15
@@ -618,7 +609,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 	# - d9 = b0-b7
 	VLD1.8 {d9}, [r9:64]!
 
-	# q4 = b0:7 - b_offset
+	# q4 = b0:7 - vb_zero_point
 	# - d8 = vb0123 (channel 6)
 	# - d9 = vb4567 (channel 6)
 	VSUBL.U8 q4, d9, d15
@@ -677,8 +668,8 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 	VSRA.S32 q10, q2, 31
 	VSRA.S32 q11, q3, 31
 
-	# Load zero_point
-	# - q7 = d14:d15 = vzero_point
+	# Load output_zero_point
+	# - q7 = d14:d15 = voutput_zero_point
 	VLD1.16 {d14[], d15[]}, [ip]!
 
 	VBIC q0, q12, q5
@@ -692,7 +683,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 	VSRA.S32 q15, q3, 31
 
 	# Load max:
-	# - q5 = d10:d11 = vmax
+	# - q5 = d10:d11 = voutput_max
 	VLD1.8 {d10[], d11[]}, [ip]!
 
 	VRSHL.S32  q8,  q8, q4
@@ -719,7 +710,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 	VQMOVN.S32 d23, q15
 
 	# Load min:
-	# - q4 = q8:q9 = vmin
+	# - q4 = q8:q9 = voutput_min
 	VLD1.8 {d8[], d9[]}, [ip]!
 	ADD r4, r2, r3
 

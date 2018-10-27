@@ -17,20 +17,18 @@
 extern "C" {
 #endif
 
-#define DECLARE_Q8CONV_UKERNEL_FUNCTION(fn_name)                          \
-  void fn_name(                                                           \
-      size_t mr,                                                          \
-      size_t nr,                                                          \
-      size_t kc,                                                          \
-      size_t ks,                                                          \
-      const uint8_t** a,                                                  \
-      const uint8_t* b,                                                   \
-      const int32_t* bias,                                                \
-      uint8_t* c,                                                         \
-      size_t c_stride,                                                    \
-      const uint8_t a_offset,                                             \
-      const uint8_t b_offset,                                             \
-      const union qnnp_q31_requantization_params* requantization_params);
+#define DECLARE_Q8CONV_UKERNEL_FUNCTION(fn_name)                       \
+  void fn_name(                                                        \
+      size_t mr,                                                       \
+      size_t nr,                                                       \
+      size_t kc,                                                       \
+      size_t ks,                                                       \
+      const uint8_t** a,                                               \
+      const uint8_t* b,                                                \
+      const int32_t* bias,                                             \
+      uint8_t* c,                                                      \
+      size_t c_stride,                                                 \
+      const union qnnp_conv_quantization_params* quantization_params);
 
 DECLARE_Q8CONV_UKERNEL_FUNCTION(q8conv_ukernel_4x8__neon)
 DECLARE_Q8CONV_UKERNEL_FUNCTION(q8conv_ukernel_4x8__aarch32_neon)

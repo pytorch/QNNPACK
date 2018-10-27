@@ -348,8 +348,9 @@ class GemmTester {
         long(std::numeric_limits<uint8_t>::max())), long(std::numeric_limits<uint8_t>::min())));
 
       const float requantizationScale = 1.0f / float(cScale);
-      const union qnnp_q31_requantization_params requantizationParams =
-        qnnp_compute_requantization_params(
+      const union qnnp_conv_quantization_params quantizationParams =
+        qnnp_compute_conv_quantization_params(
+          aZeroPoint, bZeroPoint,
           requantizationScale, cZeroPoint, qmin(), qmax());
       const union qnnp_q31_requantization_params scalarRequantizationParams =
         qnnp_compute_scalar_requantization_params(
@@ -359,7 +360,7 @@ class GemmTester {
         m(), n(), k(), ks(),
         im2col.data(), packedB.data(), bias.data(),
         c.data(), cStride() * sizeof(uint8_t),
-        aZeroPoint, bZeroPoint, &requantizationParams);
+        &quantizationParams);
 
       for (size_t mIndex = 0; mIndex < m(); mIndex++) {
         for (size_t nIndex = 0; nIndex < n(); nIndex++) {

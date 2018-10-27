@@ -327,14 +327,14 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
   convolution->input_zero_point = input_zero_point;
   convolution->kernel_zero_point = kernel_zero_point;
 
-  if (flags & QNNP_CONVOLUTION_FLAG_DW) {
+  if (flags & (QNNP_CONVOLUTION_FLAG_GEMM | QNNP_CONVOLUTION_FLAG_XZP_GEMM)) {
+    convolution->requantization_params =
+      qnnp_compute_requantization_params(
+        convolution_scale, output_zero_point, output_min, output_max);
+  } else {
     convolution->conv_quantization_params =
       qnnp_compute_conv_quantization_params(
         input_zero_point, kernel_zero_point,
-        convolution_scale, output_zero_point, output_min, output_max);
-  } else {
-    convolution->requantization_params =
-      qnnp_compute_requantization_params(
         convolution_scale, output_zero_point, output_min, output_max);
   }
 
@@ -736,9 +736,7 @@ struct q8conv_context {
   const int32_t* bias;
   uint8_t* c;
   size_t c_stride;
-  uint8_t a_zero_point;
-  uint8_t b_zero_point;
-  union qnnp_q31_requantization_params requantization_params;
+  union qnnp_conv_quantization_params quantization_params;
   const q8conv_ukernel_function ukernel;
 };
 
@@ -766,8 +764,6 @@ static void compute_q8conv(
   const int32_t* restrict bias = context->bias;
   uint8_t* restrict c = context->c;
   const size_t c_stride = context->c_stride;
-  const uint8_t a_zero_point = context->a_zero_point;
-  const uint8_t b_zero_point = context->b_zero_point;
 
   context->ukernel(
       mr_block_size,
@@ -779,9 +775,7 @@ static void compute_q8conv(
       bias + nr_block_start + group_index * n_stride,
       c + (mr_block_start + image_index * m) * c_stride + group_index * n + nr_block_start,
       c_stride,
-      a_zero_point,
-      b_zero_point,
-      &context->requantization_params);
+      &context->quantization_params);
 }
 
 struct q8dw_context {
@@ -952,9 +946,7 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
           .bias = (const int32_t*) op->bias,
           .c = op->output,
           .c_stride = op->output_pixel_stride,
-          .a_zero_point = op->input_zero_point,
-          .b_zero_point = op->kernel_zero_point,
-          .requantization_params = op->requantization_params,
+          .quantization_params = op->conv_quantization_params,
           .ukernel = qnnp_params.q8conv.conv,
       };
 

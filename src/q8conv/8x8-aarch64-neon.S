@@ -18,10 +18,11 @@
 #    const int32_t* restrict bias,
 #    uint8_t* restrict c,
 #    size_t c_stride,
-#    const uint8_t a_offset,
-#    const uint8_t b_offset,
-#    const union qnnp_q31_requantization_params requantization_params[restrict static 1])
+#    const union qnnp_q31_requantization_params quantization_params[restrict static 1])
 BEGIN_FUNCTION q8conv_ukernel_8x8__aarch64_neon
+
+        # Load params
+        LDR x8, [sp, 8]
 
         STP d15, d14, [sp, -16]
         STP d13, d12, [sp, -32]
@@ -30,35 +31,17 @@ BEGIN_FUNCTION q8conv_ukernel_8x8__aarch64_neon
 
         # Load bias0123, bias4567
         LD1 {v8.4s, v9.4s}, [x6]
-
-#ifndef __APPLE__
-        # Load a_offset
-        ADD x8, sp, 8
-        LD1R {v24.8b}, [x8]
-
-        # Load b_offset
-        ADD x8, sp, 16
-        LD1R {v25.8b}, [x8]
-
-        # Load params
-        LDR x8, [sp, 24]
-#else
-        # Load a_offset
-        ADD x8, sp, 8
-        LD1R {v24.8b}, [x8]
-
-        # Load b_offset
-        ADD x8, sp, 9
-        LD1R {v25.8b}, [x8]
-
-        # Load params
-        LDR x8, [sp, 16]
-#endif
+        MOV x9, 2
 
         # v10 := vacc1x0123
         MOV v10.16b, v8.16b
+        # Load a_zero_point
+        LD1R {v24.8b}, [x8], x9
+
         # v11 := vacc1x4567
         MOV v11.16b, v9.16b
+        # Load b_zero_point
+        LD1R {v25.8b}, [x8], x9
 
         # v12 := vacc2x0123
         MOV v12.16b, v8.16b
@@ -90,15 +73,13 @@ BEGIN_FUNCTION q8conv_ukernel_8x8__aarch64_neon
         # v23 := vacc7x4567
         MOV v23.16b, v9.16b
 
-        // Load multiplier
-        // - v26 = vmultiplier
+        # Load multiplier
+        # - v26 = vmultiplier
         LD1R {v26.4s}, [x8], 4
-
-        MOV x17, x2
 
         .p2align 4
 3:
-        MOV x2, x17
+        MOV x17, x2
 
         LDR x16, [x4], 8  // a0
         LDR x9,  [x4], 8  // a1
@@ -109,12 +90,12 @@ BEGIN_FUNCTION q8conv_ukernel_8x8__aarch64_neon
         LDR x14, [x4], 8  // a6
         LDR x15, [x4], 8  // a7
 
-        SUBS x2, x2, 8
+        SUBS x17, x17, 8
         B.LO 1f
 
         .p2align 5
 0:
-        // b0-7 (channel 0)
+        # b0-7 (channel 0)
         LD1 {v27.8b}, [x5], 8
         USUBL v27.8h, v27.8b, v25.8b
 
@@ -283,7 +264,7 @@ BEGIN_FUNCTION q8conv_ukernel_8x8__aarch64_neon
         SMLAL v22.4s, v27.4h, v7.h[6]   // vacc7x0123 += vb0123 * va7[6]
         SMLAL2 v23.4s, v27.8h, v7.h[6]  // vacc7x4567 += vb4567 * va7[6]
 
-        SUBS x2, x2, 8
+        SUBS x17, x17, 8
 
         SMLAL v8.4s, v28.4h, v0.h[7]    // vacc0x0123 += vb0123 * va0[7]
         SMLAL2 v9.4s, v28.8h, v0.h[7]   // vacc0x4567 += vb4567 * va0[7]
@@ -305,22 +286,22 @@ BEGIN_FUNCTION q8conv_ukernel_8x8__aarch64_neon
         B.HS 0b
 
 1:
-        CMP x2, -8
+        CMP x17, -8
         B.EQ 2f
 
         // Adjust a0-a7
-        ADD x16, x16, x2
-        ADD x9, x9, x2
-        ADD x10, x10, x2
-        ADD x11, x11, x2
-        ADD x12, x12, x2
-        ADD x13, x13, x2
-        ADD x14, x14, x2
-        ADD x15, x15, x2
+        ADD x16, x16, x17
+        ADD x9, x9, x17
+        ADD x10, x10, x17
+        ADD x11, x11, x17
+        ADD x12, x12, x17
+        ADD x13, x13, x17
+        ADD x14, x14, x17
+        ADD x15, x15, x17
 
         // a_shift = 8 * k - 64
-        LSL x2, x2, 3
-        FMOV d29, x2
+        LSL x17, x17, 3
+        FMOV d29, x17
         USHL d31, d24, d29
 
         // Load x0-a7
@@ -377,7 +358,7 @@ BEGIN_FUNCTION q8conv_ukernel_8x8__aarch64_neon
         SMLAL v22.4s, v27.4h, v7.h[0]   // vacc7x0123 += vb0123 * va7[0]
         SMLAL2 v23.4s, v27.8h, v7.h[0]  // vacc7x4567 += vb4567 * va7[0]
 
-        CMP x2, -48
+        CMP x17, -48
         B.LO 2f
 
         // Channel 1
@@ -424,7 +405,7 @@ BEGIN_FUNCTION q8conv_ukernel_8x8__aarch64_neon
         SMLAL v22.4s, v27.4h, v7.h[2]   // vacc7x0123 += vb0123 * va7[2]
         SMLAL2 v23.4s, v27.8h, v7.h[2]  // vacc7x4567 += vb4567 * va7[2]
 
-        CMP x2, -32
+        CMP x17, -32
         B.LO 2f
 
         // Channel 3
@@ -471,7 +452,7 @@ BEGIN_FUNCTION q8conv_ukernel_8x8__aarch64_neon
         SMLAL v22.4s, v27.4h, v7.h[4]   // vacc7x0123 += vb0123 * va7[4]
         SMLAL2 v23.4s, v27.8h, v7.h[4]  // vacc7x4567 += vb4567 * va7[4]
 
-        CMP x2, -16
+        CMP x17, -16
         B.LO 2f
 
         // Channel 5

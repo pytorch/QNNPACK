@@ -181,8 +181,9 @@ enum qnnp_status qnnp_create_deconvolution2d_nhwc_q8(
   deconvolution->input_zero_point = input_zero_point;
   deconvolution->kernel_zero_point = kernel_zero_point;
 
-  deconvolution->requantization_params =
-    qnnp_compute_requantization_params(
+  deconvolution->conv_quantization_params =
+    qnnp_compute_conv_quantization_params(
+      input_zero_point, kernel_zero_point,
       deconvolution_scale, output_zero_point, output_min, output_max);
 
   deconvolution->format = qnnp_format_quint8;
