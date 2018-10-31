@@ -11,6 +11,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include <math.h>
 
 #include <cpuinfo.h>
 #include <fp16.h>
@@ -93,6 +94,24 @@ enum qnnp_status qnnp_create_deconvolution2d_nhwc_q8(
       "failed to create deconvolution with %" PRIu32 "x%" PRIu32 " dilation: "
       "dilation dimensions must be non-zero",
       dilation_width, dilation_height);
+    goto error;
+  }
+
+  if (input_scale <= 0.0f || !isnormal(input_scale)) {
+    qnnp_log_error(
+      "failed to create deconvolution with %.7g input scale: scale must be finite and positive", input_scale);
+    goto error;
+  }
+
+  if (kernel_scale <= 0.0f || !isnormal(kernel_scale)) {
+    qnnp_log_error(
+      "failed to create deconvolution with %.7g kernel scale: scale must be finite and positive", kernel_scale);
+    goto error;
+  }
+
+  if (output_scale <= 0.0f || !isnormal(output_scale)) {
+    qnnp_log_error(
+      "failed to create deconvolution with %.7g output scale: scale must be finite and positive", output_scale);
     goto error;
   }
 

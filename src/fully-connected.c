@@ -11,6 +11,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include <math.h>
 
 #include <cpuinfo.h>
 #include <fp16.h>
@@ -46,6 +47,26 @@ enum qnnp_status qnnp_create_fully_connected_nc_q8(
 
   if (!qnnp_params.initialized) {
     qnnp_log_error("qnnp_create_fully_connected_nc_q8 failed because QNNPACK is not properly initialized");
+    goto error;
+  }
+
+  status = qnnp_status_invalid_parameter;
+
+  if (input_scale <= 0.0f || !isnormal(input_scale)) {
+    qnnp_log_error(
+      "failed to create fully connected operator with %.7g input scale: scale must be finite and positive", input_scale);
+    goto error;
+  }
+
+  if (kernel_scale <= 0.0f || !isnormal(kernel_scale)) {
+    qnnp_log_error(
+      "failed to create fully connected operator with %.7g kernel scale: scale must be finite and positive", kernel_scale);
+    goto error;
+  }
+
+  if (output_scale <= 0.0f || !isnormal(output_scale)) {
+    qnnp_log_error(
+      "failed to create fully connected operator with %.7g output scale: scale must be finite and positive", output_scale);
     goto error;
   }
 
