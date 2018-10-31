@@ -102,8 +102,9 @@ enum qnnp_status qnnp_create_fully_connected_nc_q8(
   fully_connected->input_zero_point = input_zero_point;
   fully_connected->kernel_zero_point = kernel_zero_point;
 
-  fully_connected->requantization_params =
-    qnnp_compute_requantization_params(
+  fully_connected->conv_quantization_params =
+    qnnp_compute_conv_quantization_params(
+      input_zero_point, kernel_zero_point,
       requantization_scale, output_zero_point, output_min, output_max);
 
   fully_connected->format = qnnp_format_quint8;

@@ -179,9 +179,7 @@ typedef void (*q8gemm_ukernel_function)(
     const int32_t* bias,
     uint8_t* c,
     size_t c_stride,
-    const uint8_t a_offset,
-    const uint8_t b_offset,
-    const union qnnp_q31_requantization_params* requantization_params);
+    const union qnnp_conv_quantization_params* quantization_params);
 
 typedef void (*q8conv_ukernel_function)(
     size_t mr,

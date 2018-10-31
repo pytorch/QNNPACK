@@ -95,7 +95,7 @@ class Q8GEMM : public benchmark::Fixture {
     c_.resize(mc() * nc());
     std::fill(c_.begin(), c_.end(), 0xA5);
 
-    requantizationParams_ = qnnp_compute_requantization_params(0.75f, 0x33, 1, 254);
+    quantizationParams_ = qnnp_compute_conv_quantization_params(127, 127, 0.75f, 127, 1, 254);
   }
 
   virtual void TearDown(benchmark::State& state) override
@@ -166,9 +166,9 @@ class Q8GEMM : public benchmark::Fixture {
     return roundUp(kc(), kr());
   }
 
-  inline const qnnp_q31_requantization_params* requantizationParams() const
+  inline const qnnp_conv_quantization_params* quantizationParams() const
   {
-    return &requantizationParams_;
+    return &quantizationParams_;
   }
 
  protected:
@@ -182,7 +182,7 @@ class Q8GEMM : public benchmark::Fixture {
   uint32_t mc_{mr_};
   uint32_t nc_{nr_};
   uint32_t kc_{kr_};
-  qnnp_q31_requantization_params requantizationParams_;
+  qnnp_conv_quantization_params quantizationParams_;
 };
 
 template <uint32_t MR, uint32_t NR, uint32_t KR>
@@ -235,6 +235,8 @@ class Q8GEMM_XZP : public Q8GEMM {
     std::fill(c_.begin(), c_.end(), 0xA5);
     as_.resize(roundUp(mc(), mr()));
     std::fill(as_.begin(), as_.end(), 0xFE01);
+
+    requantizationParams_ = qnnp_compute_requantization_params(0.75f, 127, 1, 254);
   }
 
   virtual void TearDown(benchmark::State& state) override
@@ -251,8 +253,14 @@ class Q8GEMM_XZP : public Q8GEMM {
     return as_.data();
   }
 
+  inline const qnnp_q31_requantization_params* requantizationParams() const
+  {
+    return &requantizationParams_;
+  }
+
  protected:
   std::vector<int32_t, AlignedAllocator<int32_t, 32>> as_;
+  qnnp_q31_requantization_params requantizationParams_;
 };
 
 template <uint32_t MR, uint32_t NR, uint32_t KR>
@@ -574,7 +582,7 @@ BENCHMARK_TEMPLATE_F(Q8GEMM_L1, 4x8__aarch32_neon, 4, 8, 1)(benchmark::State& st
       a(), kc() * sizeof(uint8_t),
       b(), bias(),
       c(), mr() * sizeof(uint8_t),
-      0x11, 0x22, requantizationParams());
+      quantizationParams());
   }
 }
 
@@ -591,7 +599,7 @@ BENCHMARK_TEMPLATE_DEFINE_F(Q8GEMM_Op, 4x8__aarch32_neon, 4, 8, 1)(benchmark::St
           b() + n * kcStride(),
           bias() + n,
           c() + m * nc() + n, nc() * sizeof(uint8_t),
-          0x11, 0x22, requantizationParams());
+          quantizationParams());
       }
     }
   }
@@ -652,7 +660,7 @@ BENCHMARK_TEMPLATE_F(Q8GEMM_L1, 8x8__aarch64_neon, 8, 8, 1)(benchmark::State& st
       a(), kc() * sizeof(uint8_t),
       b(), bias(),
       c(), mr() * sizeof(uint8_t),
-      0x11, 0x22, requantizationParams());
+      quantizationParams());
   }
 }
 
@@ -669,7 +677,7 @@ BENCHMARK_TEMPLATE_DEFINE_F(Q8GEMM_Op, 8x8__aarch64_neon, 8, 8, 1)(benchmark::St
           b() + n * kcStride(),
           bias() + n,
           c() + m * nc() + n, nc() * sizeof(uint8_t),
-          0x11, 0x22, requantizationParams());
+          quantizationParams());
       }
     }
   }
@@ -690,7 +698,7 @@ BENCHMARK_TEMPLATE_F(Q8GEMM_L1, 4x8__neon, 4, 8, 1)(benchmark::State& state)
       a(), kc() * sizeof(uint8_t),
       b(), bias(),
       c(), mr() * sizeof(uint8_t),
-      0x11, 0x22, requantizationParams());
+      quantizationParams());
   }
 }
 
@@ -702,7 +710,7 @@ BENCHMARK_TEMPLATE_F(Q8GEMM_L1, 8x8__neon, 8, 8, 1)(benchmark::State& state)
       a(), kc() * sizeof(uint8_t),
       b(), bias(),
       c(), mr() * sizeof(uint8_t),
-      0x11, 0x22, requantizationParams());
+      quantizationParams());
   }
 }
 
@@ -719,7 +727,7 @@ BENCHMARK_TEMPLATE_DEFINE_F(Q8GEMM_Op, 4x8__neon, 4, 8, 1)(benchmark::State& sta
           b() + n * kcStride(),
           bias() + n,
           c() + m * nc() + n, nc() * sizeof(uint8_t),
-          0x11, 0x22, requantizationParams());
+          quantizationParams());
       }
     }
   }
@@ -743,7 +751,7 @@ BENCHMARK_TEMPLATE_DEFINE_F(Q8GEMM_Op, 8x8__neon, 8, 8, 1)(benchmark::State& sta
           b() + n * kcStride(),
           bias() + n,
           c() + m * nc() + n, nc() * sizeof(uint8_t),
-          0x11, 0x22, requantizationParams());
+          quantizationParams());
       }
     }
   }
@@ -820,7 +828,7 @@ BENCHMARK_TEMPLATE_F(Q8GEMM_L1, 2x4c8__sse2, 2, 4, 8)(benchmark::State& state)
       a(), kc() * sizeof(uint8_t),
       b(), bias(),
       c(), mr() * sizeof(uint8_t),
-      0x11, 0x22, requantizationParams());
+      quantizationParams());
   }
 }
 
@@ -832,7 +840,7 @@ BENCHMARK_TEMPLATE_F(Q8GEMM_L1, 4x4c2__sse2, 4, 4, 2)(benchmark::State& state)
       a(), kc() * sizeof(uint8_t),
       b(), bias(),
       c(), mr() * sizeof(uint8_t),
-      0x11, 0x22, requantizationParams());
+      quantizationParams());
   }
 }
 
@@ -849,7 +857,7 @@ BENCHMARK_TEMPLATE_DEFINE_F(Q8GEMM_Op, 4x4c2__sse2, 4, 4, 2)(benchmark::State& s
           b() + n * kcStride(),
           bias() + n,
           c() + m * nc() + n, nc() * sizeof(uint8_t),
-          0x11, 0x22, requantizationParams());
+          quantizationParams());
       }
     }
   }

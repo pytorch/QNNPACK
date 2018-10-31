@@ -20,9 +20,7 @@
 #     const int32_t*restrict bias,
 #     uint8_t*restrict c,
 #     size_t c_stride,
-#     const uint8_t a_offset,
-#     const uint8_t b_offset,
-#     const union qnnp_q31_requantization_params requantization_params[restrict static 1])
+#     const union qnnp_conv_quantization_params quantization_params[restrict static 1])
 BEGIN_FUNCTION q8gemm_ukernel_4x8__aarch32_neon
 	.arm
 #ifndef __APPLE__
@@ -35,11 +33,11 @@ BEGIN_FUNCTION q8gemm_ukernel_4x8__aarch32_neon
 	PUSH {r4, r5, r6, r7}
 
 	VPUSH {d8-d15}
-	ADD r4, sp, 100
+	LDR r4, [sp, 100]
 
 	# Load bias0123, bias4567
 	VLD1.8 {d16-d19}, [ip]
-	ADD r5, sp, 104
+	ADD r5, r4, 2
 
 	# Load a_stride
 	# - r6 = a_stride
@@ -60,10 +58,9 @@ BEGIN_FUNCTION q8gemm_ukernel_4x8__aarch32_neon
 	VLD1.8 {d15[]}, [r5]
 	MOVLO r4, r3
 
-
 	# Load params:
 	# - ip = params
-	LDR ip, [sp, 108]
+	ADD ip, r5, 2
 	ADD r5, r4, r6
 
 	# q10 := vacc1x0123

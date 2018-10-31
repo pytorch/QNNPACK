@@ -18,9 +18,7 @@
 #     const int32_t*restrict bias,
 #     uint8_t*restrict c,
 #     size_t c_stride,
-#     const uint8_t a_offset,
-#     const uint8_t b_offset,
-#     const union qnnp_q31_requantization_params requantization_params[restrict static 1])
+#     const union qnnp_conv_quantization_params quantization_params[restrict static 1])
 BEGIN_FUNCTION q8gemm_ukernel_8x8__aarch64_neon
 
         STP d15, d14, [sp, -16]
@@ -31,29 +29,15 @@ BEGIN_FUNCTION q8gemm_ukernel_8x8__aarch64_neon
         # Load bias0123, bias4567
         LD1 {v8.4s, v9.4s}, [x6]
 
-#ifndef __APPLE__
-        # Load a_offset
-        ADD x8, sp, 8
-        LD1R {v24.8b}, [x8]
-
-        # Load b_offset
-        ADD x8, sp, 16
-        LD1R {v25.8b}, [x8]
+        MOV x9, 2
 
         # Load params
-        LDR x8, [sp, 24]
-#else
-        # Load a_offset
-        ADD x8, sp, 8
-        LD1R {v24.8b}, [x8]
+        LDR x8, [sp, 8]
 
-        # Load b_offset
-        ADD x8, sp, 9
-        LD1R {v25.8b}, [x8]
-
-        # Load params
-        LDR x8, [sp, 16]
-#endif
+        # Load a_zero_point
+        LD1R {v24.8b}, [x8], x9
+        # Load b_zero_point
+        LD1R {v25.8b}, [x8], x9
 
         # v10 := vacc1x0123
         MOV v10.16b, v8.16b
