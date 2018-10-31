@@ -23,19 +23,6 @@ IF(QNNPACK_BUILD_TESTS)
   ENABLE_TESTING()
 ENDIF()
 
-MACRO(NNPACK_TARGET_ENABLE_CXX11 target)
-  IF(${CMAKE_VERSION} VERSION_LESS "3.1")
-    IF(NOT MSVC)
-      TARGET_COMPILE_OPTIONS(${target} PRIVATE -std=gnu++11)
-    ENDIF()
-  ELSE()
-    SET_TARGET_PROPERTIES(${target} PROPERTIES
-      CXX_STANDARD 11
-      CXX_STANDARD_REQUIRED YES
-      CXX_EXTENSIONS YES)
-  ENDIF()
-ENDMACRO()
-
 # ---[ Build flags
 IF(NOT CMAKE_SYSTEM_PROCESSOR)
   IF(NOT IOS)
@@ -131,7 +118,7 @@ IF(QNNPACK_BUILD_BENCHMARKS AND NOT DEFINED GOOGLEBENCHMARK_SOURCE_DIR)
   SET(GOOGLEBENCHMARK_SOURCE_DIR "${CONFU_DEPENDENCIES_SOURCE_DIR}/googlebenchmark" CACHE STRING "Google Benchmark source directory")
 ENDIF()
 
-# ---[ NNPACK library
+# ---[ QNNPACK library
 SET(QNNPACK_INIT_SRCS src/init.c)
 SET(QNNPACK_OPERATOR_SRCS
   src/convolution.c
@@ -189,7 +176,7 @@ ELSEIF(QNNPACK_LIBRARY_TYPE STREQUAL "shared")
 ELSEIF(QNNPACK_LIBRARY_TYPE STREQUAL "static")
   ADD_LIBRARY(qnnpack STATIC ${QNNPACK_INIT_SRCS} ${QNNPACK_OPERATOR_SRCS} ${QNNPACK_UKERNELS})
 ELSE()
-  MESSAGE(FATAL_ERROR "Unsupported NNPACK library type \"${QNNPACK_LIBRARY_TYPE}\". Must be \"static\", \"shared\", or \"default\"")
+  MESSAGE(FATAL_ERROR "Unsupported QNNPACK library type \"${QNNPACK_LIBRARY_TYPE}\". Must be \"static\", \"shared\", or \"default\"")
 ENDIF()
 SET_TARGET_PROPERTIES(qnnpack PROPERTIES
   C_STANDARD 99
@@ -242,7 +229,7 @@ IF(NOT TARGET pthreadpool)
 ENDIF()
 IF(QNNPACK_CUSTOM_THREADPOOL)
   # Depend on pthreadpool interface, but not on implementation.
-  # This is used when NNPACK user (e.g. Caffe2) provides its own threadpool implementation.
+  # This is used when QNNPACK user (e.g. Caffe2) provides its own threadpool implementation.
   TARGET_LINK_LIBRARIES(qnnpack PUBLIC pthreadpool_interface)
 ELSE()
   TARGET_LINK_LIBRARIES(qnnpack PUBLIC pthreadpool)
