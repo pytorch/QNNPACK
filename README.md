@@ -26,7 +26,16 @@ Notes:
 
 ### Cross-compilation for iOS
 
-To cross-compile for iOS, use [ios-cmake](https://github.com/leetal/ios-cmake) to generate Xcode project files.
+To cross-compile for iOS, clone [ios-cmake](https://github.com/leetal/ios-cmake), and set `$IOS_CMAKE_TOOLCHAIN_FILE` environment variable (where `$IOS_CMAKE_TOOLCHAIN_FILE` is the path to `ios.toolchain.cmake` file in [ios-cmake](https://github.com/leetal/ios-cmake)), and use one of the scripts from the table below:
+
+| Architecture | Build script                  | Notes                     |
+| ------------ | ----------------------------- | ------------------------- |
+| armv7        | `scripts/build-ios-armv7.sh`  | iPhone 3GS/4/4S           |
+| armv7        | `scripts/build-ios-armv7s.sh` | iPhone 5 and newer        |
+| arm64        | `scripts/build-ios-arm64.sh`  | iPhone 5S and newer       |
+| arm64e       | `scripts/build-ios-arm64e.sh` | iPhone XS/XR              |
+| i386         | `scripts/build-ios-i386.sh`   | iPhone Simulator (32-bit) |
+| x86_64       | `scripts/build-ios-x86_64.sh` | iPhone Simulator (64-bit) |
 
 ## Acknowledgements
 
