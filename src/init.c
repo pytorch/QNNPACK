@@ -65,6 +65,10 @@ static void init(void) {
       .dw = q8dw_ukernel_9c8__neon,
       .cr = 8,
   };
+  qnnp_params.q8dw25 = (struct q8dw_multipass_parameters) {
+      .dw = q8dw_ukernel_25c8__neon,
+      .cr = 8,
+  };
   qnnp_params.q8sum_rows = (struct q8sum_rows_parameters) {
       .sum_rows = q8sumrows_ukernel_4x__neon,
       .m = 4,

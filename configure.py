@@ -84,6 +84,7 @@ def main(args):
                     build.cc("q8conv/4x8-neon.c"),
                     build.cc("q8conv/8x8-neon.c"),
                     build.cc("q8dw/9c8-neon.c"),
+                    build.cc("q8dw/25c8-neon.c"),
                     build.cc("sgemm/5x8-neon.c"),
                     build.cc("sgemm/6x8-neon.c"),
                 ]

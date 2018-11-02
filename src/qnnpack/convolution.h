@@ -61,6 +61,7 @@ struct qnnp_operator {
 
   void* bias;
   void* zero;
+  void* multipass_acc;
 
   union {
     union qnnp_q31_requantization_params requantization_params;

@@ -248,6 +248,17 @@ typedef void (*q8dw_ukernel_function)(
     size_t output_increment,
     const union qnnp_conv_quantization_params* quantization_params);
 
+typedef void (*q8dw_multipass_ukernel_function)(
+    size_t channels,
+    size_t output_width,
+    const uint8_t** input,
+    const void* weights,
+    int32_t* multipass_acc,
+    uint8_t* output,
+    size_t input_stride,
+    size_t output_increment,
+    const union qnnp_conv_quantization_params* quantization_params);
+
 struct q8conv_parameters {
   q8gemm_ukernel_function gemm;
   q8conv_ukernel_function conv;
@@ -271,6 +282,11 @@ struct q8dw_parameters {
   uint8_t cr;
 };
 
+struct q8dw_multipass_parameters {
+  q8dw_multipass_ukernel_function dw;
+  uint8_t cr;
+};
+
 struct q8sum_rows_parameters {
   q8sum_rows_ukernel_function sum_rows;
   uint32_t m;
@@ -280,6 +296,7 @@ struct qnnp_parameters {
   struct q8conv_parameters q8conv;
   struct q8conv_xzp_parameters q8conv_xzp;
   struct q8dw_parameters q8dw9;
+  struct q8dw_multipass_parameters q8dw25;
   struct q8sum_rows_parameters q8sum_rows;
   bool initialized;
 };

@@ -21,6 +21,7 @@
 #include <qnnpack/params.h>
 #include <qnnpack/scalar-utils.h>
 #include <qnnpack/requantization.h>
+#include <qnnpack/q8dw.h>
 
 class DepthwiseMicrokernelTester {
  public:
@@ -161,6 +162,8 @@ class DepthwiseMicrokernelTester {
     std::vector<uint8_t, AlignedAllocator<uint8_t, 32>> packedWeights((kernelSize() + sizeof(int32_t) / sizeof(uint8_t)) * packedChannels());
     std::vector<int32_t> bias(packedChannels());
     std::vector<int32_t> accumulators(width() * channels());
+    auto channel_stride = (channels() + (cr() - 1)) & -cr();
+    std::vector<int32_t> outacc32(width() * channel_stride);
     std::vector<uint8_t> output((width() - 1) * outputStride() + channels());
     std::vector<const uint8_t*> indirectInput(kernelSize() + (width() * subsampling() - 1) * kernelHeight());
 
@@ -173,15 +176,32 @@ class DepthwiseMicrokernelTester {
       std::generate(kernel.begin(), kernel.end(), std::ref(u8rng));
       std::generate(bias.begin(), bias.end(), std::ref(s32rng));
       std::fill(accumulators.begin(), accumulators.end(), 0);
+      std::fill(outacc32.begin(), outacc32.end(), 0);
 
       ASSERT_NE(*std::max_element(input.cbegin(), input.cend()), *std::min_element(input.cbegin(), input.cend()));
       ASSERT_NE(*std::max_element(kernel.cbegin(), kernel.cend()), *std::min_element(kernel.cbegin(), kernel.cend()));
 
       std::fill(packedWeights.begin(), packedWeights.end(), 0xA5);
-      pack_q8dw_w(
-        kernelHeight(), kernelWidth(), channels(), cr(),
-        kernel.data(), bias.data(), packedWeights.data());
 
+      if (kernelSize() == 25) {
+        // special path for 5x5 now
+        pack_q8dw_w_dilation(
+          kernelHeight(), kernelWidth(), channels(), cr(),
+          0, kernelHeight(), 0, 2,
+          kernel.data(), bias.data(), packedWeights.data(), true);
+        pack_q8dw_w_dilation(
+          kernelHeight(), kernelWidth(), channels(), cr(),
+          0, kernelHeight(), 2, 4,
+          kernel.data(), bias.data(), packedWeights.data() + (10 + sizeof(int32_t) / sizeof(uint8_t)) * channel_stride, false);
+        pack_q8dw_w_dilation(
+          kernelHeight(), kernelWidth(), channels(), cr(),
+          0, kernelHeight(), 4, 5,
+          kernel.data(), bias.data(), packedWeights.data() + (20 + sizeof(int32_t) / sizeof(uint8_t)) * channel_stride, false);
+      } else {
+        pack_q8dw_w(
+          kernelHeight(), kernelWidth(), channels(), cr(),
+          kernel.data(), bias.data(), packedWeights.data());
+      }
       for (size_t i = 0; i < kernelSize() + (width() * subsampling() - 1) * kernelHeight(); i++) {
         indirectInput[i] = inputPtr + i * inputStride();
       }
@@ -219,12 +239,21 @@ class DepthwiseMicrokernelTester {
         qnnp_compute_scalar_requantization_params(
           requantizationScale, outputZeroPoint, qmin(), qmax());
 
-      q8dw(
-        channels(), width(),
-        indirectInput.data(), packedWeights.data(), output.data(),
-        kernelHeight() * subsampling() * sizeof(void*),
-        (outputStride() - channels()) * sizeof(uint8_t),
-        &quantizationParams);
+      if (kernelHeight() == 3 && kernelWidth() == 3) {
+        q8dw(
+          channels(), width(),
+          indirectInput.data(), packedWeights.data(), output.data(),
+          kernelHeight() * subsampling() * sizeof(void*),
+          (outputStride() - channels()) * sizeof(uint8_t),
+          &quantizationParams);
+      } else {
+        q8dw_ukernel_25c8__neon(
+          channels(), width(),
+          indirectInput.data(), packedWeights.data(), outacc32.data(), output.data(),
+          kernelHeight() * subsampling() * sizeof(void*),
+          (outputStride() - channels()) * sizeof(uint8_t),
+          &quantizationParams);
+      }
 
       for (size_t x = 0; x < width(); x++) {
         for (size_t c = 0; c < channels(); c++) {
