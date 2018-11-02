@@ -156,13 +156,13 @@ class DepthwiseMicrokernelTester {
     auto s32rng = std::bind(std::uniform_int_distribution<int32_t>(-10000, 10000), rng);
     auto u8rng = std::bind(std::uniform_int_distribution<uint8_t>(), rng);
 
-    std::vector<uint8_t> input((kernelSize() + (width() - 1) * kernelHeight() * subsampling() - 1) * inputStride() + channels() + 8);
+    std::vector<uint8_t> input((kernelSize() + (width() * subsampling() - 1) * kernelHeight() - 1) * inputStride() + channels() + 8);
     std::vector<uint8_t> kernel(channels() * kernelSize());
     std::vector<uint8_t, AlignedAllocator<uint8_t, 32>> packedWeights((kernelSize() + sizeof(int32_t) / sizeof(uint8_t)) * packedChannels());
     std::vector<int32_t> bias(packedChannels());
     std::vector<int32_t> accumulators(width() * channels());
     std::vector<uint8_t> output((width() - 1) * outputStride() + channels());
-    std::vector<const uint8_t*> indirectInput(kernelSize() + (width() - 1) * kernelHeight() * subsampling());
+    std::vector<const uint8_t*> indirectInput(kernelSize() + (width() * subsampling() - 1) * kernelHeight());
 
     const uint8_t* inputPtr = input.data() + 8;
     const uint8_t inputZeroPoint = 127;
@@ -182,7 +182,7 @@ class DepthwiseMicrokernelTester {
         kernelHeight(), kernelWidth(), channels(), cr(),
         kernel.data(), bias.data(), packedWeights.data());
 
-      for (size_t i = 0; i < kernelSize() + (width() - 1) * kernelHeight() * subsampling(); i++) {
+      for (size_t i = 0; i < kernelSize() + (width() * subsampling() - 1) * kernelHeight(); i++) {
         indirectInput[i] = inputPtr + i * inputStride();
       }
       std::shuffle(indirectInput.begin(), indirectInput.end(), rng);
