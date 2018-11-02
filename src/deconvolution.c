@@ -269,14 +269,14 @@ enum qnnp_status qnnp_setup_deconvolution2d_nhwc_q8(
   const size_t output_size = output_height * output_width;
   const size_t output_tile_size = qnnp_params.q8conv.mr;
   const size_t tiled_output_size = round_up(output_size, output_tile_size);
-  const size_t im2col_buffer_size = sizeof(void*) * batch_size * groups * tiled_output_size * kernel_size;
+  const size_t indirection_buffer_size = sizeof(void*) * batch_size * groups * tiled_output_size * kernel_size;
 
-  const void** im2col_buffer = (const void**) realloc(deconvolution->im2col_buffer, im2col_buffer_size);
-  if (im2col_buffer == NULL) {
-    qnnp_log_error("failed to allocate %zu bytes for im2col buffer", im2col_buffer_size);
+  const void** indirection_buffer = (const void**) realloc(deconvolution->indirection_buffer, indirection_buffer_size);
+  if (indirection_buffer == NULL) {
+    qnnp_log_error("failed to allocate %zu bytes for indirection buffer", indirection_buffer_size);
     return qnnp_status_out_of_memory;
   }
-  deconvolution->im2col_buffer = im2col_buffer;
+  deconvolution->indirection_buffer = indirection_buffer;
 
   const void* zero = deconvolution->zero;
   if (deconvolution->group_input_channels < 8) {
@@ -297,13 +297,13 @@ enum qnnp_status qnnp_setup_deconvolution2d_nhwc_q8(
             for (size_t kernel_x = 0; kernel_x < kernel_width; kernel_x++) {
               const size_t x = output_x + deconvolution->input_padding_left - kernel_x * deconvolution->dilation_width;
               const size_t input_x = x / stride_width;
-              const size_t im2col_index =
+              const size_t index =
                 (group * batch_size + image) * tiled_output_size * kernel_size + output_tile_start * kernel_size + (kernel_y * kernel_width + kernel_x) * output_tile_size + output_tile_offset;
               if (input_y * stride_height == y && input_y < input_height && input_x * stride_width == x && input_x < input_width) {
-                im2col_buffer[im2col_index] =
+                indirection_buffer[index] =
                   input + ((image * input_height + input_y) * input_width + input_x) * input_pixel_stride + group * deconvolution->group_input_channels;
               } else {
-                im2col_buffer[im2col_index] = zero;
+                indirection_buffer[index] = zero;
               }
             }
           }

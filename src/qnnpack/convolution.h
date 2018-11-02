@@ -47,7 +47,7 @@ struct qnnp_operator {
   size_t input_width;
   size_t input_pixel_stride;
   const void* input;
-  const void** im2col_buffer;
+  const void** indirection_buffer;
   uint8_t input_zero_point;
   void* a_sum;
 

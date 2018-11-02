@@ -417,7 +417,7 @@ enum qnnp_status qnnp_setup_convolution2d_nhwc_q8(
   convolution->output_pixel_stride = output_pixel_stride;
 
   if (convolution->flags & QNNP_CONVOLUTION_FLAG_GEMM) {
-    /* Convolution maps directly to GEMM and doesn't use im2col buffer */
+    /* Convolution maps directly to GEMM and doesn't use indirection buffer */
     return qnnp_status_success;
   }
 
@@ -441,15 +441,16 @@ enum qnnp_status qnnp_setup_convolution2d_nhwc_q8(
   const size_t output_width = convolution->output_width;
   if (convolution->flags & QNNP_CONVOLUTION_FLAG_DW) {
     const size_t subsampling_width = convolution->stride_width;
-    const size_t im2col_buffer_size = sizeof(void*) * batch_size * output_height *
+    const size_t indirection_buffer_size = sizeof(void*) * batch_size * output_height *
       (kernel_size + (output_width * subsampling_width - 1) * kernel_height);
 
-    const void** im2col_buffer = (const void**) realloc(convolution->im2col_buffer, im2col_buffer_size);
-    if (im2col_buffer == NULL) {
-      qnnp_log_error("failed to allocate %zu bytes for im2col buffer", im2col_buffer_size);
+    const void** indirection_buffer =
+      (const void**) realloc(convolution->indirection_buffer, indirection_buffer_size);
+    if (indirection_buffer == NULL) {
+      qnnp_log_error("failed to allocate %zu bytes for indirection buffer", indirection_buffer_size);
       return qnnp_status_out_of_memory;
     }
-    convolution->im2col_buffer = im2col_buffer;
+    convolution->indirection_buffer = indirection_buffer;
 
     const void* zero = convolution->zero;
     if (groups < 8) {
@@ -467,23 +468,23 @@ enum qnnp_status qnnp_setup_convolution2d_nhwc_q8(
                 for (size_t kernel_x = 0; kernel_x < kernel_width; kernel_x++) {
                   const size_t input_x =
                     output_x * subsampling_width + kernel_x * convolution->dilation_width - convolution->input_padding_left;
-                  const size_t im2col_index =
+                  const size_t index =
                     (image * output_height + output_y) * (kernel_size + (output_width * subsampling_width - 1) * kernel_height) +
                     output_x * subsampling_width * kernel_height + kernel_x * kernel_height + kernel_y;
                   if (input_x < input_width) {
-                    im2col_buffer[im2col_index] = input + ((image * input_height + input_y) * input_width + input_x) * input_pixel_stride;
+                    indirection_buffer[index] = input + ((image * input_height + input_y) * input_width + input_x) * input_pixel_stride;
                   } else {
-                    im2col_buffer[im2col_index] = zero;
+                    indirection_buffer[index] = zero;
                   }
                 }
               }
             } else {
               for (size_t output_x = 0; output_x < output_width; output_x++) {
                 for (size_t kernel_x = 0; kernel_x < kernel_width; kernel_x++) {
-                  const size_t im2col_index =
+                  const size_t index =
                     (image * output_height + output_y) * (kernel_size + (output_width * subsampling_width - 1) * kernel_height) +
                     output_x * subsampling_width * kernel_height + kernel_x * kernel_height + kernel_y;
-                  im2col_buffer[im2col_index] = zero;
+                  indirection_buffer[index] = zero;
                 }
               }
             }
@@ -495,14 +496,14 @@ enum qnnp_status qnnp_setup_convolution2d_nhwc_q8(
     const size_t output_size = output_height * output_width;
     const size_t output_tile_size = qnnp_params.q8conv.mr;
     const size_t tiled_output_size = round_up(output_size, output_tile_size);
-    const size_t im2col_buffer_size = sizeof(void*) * batch_size * groups * tiled_output_size * kernel_size;
+    const size_t indirection_buffer_size = sizeof(void*) * batch_size * groups * tiled_output_size * kernel_size;
 
-    const void** im2col_buffer = (const void**) realloc(convolution->im2col_buffer, im2col_buffer_size);
-    if (im2col_buffer == NULL) {
-      qnnp_log_error("failed to allocate %zu bytes for im2col buffer", im2col_buffer_size);
+    const void** indirection_buffer = (const void**) realloc(convolution->indirection_buffer, indirection_buffer_size);
+    if (indirection_buffer == NULL) {
+      qnnp_log_error("failed to allocate %zu bytes for indirection buffer", indirection_buffer_size);
       return qnnp_status_out_of_memory;
     }
-    convolution->im2col_buffer = im2col_buffer;
+    convolution->indirection_buffer = indirection_buffer;
 
     const void* zero = convolution->zero;
     if (convolution->group_input_channels < 8) {
@@ -527,20 +528,20 @@ enum qnnp_status qnnp_setup_convolution2d_nhwc_q8(
                 for (size_t kernel_x = 0; kernel_x < kernel_width; kernel_x++) {
                   const size_t input_x =
                     output_x * convolution->stride_width + kernel_x * convolution->dilation_width - convolution->input_padding_left;
-                  const size_t im2col_index =
+                  const size_t index =
                     (group * batch_size + image) * tiled_output_size * kernel_size + output_tile_start * kernel_size + (kernel_y * kernel_width + kernel_x) * output_tile_size + output_tile_offset;
                   if (input_x < input_width) {
-                    im2col_buffer[im2col_index] =
+                    indirection_buffer[index] =
                       input + ((image * input_height + input_y) * input_width + input_x) * input_pixel_stride + group * convolution->group_input_channels;
                   } else {
-                    im2col_buffer[im2col_index] = zero;
+                    indirection_buffer[index] = zero;
                   }
                 }
               } else {
                 for (size_t kernel_x = 0; kernel_x < kernel_width; kernel_x++) {
-                  const size_t im2col_index =
+                  const size_t index =
                     (group * batch_size + image) * tiled_output_size * kernel_size + output_tile_start * kernel_size + (kernel_y * kernel_width + kernel_x) * output_tile_size + output_tile_offset;
-                  im2col_buffer[im2col_index] = zero;
+                  indirection_buffer[index] = zero;
                 }
               }
             }
@@ -744,7 +745,7 @@ struct q8conv_context {
   size_t m_stride;
   size_t n;
   size_t n_stride;
-  const uint8_t** im2col_a;
+  const uint8_t** indirect_a;
   const uint8_t* packed_b;
   const int32_t* bias;
   uint8_t* c;
@@ -772,7 +773,7 @@ static void compute_q8conv(
   const size_t m_stride = context->m_stride;
   const size_t n = context->n;
   const size_t n_stride = context->n_stride;
-  const uint8_t** restrict im2col_a = context->im2col_a;
+  const uint8_t** restrict indirect_a = context->indirect_a;
   const uint8_t* restrict packed_b = context->packed_b;
   const int32_t* restrict bias = context->bias;
   uint8_t* restrict c = context->c;
@@ -783,7 +784,7 @@ static void compute_q8conv(
       nr_block_size,
       kc,
       ks,
-      im2col_a + (mr_block_start + (image_index + group_index * bs) * m_stride) * ks,
+      indirect_a + (mr_block_start + (image_index + group_index * bs) * m_stride) * ks,
       packed_b + (nr_block_start + group_index * n_stride) * kc_stride,
       bias + nr_block_start + group_index * n_stride,
       c + (mr_block_start + image_index * m) * c_stride + group_index * n + nr_block_start,
@@ -793,9 +794,9 @@ static void compute_q8conv(
 
 struct q8dw_context {
   size_t groups;
-  const uint8_t** im2col_buffer;
-  size_t im2col_row_stride;
-  size_t im2col_col_stride;
+  const uint8_t** indirection_buffer;
+  size_t indirection_buffer_row_stride;
+  size_t indirection_buffer_col_stride;
   const uint8_t* packed_kernel;
   const int32_t* bias;
   uint8_t* output;
@@ -817,10 +818,10 @@ static void compute_q8dw(
   context->ukernel(
     context->groups,
     context->output_width,
-    context->im2col_buffer + (image * output_height + output_y) * context->im2col_row_stride,
+    context->indirection_buffer + (image * output_height + output_y) * context->indirection_buffer_row_stride,
     context->packed_kernel,
     context->output + (image * output_height + output_y) * context->output_row_stride,
-    context->im2col_col_stride,
+    context->indirection_buffer_col_stride,
     context->output_col_increment,
     &context->quantization_params);
 }
@@ -839,9 +840,9 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
 
     struct q8dw_context q8dw_context = {
         .groups = groups,
-        .im2col_buffer = (const uint8_t**) op->im2col_buffer,
-        .im2col_row_stride = kernel_size + (output_width * subsampling_width - 1) * kernel_height,
-        .im2col_col_stride = kernel_height * subsampling_width * sizeof(void*),
+        .indirection_buffer = (const uint8_t**) op->indirection_buffer,
+        .indirection_buffer_row_stride = kernel_size + (output_width * subsampling_width - 1) * kernel_height,
+        .indirection_buffer_col_stride = kernel_height * subsampling_width * sizeof(void*),
         .packed_kernel = op->packed_kernel,
         .bias = op->bias,
         .output = op->output,
@@ -952,7 +953,7 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
           .m_stride = m_stride,
           .n = group_output_channels,
           .n_stride = n_stride,
-          .im2col_a = (const uint8_t**) op->im2col_buffer,
+          .indirect_a = (const uint8_t**) op->indirection_buffer,
           .packed_b = op->packed_kernel,
           .bias = (const int32_t*) op->bias,
           .c = op->output,
@@ -975,7 +976,7 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
 enum qnnp_status qnnp_delete_operator(qnnp_operator_t op)
 {
   if (op != NULL) {
-    free(op->im2col_buffer);
+    free(op->indirection_buffer);
     free(op->packed_kernel);
     free(op->a_sum);
     free(op->bias);
