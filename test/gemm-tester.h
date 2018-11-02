@@ -21,6 +21,7 @@
 #include <cpuinfo.h>
 #include <qnnpack/AlignedAllocator.h>
 #include <qnnpack/params.h>
+#include <qnnpack/pack.h>
 #include <qnnpack/q8gemm.h>
 #include <qnnpack/q8conv.h>
 #include <qnnpack/scalar-utils.h>
@@ -280,7 +281,7 @@ class GemmTester {
 
     std::vector<uint8_t> a((mr() - 1) * aStride() + k() + 8);
     std::vector<uint8_t> b(n() * ks() * k());
-    std::vector<uint8_t, AlignedAllocator<uint8_t, 32>> packedB(packedN() * ks() * packedK());
+    std::vector<uint8_t, AlignedAllocator<uint8_t, 32>> packedW((ks() * packedK() + sizeof(int32_t) / sizeof(uint8_t)) * packedN());
     std::vector<int32_t> bias(nr());
     std::vector<uint8_t> c((m() - 1) * cStride() + n());
     std::vector<int32_t> acc(m() * n());
@@ -295,8 +296,8 @@ class GemmTester {
       std::generate(bias.begin(), bias.end(), std::ref(s32rng));
       std::fill(c.begin(), c.end(), 0xA5);
 
-      std::fill(packedB.begin(), packedB.end(), bZeroPoint);
-      pack_q8conv_b(n(), ks(), k(), np(), kr(), b.data(), packedB.data());
+      std::fill(packedW.begin(), packedW.end(), bZeroPoint);
+      pack_q8conv_w(n(), ks(), k(), np(), kr(), b.data(), bias.data(), packedW.data());
 
       ASSERT_NE(*std::max_element(a.cbegin(), a.cend()), *std::min_element(a.cbegin(), a.cend()));
       ASSERT_NE(*std::max_element(b.cbegin(), b.cend()), *std::min_element(b.cbegin(), b.cend()));
@@ -323,11 +324,10 @@ class GemmTester {
                 ASSERT_LT(ksIndex * mr() + mIndex, im2col.size());
                 ASSERT_LT(kBlockStart + kBlockOffset, k());
                 ASSERT_LT(kBlockStart + kBlockOffset, aStride());
-                ASSERT_LT(kBlockStart * ks() * packedN() + (ksIndex * nr() + nIndex) * kr() + kBlockOffset, packedB.size());
 
                 acc[mIndex * n() + nIndex] +=
                   (int32_t(im2col[ksIndex * mr() + mIndex][kBlockStart + kBlockOffset]) - int32_t(aZeroPoint)) *
-                  (int32_t(packedB[kBlockStart * ks() * packedN() + (ksIndex * nr() + nIndex) * kr() + kBlockOffset]) - int32_t(bZeroPoint));
+                  (int32_t(b[(nIndex * ks() + ksIndex) * k() + kBlockStart + kBlockOffset]) - int32_t(bZeroPoint));
               }
             }
           }
@@ -359,7 +359,7 @@ class GemmTester {
 
       qconv(
         m(), n(), k(), ks(),
-        im2col.data(), packedB.data(), bias.data(),
+        im2col.data(), packedW.data(),
         c.data(), cStride() * sizeof(uint8_t),
         &quantizationParams);
 
@@ -429,25 +429,6 @@ class GemmTester {
           for (size_t kr_block_offset = 0; kr_block_offset < kr_block_size; kr_block_offset++) {
             packed_b[nr_block_start * k_stride + kr_block_start * np + nr_block_offset * kr + kr_block_offset] =
               b[(nr_block_start + nr_block_offset) * b_stride + (kr_block_start + kr_block_offset)];
-          }
-        }
-      }
-    }
-  }
-
-  void pack_q8conv_b(size_t n, size_t ks, size_t kc, size_t np, size_t kr, const uint8_t* b, uint8_t* packed_b) const
-  {
-    const size_t kc_stride = (kc + (kr - 1)) & -kr;
-    for (size_t nr_block_start = 0; nr_block_start < n; nr_block_start += np) {
-      const size_t nr_block_size = std::min(n - nr_block_start, np);
-      for (size_t kr_block_start = 0; kr_block_start < kc; kr_block_start += kr) {
-        const size_t kr_block_size = std::min(kc - kr_block_start, kr);
-        for (size_t ki = 0; ki < ks; ki++) {
-          for (size_t nr_block_offset = 0; nr_block_offset < nr_block_size; nr_block_offset++) {
-            for (size_t kr_block_offset = 0; kr_block_offset < kr_block_size; kr_block_offset++) {
-              packed_b[(nr_block_start * ks + ki * np) * kc_stride + kr_block_start * np + nr_block_offset * kr + kr_block_offset] =
-                b[((nr_block_start + nr_block_offset) * ks + ki) * kc + (kr_block_start + kr_block_offset)];
-            }
           }
         }
       }

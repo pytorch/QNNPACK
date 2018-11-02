@@ -258,17 +258,18 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
     const uint32_t n_stride = (group_output_channels + (nr - 1)) & -nr;
     const uint32_t k_stride = (group_input_channels + (kr - 1)) & -kr;
 
-    convolution->packed_kernel = malloc(sizeof(uint8_t) * kernel_size * groups * k_stride * n_stride);
+    const size_t packed_group_weights_size =
+      (sizeof(uint8_t) * kernel_size * k_stride + sizeof(int32_t)) * n_stride;
+    convolution->packed_kernel = malloc(packed_group_weights_size * groups);
     if (convolution->packed_kernel == NULL) {
-      qnnp_log_error("failed to allocate %zu bytes for packed kernel data",
-        sizeof(uint8_t) * kernel_size * groups * k_stride * n_stride);
+      qnnp_log_error("failed to allocate %zu bytes for packed weights data", packed_group_weights_size * groups);
       goto error;
     }
     if (flags & QNNP_CONVOLUTION_FLAG_XZP_GEMM) {
       /* The XZP ukernel needs the padding to be 0 */
       memset(convolution->packed_kernel, 0, sizeof(uint8_t) * groups * kernel_size * k_stride * n_stride);
     } else {
-      memset(convolution->packed_kernel, kernel_zero_point, sizeof(uint8_t) * groups * kernel_size * k_stride * n_stride);
+      memset(convolution->packed_kernel, kernel_zero_point, packed_group_weights_size * groups);
     }
 
     if (flags & QNNP_CONVOLUTION_FLAG_GEMM) {
@@ -290,11 +291,12 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
       }
     } else {
       for (uint32_t group = 0; group < groups; group++) {
-        pack_q8conv_b(
+        pack_q8conv_w(
             group_output_channels, kernel_size, group_input_channels,
             nr, kr,
             kernel + group * group_output_channels * kernel_size * group_input_channels,
-            convolution->packed_kernel + group * kernel_size * n_stride * k_stride);
+            bias + group * group_output_channels,
+            (void*) ((uintptr_t) convolution->packed_kernel + group * packed_group_weights_size));
       }
     }
 
@@ -776,8 +778,7 @@ struct q8conv_context {
   size_t n;
   size_t n_stride;
   const uint8_t** indirect_a;
-  const uint8_t* packed_b;
-  const int32_t* bias;
+  const void* packed_w;
   uint8_t* c;
   size_t c_stride;
   union qnnp_conv_quantization_params quantization_params;
@@ -804,8 +805,7 @@ static void compute_q8conv(
   const size_t n = context->n;
   const size_t n_stride = context->n_stride;
   const uint8_t** restrict indirect_a = context->indirect_a;
-  const uint8_t* restrict packed_b = context->packed_b;
-  const int32_t* restrict bias = context->bias;
+  const void* restrict packed_w = context->packed_w;
   uint8_t* restrict c = context->c;
   const size_t c_stride = context->c_stride;
 
@@ -815,8 +815,7 @@ static void compute_q8conv(
       kc,
       ks,
       indirect_a + (mr_block_start + (image_index + group_index * bs) * m_stride) * ks,
-      packed_b + (nr_block_start + group_index * n_stride) * kc_stride,
-      bias + nr_block_start + group_index * n_stride,
+      (void*) ((uintptr_t) packed_w + (nr_block_start + group_index * n_stride) * (kc_stride * sizeof(uint8_t) + sizeof(int32_t))),
       c + (mr_block_start + image_index * m) * c_stride + group_index * n + nr_block_start,
       c_stride,
       &context->quantization_params);
@@ -1034,8 +1033,7 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
           .n = group_output_channels,
           .n_stride = n_stride,
           .indirect_a = (const uint8_t**) op->indirection_buffer,
-          .packed_b = op->packed_kernel,
-          .bias = (const int32_t*) op->bias,
+          .packed_w = op->packed_kernel,
           .c = op->output,
           .c_stride = op->output_pixel_stride,
           .quantization_params = op->conv_quantization_params,

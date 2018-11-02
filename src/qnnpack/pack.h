@@ -32,53 +32,71 @@ static inline void pack_q8gemm_b(
   }
 }
 
-static inline void pack_q8conv_b(
-    size_t n,
-    size_t ks,
-    size_t kc,
-    uint32_t nr,
-    uint32_t kr,
-    const uint8_t* b,
-    uint8_t* packed_b)
+static inline void pack_q8conv_w(
+  size_t n,
+  size_t ks,
+  size_t kc,
+  uint32_t nr,
+  uint32_t kr,
+  const uint8_t* k,
+  const int32_t* b,
+  void* packed_w)
 {
   const size_t kc_stride = (kc + (kr - 1)) & -kr;
   for (size_t nr_block_start = 0; nr_block_start < n; nr_block_start += nr) {
     const size_t nr_block_size = min(n - nr_block_start, nr);
-    for (size_t kr_block_start = 0; kr_block_start < kc; kr_block_start += kr) {
-      const size_t kr_block_size = min(kc - kr_block_start, kr);
-      for (size_t ki = 0; ki < ks; ki++) {
+    for (size_t nr_block_offset = 0; nr_block_offset < nr_block_size; nr_block_offset++) {
+      *((int32_t*) packed_w) = b[nr_block_start + nr_block_offset];
+      packed_w = (void*) ((uintptr_t) packed_w + sizeof(int32_t));
+    }
+    packed_w = (void*) ((uintptr_t) packed_w + (nr - nr_block_size) * sizeof(int32_t));
+    for (size_t ki = 0; ki < ks; ki++) {
+      for (size_t kr_block_start = 0; kr_block_start < kc; kr_block_start += kr) {
+        const size_t kr_block_size = min(kc - kr_block_start, kr);
         for (size_t nr_block_offset = 0; nr_block_offset < nr_block_size; nr_block_offset++) {
           for (size_t kr_block_offset = 0; kr_block_offset < kr_block_size; kr_block_offset++) {
-            packed_b[(nr_block_start * ks + ki * nr) * kc_stride + kr_block_start * nr + nr_block_offset * kr + kr_block_offset] =
-                b[((nr_block_start + nr_block_offset) * ks + ki) * kc + (kr_block_start + kr_block_offset)];
+            *((uint8_t*) packed_w) =
+              k[((nr_block_start + nr_block_offset) * ks + ki) * kc + (kr_block_start + kr_block_offset)];
+            packed_w = (void*) ((uintptr_t) packed_w + sizeof(uint8_t));
           }
+          packed_w = (void*) ((uintptr_t) packed_w + (kr - kr_block_size) * sizeof(uint8_t));
         }
+        packed_w = (void*) ((uintptr_t) packed_w + (nr - nr_block_size) * kr * sizeof(uint8_t));
       }
     }
   }
 }
 
-static inline void pack_q8deconv_b(
+static inline void pack_q8deconv_w(
     size_t n,
     size_t ks,
     size_t kc,
     uint32_t nr,
     uint32_t kr,
-    const uint8_t* b,
-    uint8_t* packed_b)
+    const uint8_t* k,
+    const int32_t* b,
+    void* packed_w)
 {
   const size_t kc_stride = (kc + (kr - 1)) & -kr;
   for (size_t nr_block_start = 0; nr_block_start < n; nr_block_start += nr) {
     const size_t nr_block_size = min(n - nr_block_start, nr);
-    for (size_t kr_block_start = 0; kr_block_start < kc; kr_block_start += kr) {
-      const size_t kr_block_size = min(kc - kr_block_start, kr);
-      for (size_t ki = 0; ki < ks; ki++) {
+    for (size_t nr_block_offset = 0; nr_block_offset < nr_block_size; nr_block_offset++) {
+      *((int32_t*) packed_w) = b[nr_block_start + nr_block_offset];
+      packed_w = (void*) ((uintptr_t) packed_w + sizeof(int32_t));
+    }
+    packed_w = (void*) ((uintptr_t) packed_w + (nr - nr_block_size) * sizeof(int32_t));
+    for (size_t ki = 0; ki < ks; ki++) {
+      for (size_t kr_block_start = 0; kr_block_start < kc; kr_block_start += kr) {
+        const size_t kr_block_size = min(kc - kr_block_start, kr);
         for (size_t nr_block_offset = 0; nr_block_offset < nr_block_size; nr_block_offset++) {
           for (size_t kr_block_offset = 0; kr_block_offset < kr_block_size; kr_block_offset++) {
-            packed_b[(nr_block_start * ks + ki * nr) * kc_stride + kr_block_start * nr + nr_block_offset * kr + kr_block_offset] =
-                b[((kr_block_start + kr_block_offset) * ks + ki) * n + (nr_block_start + nr_block_offset)];
+            *((uint8_t*) packed_w) =
+              k[((kr_block_start + kr_block_offset) * ks + ki) * n + (nr_block_start + nr_block_offset)];
+            packed_w = (void*) ((uintptr_t) packed_w + sizeof(uint8_t));
           }
+          packed_w = (void*) ((uintptr_t) packed_w + (kr - kr_block_size) * sizeof(uint8_t));
         }
+        packed_w = (void*) ((uintptr_t) packed_w + (nr - nr_block_size) * kr * sizeof(uint8_t));
       }
     }
   }

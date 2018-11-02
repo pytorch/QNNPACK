@@ -16,8 +16,7 @@
 #     size_t kc,
 #     size_t ks,
 #     const uint8_t**restrict a,
-#     const uint8_t*restrict b,
-#     const int32_t*restrict bias,
+#     const void*restrict w,
 #     uint8_t*restrict c,
 #     size_t c_stride,
 #     const union qnnp_conv_quantization_params quantization_params[restrict static 1])
@@ -27,18 +26,18 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 	.arch armv7-a
 	.fpu neon
 #endif
-	# Load bias
-	# - ip = bias
-	LDR ip, [sp, 8]
+	# Load w
+	# - ip = w
+	LDR ip, [sp, 4]
 	PUSH {r4, r5, r6, r7, r8, r9, r10, r11}
 
 	VPUSH {d8-d15}
 
 	# Load bias0123, bias4567
-	VLDM ip, {d16-d19}
+	VLDM ip!, {d16-d19}
 	# Load params:
-	# - ip = params
-	LDR ip, [sp, 116]
+	# - r9 = params
+	LDR r9, [sp, 112]
 
 	# q10 := vacc1x0123
 	VMOV.I32 q10, q8
@@ -50,24 +49,21 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 	LDR r8, [sp, 96]
 	# q12 := vacc2x0123
 	VMOV.I32 q12, q8
-	# Load b
-	# - r9 = b
-	LDR r9, [sp, 100]
 	# q13 := vacc2x4567
 	VMOV.I32 q13, q9
 	# Load a_zero_point:
 	# - d14 = a_zero_point
-	VLD1.8 {d14[]}, [ip], r4
+	VLD1.8 {d14[]}, [r9], r4
 	# q14 := vacc3x0123
 	VMOV.I32 q14, q8
 	# Load b_zero_point:
 	# - d15 = b_zero_point	
-	VLD1.8 {d15[]}, [ip], r4
+	VLD1.8 {d15[]}, [r9], r4
 	# q15 := vacc3x4567
 	VMOV.I32 q15, q9
 	# Load multiplier:
 	# - d12 = vmultiplier
-	VLD1.32 {d12[]}, [ip]!
+	VLD1.32 {d12[]}, [r9]!
 
 	.p2align 5
 0:
@@ -93,7 +89,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 
 	# Load vb0-vb7 (channel 0)
 	# - d9 = vb0-vb7
-	VLD1.8 {d9}, [r9:64]!
+	VLD1.8 {d9}, [ip:64]!
 
 	# Load va2
 	# - d5 = va2
@@ -123,7 +119,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 
 	# Load b0-b7 (channel 1)
 	# - d11 = b0-b7
-	VLD1.8 {d11}, [r9:64]!
+	VLD1.8 {d11}, [ip:64]!
 
 	# vacc0x0123 += vb0123 * va0[0]
 	VMLAL.S16 q8, d8, d0[0]
@@ -154,7 +150,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 
 	# Load b0-b7 (channel 2)
 	# - d9 = b0-b7
-	VLD1.8 {d9}, [r9:64]!
+	VLD1.8 {d9}, [ip:64]!
 
 	# vacc0x0123 += vb0123 * va0[1]
 	VMLAL.S16 q8, d10, d0[1]
@@ -185,7 +181,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 
 	# Load b0-b7 (channel 3)
 	# - d11 = b0-b7
-	VLD1.8 {d11}, [r9:64]!
+	VLD1.8 {d11}, [ip:64]!
 
 	# vacc0x0123 += vb0123 * va0[2]
 	VMLAL.S16 q8, d8, d0[2]
@@ -216,7 +212,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 
 	# Load b0-b7 (channel 4)
 	# - d9 = b0-b7
-	VLD1.8 {d9}, [r9:64]!
+	VLD1.8 {d9}, [ip:64]!
 
 	# vacc0x0123 += vb0123 * va0[3]
 	VMLAL.S16 q8, d10, d0[3]
@@ -247,7 +243,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 
 	# Load b0-b7 (channel 5)
 	# - d11 = b0-b7
-	VLD1.8 {d11}, [r9:64]!
+	VLD1.8 {d11}, [ip:64]!
 
 	# vacc0x0123 += vb0123 * va0[4]
 	VMLAL.S16 q8, d8, d1[0]
@@ -278,7 +274,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 
 	# Load b0-b7 (channel 6)
 	# - d9 = b0-b7
-	VLD1.8 {d9}, [r9:64]!
+	VLD1.8 {d9}, [ip:64]!
 
 	# vacc0x0123 += vb0123 * va0[5]
 	VMLAL.S16 q8, d10, d1[1]
@@ -309,7 +305,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 
 	# Load b0-b7 (channel 7)
 	# - d11 = b0-b7
-	VLD1.8 {d11}, [r9:64]!
+	VLD1.8 {d11}, [ip:64]!
 
 	# vacc0x0123 += vb0123 * va0[6]
 	VMLAL.S16 q8, d8, d1[2]
@@ -386,7 +382,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 
 	# Load b0-b7 (channel 0)
 	# - d9 = b0-b7
-	VLD1.8 {d9}, [r9:64]!
+	VLD1.8 {d9}, [ip:64]!
 
 	# Load a2
 	# - d5 = a2
@@ -445,7 +441,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 
 	# Load b0-b7 (channel 1)
 	# - d11 = b0-b7
-	VLD1.8 {d11}, [r9:64]!
+	VLD1.8 {d11}, [ip:64]!
 
 	# q5 = b0:7 - vb_zero_point
 	# - d10 = vb0123 (channel 1)
@@ -477,7 +473,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 
 	# Load b0-b7 (channel 2)
 	# - d9 = b0-b7
-	VLD1.8 {d9}, [r9:64]!
+	VLD1.8 {d9}, [ip:64]!
 
 	# q4 = b0:7 - vb_zero_point
 	# - d8 = vb0123 (channel 2)
@@ -510,7 +506,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 
 	# Load b0-b7 (channel 3)
 	# - d9 = b0-b7
-	VLD1.8 {d11}, [r9:64]!
+	VLD1.8 {d11}, [ip:64]!
 
 	# q4 = b0:7 - vb_zero_point
 	# - d8 = vb0123 (channel 3)
@@ -542,7 +538,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 
 	# Load b0-b7 (channel 4)
 	# - d11 = b0-b7
-	VLD1.8 {d9}, [r9:64]!
+	VLD1.8 {d9}, [ip:64]!
 
 	# q5 = b0:7 - vb_zero_point
 	# - d10 = vb0123 (channel 4)
@@ -575,7 +571,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 
 	# Load b0-b7 (channel 5)
 	# - d13 = b0-b7
-	VLD1.8 {d11}, [r9:64]!
+	VLD1.8 {d11}, [ip:64]!
 
 	# q5 = b0:7 - vb_zero_point
 	# - d10 = vb0123 (channel 5)
@@ -607,7 +603,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 
 	# Load b0-b7 (channel 6)
 	# - d9 = b0-b7
-	VLD1.8 {d9}, [r9:64]!
+	VLD1.8 {d9}, [ip:64]!
 
 	# q4 = b0:7 - vb_zero_point
 	# - d8 = vb0123 (channel 6)
@@ -642,7 +638,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 
 	# Load right_shift
 	# - q4 = d8:d9 = vright_shift
-	VLD1.32 {d8[], d9[]}, [ip]!
+	VLD1.32 {d8[], d9[]}, [r9]!
 
 	VQRDMULH.S32  q8, q8, d12[0]
 	VQRDMULH.S32  q9, q9, d12[0]
@@ -670,7 +666,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 
 	# Load output_zero_point
 	# - q7 = d14:d15 = voutput_zero_point
-	VLD1.16 {d14[], d15[]}, [ip]!
+	VLD1.16 {d14[], d15[]}, [r9]!
 
 	VBIC q0, q12, q5
 	VBIC q1, q13, q5
@@ -684,7 +680,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 
 	# Load max:
 	# - q5 = d10:d11 = voutput_max
-	VLD1.8 {d10[], d11[]}, [ip]!
+	VLD1.8 {d10[], d11[]}, [r9]!
 
 	VRSHL.S32  q8,  q8, q4
 	VRSHL.S32  q9,  q9, q4
@@ -697,8 +693,8 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 
 	# Load c, c_stride:
 	# - r2 = c
-	# - r2 = c_stride
-	LDRD r2, r3, [sp, 108]
+	# - r3 = c_stride
+	LDRD r2, r3, [sp, 104]
 
 	VQMOVN.S32 d16,  q8
 	VQMOVN.S32 d17,  q9
@@ -711,7 +707,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 
 	# Load min:
 	# - q4 = q8:q9 = voutput_min
-	VLD1.8 {d8[], d9[]}, [ip]!
+	VLD1.8 {d8[], d9[]}, [r9]!
 	ADD r4, r2, r3
 
 	VQADD.S16  q8,  q8, q7

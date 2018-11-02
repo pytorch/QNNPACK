@@ -24,8 +24,7 @@ extern "C" {
       size_t kc,                                                       \
       size_t ks,                                                       \
       const uint8_t** a,                                               \
-      const uint8_t* b,                                                \
-      const int32_t* bias,                                             \
+      const void* w,                                                   \
       uint8_t* c,                                                      \
       size_t c_stride,                                                 \
       const union qnnp_conv_quantization_params* quantization_params);

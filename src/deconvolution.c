@@ -141,33 +141,23 @@ enum qnnp_status qnnp_create_deconvolution2d_nhwc_q8(
 
   const uint32_t n_stride = (group_output_channels + (nr - 1)) & -nr;
   const uint32_t k_stride = (group_input_channels + (kr - 1)) & -kr;
-  deconvolution->packed_kernel = malloc(sizeof(uint8_t) * kernel_height * kernel_width * groups * k_stride * n_stride);
+  const uint32_t kernel_size = kernel_height * kernel_width;
+  const size_t packed_group_weights_size = (sizeof(uint8_t) * kernel_size * k_stride + sizeof(int32_t)) * n_stride;
+  deconvolution->packed_kernel = malloc(packed_group_weights_size * groups);
   if (deconvolution->packed_kernel == NULL) {
     qnnp_log_error("failed to allocate %zu bytes for packed kernel data",
       sizeof(uint8_t) * kernel_height * kernel_width * groups * k_stride * n_stride);
     goto error;
   }
-  const size_t kernel_size = kernel_height * kernel_width;
-  memset(deconvolution->packed_kernel, kernel_zero_point, sizeof(uint8_t) * groups * kernel_size * k_stride * n_stride);
+  memset(deconvolution->packed_kernel, kernel_zero_point, packed_group_weights_size * groups);
 
   for (uint32_t group = 0; group < groups; group++) {
-    pack_q8deconv_b(
+    pack_q8deconv_w(
         group_output_channels, kernel_size, group_input_channels,
         nr, kr,
         kernel + group * group_output_channels * kernel_size * group_input_channels,
-        deconvolution->packed_kernel + group * kernel_size * n_stride * k_stride);
-  }
-
-  deconvolution->bias = malloc(sizeof(int32_t) * groups * n_stride);
-  if (deconvolution->bias == NULL) {
-    qnnp_log_error("failed to allocate %zu bytes for packed bias data", sizeof(int32_t) * groups * n_stride);
-    goto error;
-  }
-  for (uint32_t group = 0; group < groups; group++) {
-    memcpy(
-      (int32_t*) deconvolution->bias + group * n_stride,
-      bias + group * group_output_channels,
-      sizeof(int32_t) * group_output_channels);
+        bias + group * group_output_channels,
+        (void*) ((uintptr_t) deconvolution->packed_kernel + group * packed_group_weights_size));
   }
 
   if (flags & QNNP_CONVOLUTION_FLAG_ZERO) {
