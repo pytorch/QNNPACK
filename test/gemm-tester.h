@@ -192,7 +192,7 @@ class GemmTester {
       std::fill(c.begin(), c.end(), 0xA5);
 
       std::fill(packedB.begin(), packedB.end(), bZeroPoint);
-      pack_q8gemm_b(n(), k(), np(), kr(), b.data(), k(), packedB.data());
+      pack_q8gemm_b(n(), k(), np(), kr(), b.data(), packedB.data());
 
       ASSERT_NE(*std::max_element(a.cbegin(), a.cend()), *std::min_element(a.cbegin(), a.cend()));
       ASSERT_NE(*std::max_element(b.cbegin(), b.cend()), *std::min_element(b.cbegin(), b.cend()));
@@ -384,7 +384,7 @@ class GemmTester {
     }
   }
 
-  void pack_sgemm_b(size_t n, size_t k, size_t np, size_t kr, const float* b, size_t b_stride, float* packed_b) const
+  void pack_sgemm_b(size_t n, size_t k, size_t np, size_t kr, const float* b, float* packed_b) const
   {
     const size_t k_stride = (k + (kr - 1)) & -kr;
     for (size_t nr_block_start = 0; nr_block_start < n; nr_block_start += np) {
@@ -394,14 +394,14 @@ class GemmTester {
           const size_t kr_block_size = std::min(k - kr_block_start, kr);
           for (size_t kr_block_offset = 0; kr_block_offset < kr_block_size; kr_block_offset++) {
             packed_b[nr_block_start * k_stride + kr_block_start * np + nr_block_offset * kr + kr_block_offset] =
-              b[(nr_block_start + nr_block_offset) * b_stride + (kr_block_start + kr_block_offset)];
+              b[(nr_block_start + nr_block_offset) * k + (kr_block_start + kr_block_offset)];
           }
         }
       }
     }
   }
 
-  void pack_hgemm_b(size_t n, size_t k, size_t np, size_t kr, const uint16_t* b, size_t b_stride, uint16_t* packed_b) const
+  void pack_hgemm_b(size_t n, size_t k, size_t np, size_t kr, const uint16_t* b, uint16_t* packed_b) const
   {
     const size_t k_stride = (k + (kr - 1)) & -kr;
     for (size_t nr_block_start = 0; nr_block_start < n; nr_block_start += np) {
@@ -411,65 +411,7 @@ class GemmTester {
           const size_t kr_block_size = std::min(k - kr_block_start, kr);
           for (size_t kr_block_offset = 0; kr_block_offset < kr_block_size; kr_block_offset++) {
             packed_b[nr_block_start * k_stride + kr_block_start * np + nr_block_offset * kr + kr_block_offset] =
-              b[(nr_block_start + nr_block_offset) * b_stride + (kr_block_start + kr_block_offset)];
-          }
-        }
-      }
-    }
-  }
-
-  void pack_q8gemm_b(size_t n, size_t k, size_t np, size_t kr, const uint8_t* b, size_t b_stride, uint8_t* packed_b) const
-  {
-    const size_t k_stride = (k + (kr - 1)) & -kr;
-    for (size_t nr_block_start = 0; nr_block_start < n; nr_block_start += np) {
-      const size_t nr_block_size = std::min(n - nr_block_start, np);
-      for (size_t nr_block_offset = 0; nr_block_offset < nr_block_size; nr_block_offset++) {
-        for (size_t kr_block_start = 0; kr_block_start < k; kr_block_start += kr) {
-          const size_t kr_block_size = std::min(k - kr_block_start, kr);
-          for (size_t kr_block_offset = 0; kr_block_offset < kr_block_size; kr_block_offset++) {
-            packed_b[nr_block_start * k_stride + kr_block_start * np + nr_block_offset * kr + kr_block_offset] =
-              b[(nr_block_start + nr_block_offset) * b_stride + (kr_block_start + kr_block_offset)];
-          }
-        }
-      }
-    }
-  }
-
-  void pack_q8gemm_b_diagonal(
-      size_t n,
-      size_t k,
-      uint32_t nr,
-      uint32_t kr,
-      uint32_t kc,
-      const uint8_t* b,
-      uint8_t* packed_b) const
-  {
-    const size_t k_stride = (k + (kr - 1)) & -kr;
-    for (size_t nr_block_start = 0; nr_block_start < n; nr_block_start += nr) {
-      /* Pack b first in big chunk of size nr x kc,
-       *  within the block of size nr x kc, pack b diagonally in size of kr.
-       * kc (power of 2) must be multiples of kr (power of 2) */
-      const size_t nr_block_size = std::min(n - nr_block_start, size_t(nr));
-      size_t kr_chunk_start = 0;
-      for (; kr_chunk_start < k / kc * kc; kr_chunk_start += kc) {
-        for (size_t nr_block_offset = 0; nr_block_offset < nr_block_size; nr_block_offset++) {
-          for (size_t kr_block_start = 0; kr_block_start < kc; kr_block_start += kr) {
-            for (size_t kr_block_offset = 0; kr_block_offset < kr; kr_block_offset++) {
-              /* When kc is power of 2, x % kc == x & (kc - 1) */
-              packed_b[nr_block_start * k_stride + (kr_chunk_start + kr_block_start) * nr + nr_block_offset * kr + kr_block_offset]
-                = b[(nr_block_start + nr_block_offset) * k + kr_chunk_start + ((kr_block_start + nr_block_offset * kr + kr_block_offset) & (kc - 1))];
-            }
-          }
-        }
-      }
-
-      /* for the remaining k (< kc), pack it in the same way as pack_q8gemm_b */
-      for (size_t nr_block_offset = 0; nr_block_offset < nr_block_size; nr_block_offset++) {
-        for (size_t kr_block_start = kr_chunk_start; kr_block_start < k; kr_block_start += kr) {
-          const size_t kr_block_size = std::min(k - kr_block_start, size_t(kr));
-          for (size_t kr_block_offset = 0; kr_block_offset < kr_block_size; kr_block_offset++) {
-            packed_b[nr_block_start * k_stride + kr_block_start * nr + nr_block_offset * kr + kr_block_offset] =
-                b[(nr_block_start + nr_block_offset) * k + (kr_block_start + kr_block_offset)];
+              b[(nr_block_start + nr_block_offset) * k + (kr_block_start + kr_block_offset)];
           }
         }
       }
@@ -677,7 +619,7 @@ class GemmTester {
       std::fill(cRef.begin(), cRef.end(), 0.0f);
 
       std::fill(packedB.begin(), packedB.end(), 0);
-      pack_hgemm_b(n(), k(), np(), kr(), b.data(), k(), packedB.data());
+      pack_hgemm_b(n(), k(), np(), kr(), b.data(), packedB.data());
 
       for (size_t mIndex = 0; mIndex < m(); mIndex++) {
         for (size_t nIndex = 0; nIndex < n(); nIndex++) {
@@ -771,7 +713,7 @@ class GemmTester {
       std::fill(cRef.begin(), cRef.end(), 0.0f);
 
       std::fill(packedB.begin(), packedB.end(), 0);
-      pack_sgemm_b(n(), k(), np(), kr(), b.data(), k(), packedB.data());
+      pack_sgemm_b(n(), k(), np(), kr(), b.data(), packedB.data());
 
       for (size_t mIndex = 0; mIndex < m(); mIndex++) {
         for (size_t nIndex = 0; nIndex < n(); nIndex++) {
