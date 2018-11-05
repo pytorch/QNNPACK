@@ -493,6 +493,70 @@ static void VGG(benchmark::internal::Benchmark* b) {
   b->Args({1,  14,  14, 1, 1, 1, 1, 512,  512});
 }
 
+static void DWConv3x3(benchmark::internal::Benchmark* b) {
+  b->ArgNames({"N", "H", "W", "KH", "KW", "S", "G", "GCin", "GCout"});
+  /* 96 x 96 */
+  b->Args({1, 96, 96, 3, 3, 1, 1024, 1, 1});
+  b->Args({1, 96, 96, 3, 3, 1, 768, 1, 1});
+  b->Args({1, 96, 96, 3, 3, 1, 512, 1, 1});
+  b->Args({1, 96, 96, 3, 3, 1, 256, 1, 1});
+  b->Args({1, 96, 96, 3, 3, 1, 128, 1, 1});
+  /* 32 x 32 */
+  b->Args({1, 32, 32, 3, 3, 1, 1024, 1, 1});
+  b->Args({1, 32, 32, 3, 3, 1, 768, 1, 1});
+  b->Args({1, 32, 32, 3, 3, 1, 512, 1, 1});
+  b->Args({1, 32, 32, 3, 3, 1, 256, 1, 1});
+  b->Args({1, 32, 32, 3, 3, 1, 128, 1, 1});
+  /* 17 x 17 */
+  b->Args({1, 17, 17, 3, 3, 1, 1024, 1, 1});
+  b->Args({1, 17, 17, 3, 3, 1, 768, 1, 1});
+  b->Args({1, 17, 17, 3, 3, 1, 512, 1, 1});
+  b->Args({1, 17, 17, 3, 3, 1, 256, 1, 1});
+  b->Args({1, 17, 17, 3, 3, 1, 128, 1, 1});
+  /* 11 x 11 */
+  b->Args({1, 11, 11, 3, 3, 1, 1024, 1, 1});
+  b->Args({1, 11, 11, 3, 3, 1, 768, 1, 1});
+  b->Args({1, 11, 11, 3, 3, 1, 512, 1, 1});
+  b->Args({1, 11, 11, 3, 3, 1, 256, 1, 1});
+  b->Args({1, 11, 11, 3, 3, 1, 128, 1, 1});
+}
+
+static void DWConv5x5(benchmark::internal::Benchmark* b) {
+  b->ArgNames({"N", "H", "W", "KH", "KW", "S", "G", "GCin", "GCout"});
+  /* 96 x 96 */
+  b->Args({1, 96, 96, 5, 5, 1, 1024, 1, 1});
+  b->Args({1, 96, 96, 5, 5, 1, 768, 1, 1});
+  b->Args({1, 96, 96, 5, 5, 1, 512, 1, 1});
+  b->Args({1, 96, 96, 5, 5, 1, 256, 1, 1});
+  b->Args({1, 96, 96, 5, 5, 1, 128, 1, 1});
+  b->Args({1, 96, 96, 5, 5, 1, 64, 1, 1});
+  b->Args({1, 96, 96, 5, 5, 1, 32, 1, 1});
+  /* 32 x 32 */
+  b->Args({1, 32, 32, 5, 5, 1, 1024, 1, 1});
+  b->Args({1, 32, 32, 5, 5, 1, 768, 1, 1});
+  b->Args({1, 32, 32, 5, 5, 1, 512, 1, 1});
+  b->Args({1, 32, 32, 5, 5, 1, 256, 1, 1});
+  b->Args({1, 32, 32, 5, 5, 1, 128, 1, 1});
+  /* 11 x 11 */
+  b->Args({1, 11, 11, 5, 5, 1, 1024, 1, 1});
+  b->Args({1, 11, 11, 5, 5, 1, 768, 1, 1});
+  b->Args({1, 11, 11, 5, 5, 1, 512, 1, 1});
+  b->Args({1, 11, 11, 5, 5, 1, 256, 1, 1});
+  b->Args({1, 11, 11, 5, 5, 1, 128, 1, 1});
+  b->Args({1, 11, 11, 5, 5, 1, 64, 1, 1});
+  b->Args({1, 11, 11, 5, 5, 1, 32, 1, 1});
+  b->Args({1, 11, 11, 5, 5, 1, 16, 1, 1});
+  /* 7 x 7 */
+  b->Args({1, 7, 7, 5, 5, 1, 1024, 1, 1});
+  b->Args({1, 7, 7, 5, 5, 1, 768, 1, 1});
+  b->Args({1, 7, 7, 5, 5, 1, 512, 1, 1});
+  b->Args({1, 7, 7, 5, 5, 1, 256, 1, 1});
+  b->Args({1, 7, 7, 5, 5, 1, 128, 1, 1});
+  b->Args({1, 7, 7, 5, 5, 1, 64, 1, 1});
+  b->Args({1, 7, 7, 5, 5, 1, 32, 1, 1});
+  b->Args({1, 7, 7, 5, 5, 1, 16, 1, 1});
+}
+
 BENCHMARK_DEFINE_F(Q8Convolution, run)(benchmark::State& state)
 {
   for (auto _ : state) {
@@ -509,6 +573,8 @@ BENCHMARK_REGISTER_F(Q8Convolution, run)->Apply(ShuffleNetV1G8);
 BENCHMARK_REGISTER_F(Q8Convolution, run)->Apply(SqueezeNetV10);
 BENCHMARK_REGISTER_F(Q8Convolution, run)->Apply(SqueezeNetV11);
 BENCHMARK_REGISTER_F(Q8Convolution, run)->Apply(VGG);
+BENCHMARK_REGISTER_F(Q8Convolution, run)->Apply(DWConv3x3);
+BENCHMARK_REGISTER_F(Q8Convolution, run)->Apply(DWConv5x5);
 
 #ifndef QNNPACK_BENCHMARK_NO_MAIN
 BENCHMARK_MAIN();

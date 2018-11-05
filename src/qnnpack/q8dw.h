@@ -31,6 +31,20 @@ extern "C" {
 DECLARE_Q8DW_FUNCTION(q8dw_ukernel_9c8__neon)
 DECLARE_Q8DW_FUNCTION(q8dw_ukernel_9c8__sse2)
 
+#define DECLARE_Q8DW_MULTIPASS_FUNCTION(fn_name)                        \
+  void fn_name(                                                         \
+    size_t channels,                                                    \
+    size_t output_width,                                                \
+    const uint8_t** input,                                              \
+    const void* weights,                                                \
+    int32_t* outacc32,                                                  \
+    uint8_t* output,                                                    \
+    size_t input_stride,                                                \
+    size_t output_increment,                                            \
+    const union qnnp_conv_quantization_params* quantization_params);
+
+DECLARE_Q8DW_MULTIPASS_FUNCTION(q8dw_ukernel_25c8__neon)
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

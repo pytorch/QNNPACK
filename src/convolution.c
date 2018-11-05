@@ -189,7 +189,7 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
   const size_t kernel_size = kernel_height * kernel_width;
 
   uint32_t flags = 0;
-  if (kernel_size == 9 && dilation_width == 1 && group_input_channels == 1 && group_output_channels == 1 && groups > 1) {
+  if ((kernel_size == 9) && dilation_width == 1 && group_input_channels == 1 && group_output_channels == 1 && groups > 1) {
     flags |= QNNP_CONVOLUTION_FLAG_DW;
   } else if (kernel_size == 1 && subsampling_height == 1 && subsampling_width == 1) {
     if (group_input_channels >= qnnp_params.q8conv_xzp.kthreshold) {
@@ -212,10 +212,30 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
       goto error;
     }
 
-    pack_q8dw_w(
-      kernel_height, kernel_width,
-      groups, cr,
-      kernel, bias, convolution->packed_kernel);
+    if (kernel_size == 9) {
+      pack_q8dw_w(
+        kernel_height, kernel_width,
+        groups, cr,
+        kernel, bias, convolution->packed_kernel);
+    } else {
+      // kernel size == 25
+      /* change this later */
+      pack_q8dw_w_dilation(
+        kernel_height, kernel_width,
+        groups, cr,
+        0, kernel_height, 0, 2,
+        kernel, bias, convolution->packed_kernel, true);
+      pack_q8dw_w_dilation(
+        kernel_height, kernel_width,
+        groups, cr,
+        0, kernel_height, 2, 4,
+        kernel, bias, convolution->packed_kernel + (10 + sizeof(int32_t) / sizeof(uint8_t)) * groups, false);
+      pack_q8dw_w_dilation(
+        kernel_height, kernel_width,
+        groups, cr,
+        0, kernel_height, 4, 5,
+        kernel, bias, convolution->packed_kernel + (20 + sizeof(int32_t) / sizeof(uint8_t)) * groups, false);
+    }
 
     if (flags & QNNP_CONVOLUTION_FLAG_ZERO) {
       const size_t zero_size = sizeof(uint8_t) * c_stride + (groups >= 8 ? 0 : 8);
@@ -440,6 +460,15 @@ enum qnnp_status qnnp_setup_convolution2d_nhwc_q8(
   const size_t output_height = convolution->output_height;
   const size_t output_width = convolution->output_width;
   if (convolution->flags & QNNP_CONVOLUTION_FLAG_DW) {
+    if (kernel_size == 25) {
+      size_t multipass_acc_size = sizeof(int32_t) * convolution->output_width * convolution->output_height * output_pixel_stride;
+      void* multipass_acc = (void*) realloc(convolution->multipass_acc, multipass_acc_size);
+      if (multipass_acc == NULL) {
+        qnnp_log_error("failed to allocate %zu bytes for multipass accumulators", multipass_acc_size);
+        return qnnp_status_out_of_memory;
+      }
+      convolution->multipass_acc = multipass_acc;
+    }
     const size_t subsampling_width = convolution->stride_width;
     const size_t indirection_buffer_size = sizeof(void*) * batch_size * output_height *
       (kernel_size + (output_width * subsampling_width - 1) * kernel_height);
@@ -799,6 +828,7 @@ struct q8dw_context {
   size_t indirection_buffer_col_stride;
   const uint8_t* packed_kernel;
   const int32_t* bias;
+  int32_t* multipass_acc;
   uint8_t* output;
   size_t output_height;
   size_t output_width;
@@ -806,6 +836,7 @@ struct q8dw_context {
   size_t output_col_increment;
   union qnnp_conv_quantization_params quantization_params;
   const q8dw_ukernel_function ukernel;
+  const q8dw_multipass_ukernel_function ukernel_mp;
 };
 
 static void compute_q8dw(
@@ -826,6 +857,25 @@ static void compute_q8dw(
     &context->quantization_params);
 }
 
+static void compute_q8dw_multipass(
+    const struct q8dw_context context[restrict static 1],
+    size_t image,
+    size_t output_y)
+{
+  const size_t output_height = context->output_height;
+
+  context->ukernel_mp(
+    context->groups,
+    context->output_width,
+    context->indirection_buffer + (image * output_height + output_y) * context->indirection_buffer_row_stride,
+    context->packed_kernel,
+    context->multipass_acc + (image * output_height + output_y) * context->output_row_stride,
+    context->output + (image * output_height + output_y) * context->output_row_stride,
+    context->indirection_buffer_col_stride,
+    context->output_col_increment,
+    &context->quantization_params);
+}
+
 enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
 {
   if (op->flags & QNNP_CONVOLUTION_FLAG_DW) {
@@ -838,26 +888,53 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
     const size_t output_height = op->output_height;
     const size_t output_width = op->output_width;
 
-    struct q8dw_context q8dw_context = {
-        .groups = groups,
-        .indirection_buffer = (const uint8_t**) op->indirection_buffer,
-        .indirection_buffer_row_stride = kernel_size + (output_width * subsampling_width - 1) * kernel_height,
-        .indirection_buffer_col_stride = kernel_height * subsampling_width * sizeof(void*),
-        .packed_kernel = op->packed_kernel,
-        .bias = op->bias,
-        .output = op->output,
-        .output_height = output_height,
-        .output_width = output_width,
-        .output_row_stride = output_width * op->output_pixel_stride,
-        .output_col_increment = (op->output_pixel_stride - groups) * sizeof(uint8_t),
-        .quantization_params = op->conv_quantization_params,
-        .ukernel = qnnp_params.q8dw9.dw,
-    };
-    pthreadpool_compute_2d(
-        threadpool,
-        (pthreadpool_function_2d_t) compute_q8dw,
-        &q8dw_context,
-        batch_size, output_height);
+    if (kernel_size == 9) {
+      struct q8dw_context q8dw_context = {
+          .groups = groups,
+          .indirection_buffer = (const uint8_t**) op->indirection_buffer,
+          .indirection_buffer_row_stride = kernel_size + (output_width * subsampling_width - 1) * kernel_height,
+          .indirection_buffer_col_stride = kernel_height * subsampling_width * sizeof(void*),
+          .packed_kernel = op->packed_kernel,
+          .bias = op->bias,
+          .multipass_acc = NULL,
+          .output = op->output,
+          .output_height = output_height,
+          .output_width = output_width,
+          .output_row_stride = output_width * op->output_pixel_stride,
+          .output_col_increment = (op->output_pixel_stride - groups) * sizeof(uint8_t),
+          .quantization_params = op->conv_quantization_params,
+          .ukernel = qnnp_params.q8dw9.dw,
+      };
+      pthreadpool_compute_2d(
+          threadpool,
+          (pthreadpool_function_2d_t) compute_q8dw,
+          &q8dw_context,
+          batch_size, output_height);
+    } else if (kernel_size == 25) {
+      struct q8dw_context q8dw_context = {
+          .groups = groups,
+          .indirection_buffer = (const uint8_t**) op->indirection_buffer,
+          .indirection_buffer_row_stride = kernel_size + (output_width * subsampling_width - 1) * kernel_height,
+          .indirection_buffer_col_stride = kernel_height * subsampling_width * sizeof(void*),
+          .packed_kernel = op->packed_kernel,
+          .bias = op->bias,
+          .multipass_acc = op->multipass_acc,
+          .output = op->output,
+          .output_height = output_height,
+          .output_width = output_width,
+          .output_row_stride = output_width * op->output_pixel_stride,
+          .output_col_increment = (op->output_pixel_stride - groups) * sizeof(uint8_t),
+          .quantization_params = op->conv_quantization_params,
+          .ukernel_mp = qnnp_params.q8dw25.dw,
+      };
+      pthreadpool_compute_2d(
+          threadpool,
+          (pthreadpool_function_2d_t) compute_q8dw_multipass,
+          &q8dw_context,
+          batch_size, output_height);
+    } else {
+      return qnnp_status_unsupported_parameter;
+    }
   } else if (op->flags & QNNP_CONVOLUTION_FLAG_XZP_GEMM) {
     const size_t batch_size = op->batch_size;
     const size_t groups = op->groups;
