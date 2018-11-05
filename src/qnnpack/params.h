@@ -231,8 +231,7 @@ typedef void (*hgemm_ukernel_function)(
     size_t k,
     const void* a,
     size_t a_stride,
-    const void* b,
-    const void* bias,
+    const void* w,
     void* c,
     size_t c_stride,
     const struct qnnp_fp16_clamping_params* clamping_params);

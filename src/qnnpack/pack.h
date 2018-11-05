@@ -205,3 +205,33 @@ static inline void pack_q8gemm_b_diagonal(
     }
   }
 }
+
+static inline void pack_hgemm_w(
+  size_t nc,
+  size_t kc,
+  size_t nr,
+  size_t kr,
+  const uint16_t* k,
+  const uint16_t* b,
+  uint16_t* packed_w)
+{
+  const size_t kc_stride = (kc + (kr - 1)) & -kr;
+  for (size_t nr_block_start = 0; nr_block_start < nc; nr_block_start += nr) {
+    const size_t nr_block_size = min(nc - nr_block_start, nr);
+    for (size_t nr_block_offset = 0; nr_block_offset < nr_block_size; nr_block_offset++) {
+      *packed_w++ = b[nr_block_start + nr_block_offset];
+    }
+    packed_w += nr - nr_block_size;
+    for (size_t kr_block_start = 0; kr_block_start < kc; kr_block_start += kr) {
+      const size_t kr_block_size = min(kc - kr_block_start, kr);
+      for (size_t nr_block_offset = 0; nr_block_offset < nr_block_size; nr_block_offset++) {
+        for (size_t kr_block_offset = 0; kr_block_offset < kr_block_size; kr_block_offset++) {
+          *packed_w++ =
+            k[(nr_block_start + nr_block_offset) * kc + (kr_block_start + kr_block_offset)];
+        }
+        packed_w += kr - kr_block_size;
+      }
+      packed_w += (nr - nr_block_size) * kr;
+    }
+  }
+}

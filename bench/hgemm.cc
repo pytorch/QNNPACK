@@ -20,6 +20,7 @@
 #include <qnnpack/AlignedAllocator.h>
 #include <qnnpack/hgemm.h>
 #include <qnnpack/params.h>
+#include <qnnpack/pack.h>
 #include <qnnpack/requantization.h>
 
 #include <benchmark/benchmark.h>
@@ -34,11 +35,6 @@ inline uint32_t roundUp(uint32_t x, uint32_t q)
   return q * divideRoundUp(x, q);
 }
 
-inline uint32_t min(uint32_t a, uint32_t b)
-{
-  return a < b ? a : b;
-}
-
 class HGEMM : public benchmark::Fixture {
  public:
   inline HGEMM(uint32_t mr, uint32_t nr, uint32_t kr) : mr_(mr), nr_(nr), kr_(kr), mc_(mr), nc_(nr), kc_(kr) {}
@@ -50,10 +46,13 @@ class HGEMM : public benchmark::Fixture {
 
     a_.resize(mc() * kc());
     std::generate(a_.begin(), a_.end(), std::ref(rng));
-    b_.resize(ncStride() * kcStride());
+    k_.resize(nc() * kc());
+    std::generate(k_.begin(), k_.end(), std::ref(rng));
+    b_.resize(nc());
     std::generate(b_.begin(), b_.end(), std::ref(rng));
-    bias_.resize(roundUp(nc(), nr()));
-    std::generate(bias_.begin(), bias_.end(), std::ref(rng));
+    w_.resize(ncStride() * kcStride() + ncStride());
+    std::fill(w_.begin(), w_.end(), 0);
+    pack_hgemm_w(nc(), kc(), nr(), kr(), k(), b(), w());
     c_.resize(mc() * nc());
     std::fill(c_.begin(), c_.end(), UINT16_C(0x7E00) /* NaN */);
   }
@@ -62,26 +61,36 @@ class HGEMM : public benchmark::Fixture {
   {
     state.SetItemsProcessed(uint64_t(state.iterations()) * 2 * mc() * nc() * kc());
     a_.clear();
+    k_.clear();
     b_.clear();
+    w_.clear();
     c_.clear();
   }
 
-  inline const uint8_t* a() const
+  inline const uint16_t* a() const
   {
     return a_.data();
   }
 
-  inline const uint8_t* b() const
+  inline const uint16_t* k() const
+  {
+    return k_.data();
+  }
+
+  inline const uint16_t* b() const
   {
     return b_.data();
   }
 
-  inline const int32_t* bias() const
-  {
-    return bias_.data();
+  inline uint16_t* w() {
+    return w_.data();
   }
 
-  inline uint8_t* c()
+  inline const uint16_t* w() const {
+    return w_.data();
+  }
+
+  inline uint16_t* c()
   {
     return c_.data();
   }
@@ -132,10 +141,11 @@ class HGEMM : public benchmark::Fixture {
   }
 
  protected:
-  std::vector<uint8_t> a_;
-  std::vector<uint8_t, AlignedAllocator<uint8_t, 32>> b_;
-  std::vector<int32_t> bias_;
-  std::vector<uint8_t> c_;
+  std::vector<uint16_t> a_;
+  std::vector<uint16_t> k_;
+  std::vector<uint16_t> b_;
+  std::vector<uint16_t, AlignedAllocator<uint16_t, 32>> w_;
+  std::vector<uint16_t> c_;
   uint32_t mr_{0};
   uint32_t nr_{0};
   uint32_t kr_{0};
@@ -339,7 +349,7 @@ BENCHMARK_TEMPLATE_F(HGEMM_L1, 8x8__aarch32_neonfp16arith, 8, 8, 1)(benchmark::S
     hgemm_ukernel_8x8__aarch32_neonfp16arith(
       mr(), nr(), kc(),
       a(), kc() * sizeof(uint16_t),
-      b(), bias(),
+      w() + nc() * (kcStride() + 1),
       c(), mr() * sizeof(uint16_t),
       clampingParams());
   }
@@ -358,8 +368,7 @@ BENCHMARK_TEMPLATE_DEFINE_F(HGEMM_Op, 8x8__aarch32_neonfp16arith, 8, 8, 1)(bench
         hgemm_ukernel_8x8__aarch32_neonfp16arith(
           mrr, nrr, kc(),
           a() + m * kc(), kc() * sizeof(uint16_t),
-          b() + n * kcStride(),
-          bias() + n,
+          w() + n * (kcStride() + 1),
           c() + m * nc() + n, nc() * sizeof(uint16_t),
           clampingParams());
       }

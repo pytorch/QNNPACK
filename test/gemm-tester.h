@@ -401,23 +401,6 @@ class GemmTester {
     }
   }
 
-  void pack_hgemm_b(size_t n, size_t k, size_t np, size_t kr, const uint16_t* b, uint16_t* packed_b) const
-  {
-    const size_t k_stride = (k + (kr - 1)) & -kr;
-    for (size_t nr_block_start = 0; nr_block_start < n; nr_block_start += np) {
-      const size_t nr_block_size = std::min(n - nr_block_start, np);
-      for (size_t nr_block_offset = 0; nr_block_offset < nr_block_size; nr_block_offset++) {
-        for (size_t kr_block_start = 0; kr_block_start < k; kr_block_start += kr) {
-          const size_t kr_block_size = std::min(k - kr_block_start, kr);
-          for (size_t kr_block_offset = 0; kr_block_offset < kr_block_size; kr_block_offset++) {
-            packed_b[nr_block_start * k_stride + kr_block_start * np + nr_block_offset * kr + kr_block_offset] =
-              b[(nr_block_start + nr_block_offset) * k + (kr_block_start + kr_block_offset)];
-          }
-        }
-      }
-    }
-  }
-
   static void q8gemm_compute_row_sum(
     const uint8_t* a,
     size_t m,
@@ -601,7 +584,7 @@ class GemmTester {
 
     std::vector<uint16_t> a((m() - 1) * aStride() + k() + 4);
     std::vector<uint16_t> b(n() * k());
-    std::vector<uint16_t, AlignedAllocator<uint16_t, 32>> packedB(packedN() * packedK());
+    std::vector<uint16_t, AlignedAllocator<uint16_t, 32>> packedW(packedN() * packedK() + packedN());
     std::vector<uint16_t> bias(nr());
     std::vector<uint16_t> c((mr() - 1) * cStride() + nr());
     std::vector<float> cRef(m() * n());
@@ -618,8 +601,8 @@ class GemmTester {
       std::fill(c.begin(), c.end(), UINT16_C(0x7E00) /* NaN */);
       std::fill(cRef.begin(), cRef.end(), 0.0f);
 
-      std::fill(packedB.begin(), packedB.end(), 0);
-      pack_hgemm_b(n(), k(), np(), kr(), b.data(), packedB.data());
+      std::fill(packedW.begin(), packedW.end(), 0);
+      pack_hgemm_w(n(), k(), np(), kr(), b.data(), bias.data(), packedW.data());
 
       for (size_t mIndex = 0; mIndex < m(); mIndex++) {
         for (size_t nIndex = 0; nIndex < n(); nIndex++) {
@@ -628,10 +611,10 @@ class GemmTester {
               ASSERT_LE(n(), packedN());
               ASSERT_LT(mIndex * n() + nIndex, cRef.size());
               ASSERT_LT(mIndex * k() + kBlockStart + kBlockOffset, a.size());
-              ASSERT_LT(kBlockStart * np() + nIndex * kr() + kBlockOffset, packedB.size());
+
               cRef[mIndex * n() + nIndex] +=
                 fp16_ieee_to_fp32_value(aPtr[mIndex * aStride() + kBlockStart + kBlockOffset]) *
-                fp16_ieee_to_fp32_value(packedB[kBlockStart * packedN() + nIndex * kr() + kBlockOffset]);
+                fp16_ieee_to_fp32_value(b[nIndex * k() + kBlockStart + kBlockOffset]);
             }
           }
           cRef[mIndex * n() + nIndex] += fp16_ieee_to_fp32_value(bias[nIndex]);
@@ -653,7 +636,7 @@ class GemmTester {
 
       hgemm(m(), n(), k(),
         aPtr, aStride() * sizeof(uint16_t),
-        packedB.data(), bias.data(),
+        packedW.data(),
         c.data(), cStride() * sizeof(uint16_t),
         &clampingParams);
 

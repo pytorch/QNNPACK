@@ -16,8 +16,7 @@
 #     size_t k,
 #     const __fp16*restrict a,
 #     size_t a_stride,
-#     const __fp16*restrict b,
-#     const __fp16*restrict bias,
+#     const __fp16*restrict w,
 #     __fp16*restrict c,
 #     size_t c_stride,
 #     const struct qnnp_fp16_clamping_params clamping_params[restrict static 1])
@@ -27,24 +26,20 @@ BEGIN_FUNCTION hgemm_ukernel_8x8__aarch32_neonfp16arith
 	.arch armv7-a
 	.fpu neon
 #endif
-	# Load bias
-	# - ip = bias
-	LDR ip, [sp, 8]
+	# Load w
+	# - ip = w
+	LDR ip, [sp, 4]
 	PUSH {r4, r5, r6, r7, r8, r9, r10, r11}
 
 	VPUSH {d8-d15}
 
 	# Initialize vacc0x01234567
 	# - q8 = d16:d17 := vacc0x01234567 = bias01234567
-	VLD1.8 {d16-d17}, [ip]
+	VLD1.16 {d16-d17}, [ip:64]!
 
 	# Load a_stride
 	# - r10 = a_stride
 	LDR r10, [sp, 96]
-
-	# Load b
-	# - r11 = b
-	LDR r11, [sp, 100]
 
 	# Initialize vacc1x01234567
 	# - q9 := vacc1x01234567 = vacc0x01234567
@@ -137,7 +132,7 @@ BEGIN_FUNCTION hgemm_ukernel_8x8__aarch32_neonfp16arith
 
 	# Load b0-b15 (channel 0)
 	# - q4 = d8:d9 = b0-b15
-	VLD1.8 {d8-d9}, [r11:64]!
+	VLD1.8 {d8-d9}, [ip:64]!
 
 	# vacc0x01234567 += vb01234567 * va0[0];
 	.word 0xF3D80140 @ VMLA.F16  q8, q4, d0[0]
@@ -160,7 +155,7 @@ BEGIN_FUNCTION hgemm_ukernel_8x8__aarch32_neonfp16arith
 
 	# Load b0-b15 (channel 1)
 	# - q5 = d10:d11 = b0-b15
-	VLD1.8 {d10-d11}, [r11:64]!
+	VLD1.8 {d10-d11}, [ip:64]!
 
 	# vacc0x01234567 += vb01234567 * va0[1];
 	.word 0xF3DA0148 @ VMLA.F16  q8, q5, d0[1]
@@ -183,7 +178,7 @@ BEGIN_FUNCTION hgemm_ukernel_8x8__aarch32_neonfp16arith
 
 	# Load b0-b15 (channel 2)
 	# - q6 = d12:d13 = b0-b15
-	VLD1.8 {d12-d13}, [r11:64]!
+	VLD1.8 {d12-d13}, [ip:64]!
 
 	# vacc0x01234567 += vb01234567 * va0[2];
 	.word 0xF3DC0160 @ VMLA.F16  q8, q6, d0[2]
@@ -206,7 +201,7 @@ BEGIN_FUNCTION hgemm_ukernel_8x8__aarch32_neonfp16arith
 
 	# Load b0-b15 (channel 3)
 	# - q7 = d14:d15 = b0-b15
-	VLD1.8 {d14-d15}, [r11:64]!
+	VLD1.8 {d14-d15}, [ip:64]!
 
 	# vacc0x01234567 += vb01234567 * va0[3];
 	.word 0xF3DE0168 @ VMLA.F16  q8, q7, d0[3]
@@ -288,7 +283,7 @@ BEGIN_FUNCTION hgemm_ukernel_8x8__aarch32_neonfp16arith
 
 	# Load b0-b15 (channel 0)
 	# - q4 = d8:d9 = b0-b15
-	VLD1.8 {d8-d9}, [r11:64]!
+	VLD1.8 {d8-d9}, [ip:64]!
 
 	# vacc0x01234567 += vb01234567 * va0[0];
 	.word 0xF3D80140 @ VMLA.F16  q8, q4, d0[0]
@@ -314,7 +309,7 @@ BEGIN_FUNCTION hgemm_ukernel_8x8__aarch32_neonfp16arith
 
 	# Load b0-b15 (channel 1)
 	# - q5 = d10:d11 = b0-b15
-	VLD1.8 {d10-d11}, [r11:64]!
+	VLD1.8 {d10-d11}, [ip:64]!
 
 	# vacc0x01234567 += vb01234567 * va0[1];
 	.word 0xF3DA0148 @ VMLA.F16  q8, q5, d0[1]
@@ -339,7 +334,7 @@ BEGIN_FUNCTION hgemm_ukernel_8x8__aarch32_neonfp16arith
 
 	# Load b0-b15 (channel 2)
 	# - q6 = d12:d13 = b0-b15
-	VLD1.8 {d12-d13}, [r11:64]!
+	VLD1.8 {d12-d13}, [ip:64]!
 
 	# vacc0x01234567 += vb01234567 * va0[2];
 	.word 0xF3DC0160 @ VMLA.F16  q8, q6, d0[2]
@@ -362,7 +357,7 @@ BEGIN_FUNCTION hgemm_ukernel_8x8__aarch32_neonfp16arith
 2:
 	# Load params:
 	# - ip = params
-	LDR ip, [sp, 116]
+	LDR ip, [sp, 112]
 
 	# Load scale:
 	# - q0 = d0:d1 = vscale
@@ -406,7 +401,7 @@ BEGIN_FUNCTION hgemm_ukernel_8x8__aarch32_neonfp16arith
 	# Load c, c_stride:
 	# - r2 = c
 	# - r3 = c_stride
-	LDRD r2, r3, [sp, 108]
+	LDRD r2, r3, [sp, 104]
 
 	CMP r0, 2
 	ADD r4, r2, r3
