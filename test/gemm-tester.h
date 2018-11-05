@@ -384,23 +384,6 @@ class GemmTester {
     }
   }
 
-  void pack_sgemm_b(size_t n, size_t k, size_t np, size_t kr, const float* b, float* packed_b) const
-  {
-    const size_t k_stride = (k + (kr - 1)) & -kr;
-    for (size_t nr_block_start = 0; nr_block_start < n; nr_block_start += np) {
-      const size_t nr_block_size = std::min(n - nr_block_start, np);
-      for (size_t nr_block_offset = 0; nr_block_offset < nr_block_size; nr_block_offset++) {
-        for (size_t kr_block_start = 0; kr_block_start < k; kr_block_start += kr) {
-          const size_t kr_block_size = std::min(k - kr_block_start, kr);
-          for (size_t kr_block_offset = 0; kr_block_offset < kr_block_size; kr_block_offset++) {
-            packed_b[nr_block_start * k_stride + kr_block_start * np + nr_block_offset * kr + kr_block_offset] =
-              b[(nr_block_start + nr_block_offset) * k + (kr_block_start + kr_block_offset)];
-          }
-        }
-      }
-    }
-  }
-
   static void q8gemm_compute_row_sum(
     const uint8_t* a,
     size_t m,
@@ -679,14 +662,12 @@ class GemmTester {
     std::random_device randomDevice;
     auto rng = std::bind(std::uniform_real_distribution<float>(), std::mt19937(randomDevice()));
 
-    std::vector<float> a((m() - 1) * aStride() + k() + 4);
+    std::vector<float> a((m() - 1) * aStride() + k());
     std::vector<float> b(n() * k());
-    std::vector<float, AlignedAllocator<float, 32>> packedB(packedN() * packedK());
     std::vector<float> bias(nr());
+    std::vector<float, AlignedAllocator<float, 32>> packedW(packedN() * packedK() + packedN());
     std::vector<float> c((mr() - 1) * cStride() + nr());
     std::vector<float> cRef(m() * n());
-
-    const float* aPtr = a.data() + 4;
 
     for (size_t iteration = 0; iteration < iterations(); iteration++) {
       std::generate(a.begin(), a.end(), std::ref(rng));
@@ -695,21 +676,17 @@ class GemmTester {
       std::fill(c.begin(), c.end(), nanf(""));
       std::fill(cRef.begin(), cRef.end(), 0.0f);
 
-      std::fill(packedB.begin(), packedB.end(), 0);
-      pack_sgemm_b(n(), k(), np(), kr(), b.data(), packedB.data());
+      std::fill(packedW.begin(), packedW.end(), 0.0f);
+      pack_sgemm_w(n(), k(), np(), kr(), b.data(), bias.data(), packedW.data());
 
       for (size_t mIndex = 0; mIndex < m(); mIndex++) {
         for (size_t nIndex = 0; nIndex < n(); nIndex++) {
-          for (size_t kBlockStart = 0; kBlockStart < k(); kBlockStart += kr()) {
-            for (size_t kBlockOffset = 0; kBlockOffset < std::min(k() - kBlockStart, kr()); kBlockOffset++) {
-              ASSERT_LE(n(), packedN());
-              ASSERT_LT(mIndex * n() + nIndex, cRef.size());
-              ASSERT_LT(mIndex * k() + kBlockStart + kBlockOffset, a.size());
-              ASSERT_LT(kBlockStart * np() + nIndex * kr() + kBlockOffset, packedB.size());
-              cRef[mIndex * n() + nIndex] +=
-                aPtr[mIndex * aStride() + kBlockStart + kBlockOffset] *
-                packedB[kBlockStart * packedN() + nIndex * kr() + kBlockOffset];
-            }
+          for (size_t kIndex = 0; kIndex < k(); kIndex++) {
+            ASSERT_LE(n(), packedN());
+            ASSERT_LT(mIndex * n() + nIndex, cRef.size());
+            cRef[mIndex * n() + nIndex] +=
+              a[mIndex * aStride() + kIndex] *
+              b[nIndex * k() + kIndex];
           }
           cRef[mIndex * n() + nIndex] += bias[nIndex];
         }
@@ -731,8 +708,8 @@ class GemmTester {
       }
 
       sgemm(m(), n(), k(),
-        aPtr, aStride() * sizeof(float),
-        packedB.data(), bias.data(),
+        a.data(), aStride() * sizeof(float),
+        packedW.data(),
         c.data(), cStride() * sizeof(float),
         &clampingParams);
 

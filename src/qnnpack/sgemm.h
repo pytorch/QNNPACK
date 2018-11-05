@@ -23,8 +23,7 @@ extern "C" {
       size_t k,                                                 \
       const float* a,                                           \
       size_t a_stride,                                          \
-      const float* b,                                           \
-      const float* bias,                                        \
+      const float* w,                                           \
       float* c,                                                 \
       size_t c_stride,                                          \
       const struct qnnp_fp32_clamping_params* clamping_params);

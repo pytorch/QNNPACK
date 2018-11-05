@@ -17,14 +17,13 @@ void sgemm_ukernel_6x8__psimd(
   size_t k,
   const float*restrict a,
   size_t a_stride,
-  const float*restrict b,
-  const float*restrict bias,
+  const float*restrict w,
   float*restrict c,
   size_t c_stride,
   const struct qnnp_fp32_clamping_params clamping_params[restrict static 1])
 {
-  psimd_f32 vacc0x0123 = psimd_load_f32(bias); bias += 4;
-  psimd_f32 vacc0x4567 = psimd_load_f32(bias);
+  psimd_f32 vacc0x0123 = psimd_load_f32(w); w += 4;
+  psimd_f32 vacc0x4567 = psimd_load_f32(w); w += 4;
   psimd_f32 vacc1x0123 = vacc0x0123;
   psimd_f32 vacc1x4567 = vacc0x4567;
   psimd_f32 vacc2x0123 = vacc0x0123;
@@ -66,8 +65,8 @@ void sgemm_ukernel_6x8__psimd(
     const psimd_f32 va4 = psimd_splat_f32(*a4); a4 += 1;
     const psimd_f32 va5 = psimd_splat_f32(*a5); a5 += 1;
 
-    const psimd_f32 vb0123 = psimd_load_f32(b); b += 4;
-    const psimd_f32 vb4567 = psimd_load_f32(b); b += 4;
+    const psimd_f32 vb0123 = psimd_load_f32(w); w += 4;
+    const psimd_f32 vb4567 = psimd_load_f32(w); w += 4;
 
     vacc0x0123 += vb0123 * va0;
     vacc0x4567 += vb4567 * va0;

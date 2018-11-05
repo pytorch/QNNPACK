@@ -17,6 +17,7 @@
 
 #include <cpuinfo.h>
 #include <qnnpack/AlignedAllocator.h>
+#include <qnnpack/pack.h>
 #include <qnnpack/sgemm.h>
 
 #include <benchmark/benchmark.h>
@@ -31,11 +32,6 @@ inline uint32_t roundUp(uint32_t x, uint32_t q)
   return q * divideRoundUp(x, q);
 }
 
-inline uint32_t min(uint32_t a, uint32_t b)
-{
-  return a < b ? a : b;
-}
-
 class SGEMM : public benchmark::Fixture {
  public:
   inline SGEMM(uint32_t mr, uint32_t nr, uint32_t kr) : mr_(mr), nr_(nr), kr_(kr), mc_(mr), nc_(nr), kc_(kr) {}
@@ -47,10 +43,13 @@ class SGEMM : public benchmark::Fixture {
 
     a_.resize(mc() * kc());
     std::generate(a_.begin(), a_.end(), std::ref(rng));
-    b_.resize(ncStride() * kcStride());
+    k_.resize(nc() * kc());
+    std::generate(k_.begin(), k_.end(), std::ref(rng));
+    b_.resize(nc());
     std::generate(b_.begin(), b_.end(), std::ref(rng));
-    bias_.resize(roundUp(nc(), nr()));
-    std::generate(bias_.begin(), bias_.end(), std::ref(rng));
+    w_.resize(ncStride() * kcStride() + ncStride());
+    std::fill(w_.begin(), w_.end(), 0);
+    pack_sgemm_w(nc(), kc(), nr(), kr(), k(), b(), w());
     c_.resize(mc() * nc());
     std::fill(c_.begin(), c_.end(), std::nanf(""));
   }
@@ -59,7 +58,9 @@ class SGEMM : public benchmark::Fixture {
   {
     state.SetItemsProcessed(uint64_t(state.iterations()) * 2 * mc() * nc() * kc());
     a_.clear();
+    k_.clear();
     b_.clear();
+    w_.clear();
     c_.clear();
   }
 
@@ -68,14 +69,24 @@ class SGEMM : public benchmark::Fixture {
     return a_.data();
   }
 
+  inline const float* k() const
+  {
+    return k_.data();
+  }
+
   inline const float* b() const
   {
     return b_.data();
   }
 
-  inline const float* bias() const
+  inline float* w()
   {
-    return bias_.data();
+    return w_.data();
+  }
+
+  inline const float* w() const
+  {
+    return w_.data();
   }
 
   inline float* c()
@@ -130,8 +141,9 @@ class SGEMM : public benchmark::Fixture {
 
  protected:
   std::vector<float> a_;
-  std::vector<float, AlignedAllocator<float, 32>> b_;
-  std::vector<float> bias_;
+  std::vector<float> k_;
+  std::vector<float> b_;
+  std::vector<float, AlignedAllocator<float, 32>> w_;
   std::vector<float> c_;
   uint32_t mr_{0};
   uint32_t nr_{0};
@@ -333,7 +345,7 @@ BENCHMARK_TEMPLATE_F(SGEMM_L1, 5x8__neon, 5, 8, 1)(benchmark::State& state)
     sgemm_ukernel_5x8__neon(
       mr(), nr(), kc(),
       a(), kc() * sizeof(float),
-      b(), bias(),
+      w(),
       c(), mr() * sizeof(float),
       clampingParams());
   }
@@ -345,7 +357,7 @@ BENCHMARK_TEMPLATE_F(SGEMM_L1, 6x8__neon, 6, 8, 1)(benchmark::State& state)
     sgemm_ukernel_6x8__neon(
       mr(), nr(), kc(),
       a(), kc() * sizeof(float),
-      b(), bias(),
+      w(),
       c(), mr() * sizeof(float),
       clampingParams());
   }
@@ -361,8 +373,7 @@ BENCHMARK_TEMPLATE_DEFINE_F(SGEMM_Op, 5x8__neon, 5, 8, 1)(benchmark::State& stat
         sgemm_ukernel_5x8__neon(
           mrr, nrr, kc(),
           a() + m * kc(), kc() * sizeof(float),
-          b() + n * kcStride(),
-          bias() + n,
+          w() + n * (kcStride() + 1),
           c() + m * nc() + n, nc() * sizeof(float),
           clampingParams());
       }
@@ -380,8 +391,7 @@ BENCHMARK_TEMPLATE_DEFINE_F(SGEMM_Op, 6x8__neon, 6, 8, 1)(benchmark::State& stat
         sgemm_ukernel_6x8__neon(
           mrr, nrr, kc(),
           a() + m * kc(), kc() * sizeof(float),
-          b() + n * kcStride(),
-          bias() + n,
+          w() + n * (kcStride() + 1),
           c() + m * nc() + n, nc() * sizeof(float),
           clampingParams());
       }

@@ -17,14 +17,13 @@ void sgemm_ukernel_6x8__neon(
     size_t k,
     const float* restrict a,
     size_t a_stride,
-    const float* restrict b,
-    const float* restrict bias,
+    const float* restrict w,
     float* restrict c,
     size_t c_stride,
     const struct qnnp_fp32_clamping_params clamping_params[restrict static 1])
 {
-  float32x4_t vacc0x0123 = vld1q_f32(bias); bias += 4;
-  float32x4_t vacc0x4567 = vld1q_f32(bias);
+  float32x4_t vacc0x0123 = vld1q_f32(w); w += 4;
+  float32x4_t vacc0x4567 = vld1q_f32(w); w += 4;
   float32x4_t vacc1x0123 = vacc0x0123;
   float32x4_t vacc1x4567 = vacc0x4567;
   float32x4_t vacc2x0123 = vacc0x0123;
@@ -67,8 +66,8 @@ void sgemm_ukernel_6x8__neon(
     const float32x2_t va5 = vld1_f32(a5); a5 += 2;
 
     {
-      const float32x4_t vb0123 = vld1q_f32(b); b += 4;
-      const float32x4_t vb4567 = vld1q_f32(b); b += 4;
+      const float32x4_t vb0123 = vld1q_f32(w); w += 4;
+      const float32x4_t vb4567 = vld1q_f32(w); w += 4;
 
       vacc0x0123 = vmlaq_lane_f32(vacc0x0123, vb0123, va0, 0);
       vacc0x4567 = vmlaq_lane_f32(vacc0x4567, vb4567, va0, 0);
@@ -85,8 +84,8 @@ void sgemm_ukernel_6x8__neon(
     }
 
     {
-      const float32x4_t vb0123 = vld1q_f32(b); b += 4;
-      const float32x4_t vb4567 = vld1q_f32(b); b += 4;
+      const float32x4_t vb0123 = vld1q_f32(w); w += 4;
+      const float32x4_t vb4567 = vld1q_f32(w); w += 4;
 
       vacc0x0123 = vmlaq_lane_f32(vacc0x0123, vb0123, va0, 1);
       vacc0x4567 = vmlaq_lane_f32(vacc0x4567, vb4567, va0, 1);
@@ -110,8 +109,8 @@ void sgemm_ukernel_6x8__neon(
     const float32x4_t va4 = vld1q_dup_f32(a4);
     const float32x4_t va5 = vld1q_dup_f32(a5);
 
-    const float32x4_t vb0123 = vld1q_f32(b); b += 4;
-    const float32x4_t vb4567 = vld1q_f32(b);
+    const float32x4_t vb0123 = vld1q_f32(w); w += 4;
+    const float32x4_t vb4567 = vld1q_f32(w); w += 4;
 
     vacc0x0123 = vmlaq_f32(vacc0x0123, vb0123, va0);
     vacc0x4567 = vmlaq_f32(vacc0x4567, vb4567, va0);
