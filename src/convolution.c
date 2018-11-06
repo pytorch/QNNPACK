@@ -189,7 +189,7 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
   const size_t kernel_size = kernel_height * kernel_width;
 
   uint32_t flags = 0;
-  if ((kernel_size == 9) && dilation_width == 1 && group_input_channels == 1 && group_output_channels == 1 && groups > 1) {
+  if ((kernel_size == 9 || kernel_size == 25) && dilation_width == 1 && group_input_channels == 1 && group_output_channels == 1 && groups > 1) {
     flags |= QNNP_CONVOLUTION_FLAG_DW;
   } else if (kernel_size == 1 && subsampling_height == 1 && subsampling_width == 1) {
     if (group_input_channels >= qnnp_params.q8conv_xzp.kthreshold) {
@@ -461,7 +461,8 @@ enum qnnp_status qnnp_setup_convolution2d_nhwc_q8(
   const size_t output_width = convolution->output_width;
   if (convolution->flags & QNNP_CONVOLUTION_FLAG_DW) {
     if (kernel_size == 25) {
-      size_t multipass_acc_size = sizeof(int32_t) * convolution->output_width * convolution->output_height * output_pixel_stride;
+      size_t packed_output_stride = (output_pixel_stride + 7) & -8;
+      size_t multipass_acc_size = sizeof(int32_t) * convolution->output_width * convolution->output_height * packed_output_stride;
       void* multipass_acc = (void*) realloc(convolution->multipass_acc, multipass_acc_size);
       if (multipass_acc == NULL) {
         qnnp_log_error("failed to allocate %zu bytes for multipass accumulators", multipass_acc_size);
@@ -863,13 +864,15 @@ static void compute_q8dw_multipass(
     size_t output_y)
 {
   const size_t output_height = context->output_height;
+  const size_t acc_row_stride = (context->output_row_stride + 7) & -8;
+  const size_t acc_offset = (image * output_height + output_y) * acc_row_stride;
 
   context->ukernel_mp(
     context->groups,
     context->output_width,
     context->indirection_buffer + (image * output_height + output_y) * context->indirection_buffer_row_stride,
     context->packed_kernel,
-    context->multipass_acc + (image * output_height + output_y) * context->output_row_stride,
+    context->multipass_acc + acc_offset,
     context->output + (image * output_height + output_y) * context->output_row_stride,
     context->indirection_buffer_col_stride,
     context->output_col_increment,
