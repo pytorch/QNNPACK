@@ -187,8 +187,8 @@ void q8dw_ukernel_9c8__sse2(
       const __m128i voutput_zero_point = _mm_load_si128((const __m128i*) quantization_params->sse2.output_zero_point);
       __m128i vout = _mm_adds_epi16(_mm_packs_epi32(vout_lo, vout_hi), voutput_zero_point);
       vout = _mm_packus_epi16(vout, vout);
-      vout = _mm_max_epu8(vout, _mm_load_si128((const __m128i*) quantization_params->sse2.output_min));
       vout = _mm_min_epu8(vout, _mm_load_si128((const __m128i*) quantization_params->sse2.output_max));
+      vout = _mm_max_epu8(vout, _mm_load_si128((const __m128i*) quantization_params->sse2.output_min));
 
       _mm_storel_epi64((__m128i*) output, vout); output += 8;
     }
@@ -350,8 +350,8 @@ void q8dw_ukernel_9c8__sse2(
       const __m128i voutput_zero_point = _mm_load_si128((const __m128i*) quantization_params->sse2.output_zero_point);
       __m128i vout = _mm_adds_epi16(_mm_packs_epi32(vout_lo, vout_hi), voutput_zero_point);
       vout = _mm_packus_epi16(vout, vout);
-      vout = _mm_max_epu8(vout, _mm_load_si128((const __m128i*) quantization_params->sse2.output_min));
       vout = _mm_min_epu8(vout, _mm_load_si128((const __m128i*) quantization_params->sse2.output_max));
+      vout = _mm_max_epu8(vout, _mm_load_si128((const __m128i*) quantization_params->sse2.output_min));
 
       if (c & 4) {
         *((uint32_t*) output) = (uint32_t) _mm_cvtsi128_si32(vout);

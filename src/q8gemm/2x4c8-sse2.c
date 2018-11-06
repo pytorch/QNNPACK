@@ -212,8 +212,8 @@ void q8gemm_ukernel_2x4c8__sse2(
   const __m128i voutput_zero_point = _mm_load_si128((const __m128i*) quantization_params->sse2.output_zero_point);
   const __m128i vacc01x0123 = _mm_adds_epi16(_mm_packs_epi32(vacc0x0123, vacc1x0123), voutput_zero_point);
   __m128i vout = _mm_packus_epi16(vacc01x0123, vacc01x0123);
-  vout = _mm_max_epu8(vout, _mm_load_si128((const __m128i*) quantization_params->sse2.output_min));
   vout = _mm_min_epu8(vout, _mm_load_si128((const __m128i*) quantization_params->sse2.output_max));
+  vout = _mm_max_epu8(vout, _mm_load_si128((const __m128i*) quantization_params->sse2.output_min));
 
   uint8_t* c0 = c;
   uint8_t* c1 = (uint8_t*) ((uintptr_t) c0 + c_stride);
