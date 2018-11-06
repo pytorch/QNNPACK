@@ -68,6 +68,7 @@ def main(args):
             build.cc("convolution.c"),
             build.cc("deconvolution.c"),
             build.cc("fully-connected.c"),
+            build.cc("add.c"),
         ]
 
         with build.options(isa=arm.neon if build.target.is_arm else None):
@@ -78,6 +79,7 @@ def main(args):
         with build.options(isa=arm.neon if build.target.is_arm else None):
             if build.target.is_arm or build.target.is_arm64:
                 qnnpack_objects += [
+                    build.cc("q8add/neon.c"),
                     build.cc("q8gemm/4x8-neon.c"),
                     build.cc("q8gemm/4x-sumrows-neon.c"),
                     build.cc("q8gemm/4x8c2-xzp-neon.c"),
@@ -106,6 +108,7 @@ def main(args):
             if build.target.is_x86 or build.target.is_x86_64:
                 with build.options(isa=x86.sse2):
                     qnnpack_objects += [
+                        build.cc("q8add/sse2.c"),
                         build.cc("q8gemm/2x4c8-sse2.c"),
                         build.cc("q8gemm/4x4c2-sse2.c"),
                         build.cc("q8conv/4x4c2-sse2.c"),
@@ -125,8 +128,10 @@ def main(args):
         build.unittest("q8conv-test", build.cxx("q8conv.cc"))
         build.unittest("q8updw-test", build.cxx("q8updw.cc"))
         build.unittest("q8mpdw-test", build.cxx("q8mpdw.cc"))
+        build.unittest("q8uvadd-test", build.cxx("q8uvadd.cc"))
         build.unittest("hgemm-test", build.cxx("hgemm.cc"))
         build.unittest("sgemm-test", build.cxx("sgemm.cc"))
+        build.unittest("add-test", build.cxx("add.cc"))
         build.unittest("convolution-test", build.cxx("convolution.cc"))
         build.unittest("deconvolution-test", build.cxx("deconvolution.cc"))
         build.unittest("fully-connected-test", build.cxx("fully-connected.cc"))
@@ -144,6 +149,7 @@ def main(args):
             isa=benchmark_isa,
             extra_include_dirs="src"):
 
+        build.benchmark("add-bench", build.cxx("add.cc"))
         build.benchmark("convolution-bench", build.cxx("convolution.cc"))
         build.benchmark("q8gemm-bench", build.cxx("q8gemm.cc"))
         build.benchmark("hgemm-bench", build.cxx("hgemm.cc"))

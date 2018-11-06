@@ -270,6 +270,55 @@ static void compute_q8mpdw(
     &context->quantization_params);
 }
 
+struct q8add_strided_context {
+  size_t n;
+  const uint8_t* a;
+  size_t a_stride;
+  const uint8_t* b;
+  size_t b_stride;
+  const uint8_t* y;
+  size_t y_stride;
+  union qnnp_add_quantization_params quantization_params;
+  q8uvadd_ukernel_function ukernel;
+};
+
+static void compute_q8add_strided(
+    const struct q8add_strided_context context[restrict static 1],
+    size_t batch_offset,
+    size_t batch_range /* always 1 */)
+{
+  assert(batch_range == 1);
+
+  const size_t n = context->n;
+  const size_t a_stride = context->a_stride;
+  const size_t b_stride = context->b_stride;
+  const size_t y_stride = context->y_stride;
+  const void* a = (const void*) ((uintptr_t) context->a + a_stride * batch_offset);
+  const void* b = (const void*) ((uintptr_t) context->b + b_stride * batch_offset);
+  void* y = (void*) ((uintptr_t) context->y + y_stride * batch_offset);
+
+  context->ukernel(n, a, b, y, &context->quantization_params);
+}
+
+struct q8add_contiguous_context {
+  const uint8_t* a;
+  const uint8_t* b;
+  uint8_t* y;
+  union qnnp_add_quantization_params quantization_params;
+  q8uvadd_ukernel_function ukernel;
+};
+
+static void compute_q8add_contiguous(
+    const struct q8add_contiguous_context context[restrict static 1],
+    size_t offset,
+    size_t size)
+{
+  const void* a = (const void*) ((uintptr_t) context->a + offset);
+  const void* b = (const void*) ((uintptr_t) context->b + offset);
+  void* y = (void*) ((uintptr_t) context->y + offset);
+  context->ukernel(size, a, b, y, &context->quantization_params);
+}
+
 enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
 {
   switch (op->ukernel_type) {
@@ -469,6 +518,47 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
           &q8conv_context,
           groups, batch_size, output_size, group_output_channels,
           1, 1, mr, nr);
+      break;
+    }
+    case qnnp_ukernel_type_add:
+    {
+      const size_t batch_size = op->batch_size;
+      const size_t channels = op->channels;
+      const size_t a_stride = op->input_pixel_stride;
+      const size_t b_stride = op->input2_pixel_stride;
+      const size_t y_stride = op->output_pixel_stride;
+      if ((((a_stride ^ channels) | (b_stride ^ channels) | (y_stride ^ channels)) == 0) || batch_size == 1) {
+        const size_t block_size = 4096;
+        struct q8add_contiguous_context add_context = {
+          .a = op->input,
+          .b = op->input2,
+          .y = op->output,
+          .quantization_params = op->add_quantization_params,
+          .ukernel = qnnp_params.q8add.uvadd,
+        };
+        pthreadpool_compute_1d_tiled(
+          threadpool,
+          (pthreadpool_function_1d_tiled_t) compute_q8add_contiguous,
+          &add_context,
+          batch_size * channels * sizeof(uint8_t), block_size);
+      } else {
+        struct q8add_strided_context add_context = {
+          .a = op->input,
+          .a_stride = a_stride * sizeof(uint8_t),
+          .b = op->input2,
+          .b_stride = b_stride * sizeof(uint8_t),
+          .y = op->output,
+          .y_stride = y_stride * sizeof(uint8_t),
+          .n = channels,
+          .quantization_params = op->add_quantization_params,
+          .ukernel = qnnp_params.q8add.uvadd,
+        };
+        pthreadpool_compute_1d_tiled(
+          threadpool,
+          (pthreadpool_function_1d_tiled_t) compute_q8add_strided,
+          &add_context,
+          batch_size, 1);
+      }
       break;
     }
     default:

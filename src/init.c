@@ -16,6 +16,7 @@
 #include <qnnpack.h>
 #include <qnnpack/log.h>
 #include <qnnpack/params.h>
+#include <qnnpack/q8add.h>
 #include <qnnpack/q8gemm.h>
 #include <qnnpack/q8conv.h>
 #include <qnnpack/q8dw.h>
@@ -73,6 +74,9 @@ static void init(void) {
       .sum_rows = q8sumrows_ukernel_4x__neon,
       .m = 4,
   };
+  qnnp_params.q8add = (struct q8add_parameters) {
+      .uvadd = q8uvadd_ukernel__neon,
+  };
 #elif CPUINFO_ARCH_ARM64
   qnnp_params.q8conv = (struct q8conv_parameters) {
       .gemm = q8gemm_ukernel_8x8__aarch64_neon,
@@ -91,6 +95,9 @@ static void init(void) {
   qnnp_params.q8dw25 = (struct q8mpdw_parameters) {
       .mpdw = q8mpdw_ukernel_25c8__neon,
       .cr = 8,
+  };
+  qnnp_params.q8add = (struct q8add_parameters) {
+      .uvadd = q8uvadd_ukernel__neon,
   };
 #elif CPUINFO_ARCH_X86 || CPUINFO_ARCH_X86_64
   if (!cpuinfo_has_x86_sse2()) {
@@ -114,6 +121,9 @@ static void init(void) {
   qnnp_params.q8dw25 = (struct q8mpdw_parameters) {
       .mpdw = q8mpdw_ukernel_25c8__sse2,
       .cr = 8,
+  };
+  qnnp_params.q8add = (struct q8add_parameters) {
+      .uvadd = q8uvadd_ukernel__sse2,
   };
 #else
   #error "Unsupported architecture"

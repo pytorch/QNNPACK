@@ -26,6 +26,7 @@ enum qnnp_ukernel_type {
   qnnp_ukernel_type_gemm,
   qnnp_ukernel_type_xzp_gemm,
   qnnp_ukernel_type_dwconv,
+  qnnp_ukernel_type_add,
 };
 
 struct qnnp_operator {
@@ -43,9 +44,10 @@ struct qnnp_operator {
   uint32_t dilation_height;
   uint32_t dilation_width;
   uint32_t groups;
+  size_t group_stride;
   size_t group_input_channels;
   size_t group_output_channels;
-  size_t group_stride;
+  size_t channels;
 
   size_t input_height;
   size_t input_width;
@@ -53,6 +55,9 @@ struct qnnp_operator {
   const void* input;
   const void** indirection_buffer;
   void* a_sum;
+
+  size_t input2_pixel_stride;
+  const void* input2;
 
   size_t output_height;
   size_t output_width;
@@ -68,6 +73,7 @@ struct qnnp_operator {
   union {
     union qnnp_q31_requantization_params requantization_params;
     union qnnp_conv_quantization_params conv_quantization_params;
+    union qnnp_add_quantization_params add_quantization_params;
   };
   enum qnnp_ukernel_type ukernel_type;
   enum qnnp_format format;

@@ -134,7 +134,8 @@ SET(QNNPACK_OPERATOR_SRCS
   src/operator-run.c
   src/convolution.c
   src/deconvolution.c
-  src/fully-connected.c)
+  src/fully-connected.c
+  src/add.c)
 
 SET(QNNPACK_PSIMD_UKERNELS
   src/sgemm/6x8-psimd.c)
@@ -149,6 +150,7 @@ SET(QNNPACK_ARM_NEON_UKERNELS
   src/q8conv/8x8-neon.c
   src/q8updw/9c8-neon.c
   src/q8mpdw/25c8-neon.c
+  src/q8add/neon.c
   src/sgemm/5x8-neon.c
   src/sgemm/6x8-neon.c)
 
@@ -168,7 +170,8 @@ SET(QNNPACK_X86_SSE2_UKERNELS
   src/q8gemm/4x4c2-sse2.c
   src/q8conv/4x4c2-sse2.c
   src/q8mpdw/25c8-sse2.c
-  src/q8updw/9c8-sse2.c)
+  src/q8updw/9c8-sse2.c
+  src/q8add/sse2.c)
 
 SET(QNNPACK_UKERNELS ${QNNPACK_PSIMD_UKERNELS})
 IF(CMAKE_SYSTEM_PROCESSOR MATCHES "^armv[5-8]" OR IOS_ARCH MATCHES "^armv7")
@@ -329,6 +332,15 @@ IF(QNNPACK_BUILD_TESTS)
   TARGET_LINK_LIBRARIES(fully-connected-test PRIVATE qnnpack cpuinfo gtest gtest_main)
   ADD_TEST(fully-connected-test fully-connected-test)
 
+  ADD_EXECUTABLE(add-test test/add.cc)
+  SET_TARGET_PROPERTIES(add-test PROPERTIES
+    CXX_STANDARD 11
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO)
+  TARGET_INCLUDE_DIRECTORIES(add-test PRIVATE src test)
+  TARGET_LINK_LIBRARIES(add-test PRIVATE qnnpack cpuinfo gtest gtest_main)
+  ADD_TEST(add-test add-test)
+
   # ---[ Build unit tests for micro-kernels
   ADD_EXECUTABLE(q8gemm-test test/q8gemm.cc)
   SET_TARGET_PROPERTIES(q8gemm-test PROPERTIES
@@ -366,6 +378,15 @@ IF(QNNPACK_BUILD_TESTS)
   TARGET_LINK_LIBRARIES(q8mpdw-test PRIVATE qnnpack cpuinfo fp16 gtest gtest_main)
   ADD_TEST(q8mpdw-test q8mpdw-test)
 
+  ADD_EXECUTABLE(q8uvadd-test test/q8uvadd.cc)
+  SET_TARGET_PROPERTIES(q8uvadd-test PROPERTIES
+    CXX_STANDARD 11
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO)
+  TARGET_INCLUDE_DIRECTORIES(q8uvadd-test PRIVATE src test)
+  TARGET_LINK_LIBRARIES(q8uvadd-test PRIVATE qnnpack cpuinfo fp16 gtest gtest_main)
+  ADD_TEST(q8uvadd-test q8uvadd-test)
+
   ADD_EXECUTABLE(hgemm-test test/hgemm.cc)
   SET_TARGET_PROPERTIES(hgemm-test PROPERTIES
     CXX_STANDARD 11
@@ -401,6 +422,13 @@ IF(QNNPACK_BUILD_BENCHMARKS)
     CXX_STANDARD_REQUIRED YES
     CXX_EXTENSIONS NO)
   TARGET_LINK_LIBRARIES(convolution-bench PRIVATE qnnpack benchmark)
+
+  ADD_EXECUTABLE(add-bench bench/add.cc)
+  SET_TARGET_PROPERTIES(add-bench PROPERTIES
+    CXX_STANDARD 11
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO)
+  TARGET_LINK_LIBRARIES(add-bench PRIVATE qnnpack benchmark)
 
   ADD_EXECUTABLE(q8gemm-bench bench/q8gemm.cc)
   SET_TARGET_PROPERTIES(q8gemm-bench PROPERTIES

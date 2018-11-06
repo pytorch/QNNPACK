@@ -137,6 +137,28 @@ enum qnnp_status qnnp_setup_fully_connected_nc_q8(
     size_t output_stride,
     pthreadpool_t threadpool);
 
+enum qnnp_status qnnp_create_add_nc_q8(
+    size_t channels,
+    uint8_t a_zero_point,
+    float a_scale,
+    uint8_t b_zero_point,
+    float b_scale,
+    uint8_t sum_zero_point,
+    float sum_scale,
+    uint8_t sum_min,
+    uint8_t sum_max,
+    qnnp_operator_t* add);
+
+enum qnnp_status qnnp_setup_add_nc_q8(
+    qnnp_operator_t add,
+    size_t batch_size,
+    const uint8_t* a,
+    size_t a_stride,
+    const uint8_t* b,
+    size_t b_stride,
+    uint8_t* sum,
+    size_t sum_stride);
+
 enum qnnp_status qnnp_run_operator(
     qnnp_operator_t op,
     pthreadpool_t threadpool);
