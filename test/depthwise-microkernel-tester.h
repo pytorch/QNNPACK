@@ -16,6 +16,7 @@
 #include <random>
 #include <vector>
 
+#include <cpuinfo.h>
 #include <qnnpack/AlignedAllocator.h>
 #include <qnnpack/pack.h>
 #include <qnnpack/params.h>
@@ -247,12 +248,14 @@ class DepthwiseMicrokernelTester {
           (outputStride() - channels()) * sizeof(uint8_t),
           &quantizationParams);
       } else {
+#if CPUINFO_ARCH_ARM || CPUINFO_ARCH_ARM64
         q8dw_ukernel_25c8__neon(
           channels(), width(),
           indirectInput.data(), packedWeights.data(), outacc32.data(), output.data(),
           kernelHeight() * subsampling() * sizeof(void*),
           (outputStride() - channels()) * sizeof(uint8_t),
           &quantizationParams);
+#endif
       }
 
       for (size_t x = 0; x < width(); x++) {

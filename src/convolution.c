@@ -189,7 +189,12 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
   const size_t kernel_size = kernel_height * kernel_width;
 
   uint32_t flags = 0;
-  if ((kernel_size == 9 || kernel_size == 25) && dilation_width == 1 && group_input_channels == 1 && group_output_channels == 1 && groups > 1) {
+#if CPUINFO_ARCH_ARM || CPUINFO_ARCH_ARM64
+  if (kernel_size == 25 && dilation_width == 1 && group_input_channels == 1 && group_output_channels == 1 && groups > 1) {
+    flags |= QNNP_CONVOLUTION_FLAG_DW;
+  }
+#endif
+  if (kernel_size == 9 && dilation_width == 1 && group_input_channels == 1 && group_output_channels == 1 && groups > 1) {
     flags |= QNNP_CONVOLUTION_FLAG_DW;
   } else if (kernel_size == 1 && subsampling_height == 1 && subsampling_width == 1) {
     if (group_input_channels >= qnnp_params.q8conv_xzp.kthreshold) {
