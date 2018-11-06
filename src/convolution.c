@@ -756,7 +756,6 @@ static void compute_q8gemm_xzp(
   const size_t c_stride = context->c_stride;
   const int32_t* a_sum = context->a_sum;
   const size_t groups = context->groups;
-  const size_t batch_size = context->batch_size;
   const size_t a_sum_stride = context->a_sum_stride;
 
   context->ukernel(

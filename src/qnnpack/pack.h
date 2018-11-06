@@ -42,7 +42,6 @@ static inline void pack_q8conv_w(
   const int32_t* b,
   void* packed_w)
 {
-  const size_t kc_stride = (kc + (kr - 1)) & -kr;
   for (size_t nr_block_start = 0; nr_block_start < n; nr_block_start += nr) {
     const size_t nr_block_size = min(n - nr_block_start, nr);
     for (size_t nr_block_offset = 0; nr_block_offset < nr_block_size; nr_block_offset++) {
@@ -77,7 +76,6 @@ static inline void pack_q8deconv_w(
     const int32_t* b,
     void* packed_w)
 {
-  const size_t kc_stride = (kc + (kr - 1)) & -kr;
   for (size_t nr_block_start = 0; nr_block_start < n; nr_block_start += nr) {
     const size_t nr_block_size = min(n - nr_block_start, nr);
     for (size_t nr_block_offset = 0; nr_block_offset < nr_block_size; nr_block_offset++) {
@@ -215,7 +213,6 @@ static inline void pack_hgemm_w(
   const uint16_t* b,
   uint16_t* packed_w)
 {
-  const size_t kc_stride = (kc + (kr - 1)) & -kr;
   for (size_t nr_block_start = 0; nr_block_start < nc; nr_block_start += nr) {
     const size_t nr_block_size = min(nc - nr_block_start, nr);
     for (size_t nr_block_offset = 0; nr_block_offset < nr_block_size; nr_block_offset++) {
@@ -245,7 +242,6 @@ static inline void pack_sgemm_w(
   const float* b,
   float* packed_w)
 {
-  const size_t k_stride = (kc + (kr - 1)) & -kr;
   for (size_t nr_block_start = 0; nr_block_start < nc; nr_block_start += nr) {
     const size_t nr_block_size = min(nc - nr_block_start, nr);
     for (size_t nr_block_offset = 0; nr_block_offset < nr_block_size; nr_block_offset++) {
