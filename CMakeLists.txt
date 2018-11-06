@@ -153,6 +153,7 @@ SET(QNNPACK_AARCH32_ASM_UKERNELS
   src/q8gemm/4x8-aarch32-neon.S
   src/q8gemm/4x8c2-xzp-aarch32-neon.S
   src/q8conv/4x8-aarch32-neon.S
+  src/q8dw/9c8-aarch32-neon.S
   src/hgemm/8x8-aarch32-neonfp16arith.S)
 
 SET(QNNPACK_AARCH64_ASM_UKERNELS

@@ -29,6 +29,7 @@ extern "C" {
     const union qnnp_conv_quantization_params* quantization_params);
 
 DECLARE_Q8DW_FUNCTION(q8dw_ukernel_9c8__neon)
+DECLARE_Q8DW_FUNCTION(q8dw_ukernel_9c8__aarch32_neon)
 DECLARE_Q8DW_FUNCTION(q8dw_ukernel_9c8__sse2)
 
 #define DECLARE_Q8DW_MULTIPASS_FUNCTION(fn_name)                        \
