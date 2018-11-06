@@ -113,64 +113,86 @@ BEGIN_FUNCTION q8dw_ukernel_9c8__aarch32_neon
 1:
 	VLDM r3!, {d0-d3}
 
-	VLD1.8 {d8}, [r4]!
-	VLD1.8 {d12-d13}, [r3]!
+	VLD1.8 {d4}, [r4]!
+	VLD1.8 {d6}, [r3]!
+
+	VLD1.8 {d8}, [r5]!
+	VLD1.8 {d10}, [r3]!
+
+	VSUBL.U8 q2, d4, d30
+	VSUBL.U8 q3, d6, d31
+
+	VLD1.8 {d12}, [r6]!
+	VLD1.8 {d14}, [r3]!
+
 	VSUBL.U8 q4, d8, d30
-	VSUBL.U8 q7, d12, d31
-	VMLAL.S16 q0, d8, d14
-	VMLAL.S16 q1, d9, d15
+	VSUBL.U8 q5, d10, d31
 
-	VLD1.8 {d10}, [r5]!
-	VSUBL.U8 q4, d10, d30
-	VSUBL.U8 q6, d13, d31
-	VMLAL.S16 q0, d8, d12
-	VMLAL.S16 q1, d9, d13
+	VMLAL.S16 q0, d4, d6
+	VMLAL.S16 q1, d5, d7
 
-	VLD1.8 {d8}, [r6]!
-	VLD1.8 {d12-d13}, [r3]!
-	VSUBL.U8 q4, d8, d30
-	VSUBL.U8 q7, d12, d31
-	VMLAL.S16 q0, d8, d14
-	VMLAL.S16 q1, d9, d15
+	VLD1.8 {d4}, [r7]!
+	VLD1.8 {d6}, [r3]!
 
-	VLD1.8 {d10}, [r7]!
-	VSUBL.U8 q4, d10, d30
-	VSUBL.U8 q6, d13, d31
-	VMLAL.S16 q0, d8, d12
-	VMLAL.S16 q1, d9, d13
+	VSUBL.U8 q6, d12, d30
+	VSUBL.U8 q7, d14, d31
+
+	VMLAL.S16 q0, d8, d10
+	VMLAL.S16 q1, d9, d11
 
 	VLD1.8 {d8}, [r8]!
-	VLD1.8 {d12-d13}, [r3]!
+	VLD1.8 {d10}, [r3]!
+
+	VSUBL.U8 q2, d4, d30
+	VSUBL.U8 q3, d6, d31
+
+	VMLAL.S16 q0, d12, d14
+	VMLAL.S16 q1, d13, d15
+
+	VLD1.8 {d12}, [r9]!
+	VLD1.8 {d14}, [r3]!
+
 	VSUBL.U8 q4, d8, d30
-	VSUBL.U8 q7, d12, d31
-	VMLAL.S16 q0, d8, d14
-	VMLAL.S16 q1, d9, d15
+	VSUBL.U8 q5, d10, d31
 
-	VLD1.8 {d10}, [r9]!
-	VSUBL.U8 q4, d10, d30
-	VSUBL.U8 q6, d13, d31
-	VMLAL.S16 q0, d8, d12
-	VMLAL.S16 q1, d9, d13
+	VMLAL.S16 q0, d4, d6
+	VMLAL.S16 q1, d5, d7
 
-	VLD1.8 {d8}, [r10]!
-	VLD1.8 {d12-d13}, [r3]!
+	VLD1.8 {d4}, [r10]!
+	VLD1.8 {d6}, [r3]!
+
+	VSUBL.U8 q6, d12, d30
+	VSUBL.U8 q7, d14, d31
+
+	VMLAL.S16 q0, d8, d10
+	VMLAL.S16 q1, d9, d11
+
+	VLD1.8 {d8}, [r11]!
+	VLD1.8 {d10}, [r3]!
+
+	VSUBL.U8 q2, d4, d30
+	VSUBL.U8 q3, d6, d31
+
+	VMLAL.S16 q0, d12, d14
+	VMLAL.S16 q1, d13, d15
+
+	VLD1.8 {d12}, [r12]!
+	VLD1.8 {d14}, [r3]!
+
 	VSUBL.U8 q4, d8, d30
-	VSUBL.U8 q7, d12, d31
-	VMLAL.S16 q0, d8, d14
-	VMLAL.S16 q1, d9, d15
+	VSUBL.U8 q5, d10, d31
 
-	VLD1.8 {d10}, [r11]!
-	VSUBL.U8 q4, d10, d30
-	VSUBL.U8 q6, d13, d31
-	VMLAL.S16 q0, d8, d12
-	VMLAL.S16 q1, d9, d13
+	VMLAL.S16 q0, d4, d6
+	VMLAL.S16 q1, d5, d7
 
-	VLD1.8 {d8}, [r12]!
-	VLD1.8 {d12}, [r3]!
-	VSUBL.U8 q4, d8, d30
-	VSUBL.U8 q7, d12, d31
-	VMLAL.S16 q0, d8, d14
-	VMLAL.S16 q1, d9, d15
+	VSUBL.U8 q6, d12, d30
+	VSUBL.U8 q7, d14, d31
+
+	VMLAL.S16 q0, d8, d10
+	VMLAL.S16 q1, d9, d11
+
+	VMLAL.S16 q0, d12, d14
+	VMLAL.S16 q1, d13, d15
 
 	VQRDMULH.S32 q0, q0, q14
 	VQRDMULH.S32 q1, q1, q14
