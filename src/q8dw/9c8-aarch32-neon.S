@@ -33,8 +33,8 @@ BEGIN_FUNCTION q8dw_ukernel_9c8__aarch32_neon
 	PUSH {r4, r5, r6, r7, r8, r9, r10, r11, lr}
 	VPUSH {d8-d15}
 
-	STR r0, [sp, -8]
-	STR r3, [sp, -4]
+	STR r0, [sp, #-8]
+	STR r3, [sp, #-4]
 
 	MOV r4, 2
 
@@ -82,7 +82,7 @@ BEGIN_FUNCTION q8dw_ukernel_9c8__aarch32_neon
 
 	# Load c:
 	# - r0 = c = channels
-	LDR r0, [sp, -8]
+	LDR r0, [sp, #-8]
 
 	# Load i0, i1, i2, i3, i4, i5, i6, i7, i8
 	# - r4 = i0
@@ -105,7 +105,7 @@ BEGIN_FUNCTION q8dw_ukernel_9c8__aarch32_neon
 
 	# Load w:
 	# - r3 = w = weights
-	LDR r3, [sp, -4]
+	LDR r3, [sp, #-4]
 
 	BLO 2f
 

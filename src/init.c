@@ -62,7 +62,7 @@ static void init(void) {
       break;
   }
   qnnp_params.q8dw9 = (struct q8dw_parameters) {
-      .dw = q8dw_ukernel_9c8__neon,
+      .dw = q8dw_ukernel_9c8__aarch32_neon,
       .cr = 8,
   };
   qnnp_params.q8dw25 = (struct q8dw_multipass_parameters) {
