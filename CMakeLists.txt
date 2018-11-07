@@ -146,6 +146,7 @@ SET(QNNPACK_ARM_NEON_UKERNELS
   src/q8conv/4x8-neon.c
   src/q8conv/8x8-neon.c
   src/q8dw/9c8-neon.c
+  src/q8dw/25c8-neon.c
   src/sgemm/5x8-neon.c
   src/sgemm/6x8-neon.c)
 
