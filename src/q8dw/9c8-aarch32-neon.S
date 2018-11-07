@@ -10,7 +10,7 @@
 
 .syntax unified
 
-# void q8dw_ukernel_9c8__neon(
+# void q8dw_ukernel_9c8__aarch32_neon(
 #     size_t channels,
 #     size_t output_width,
 #     const uint8_t** input,
@@ -25,7 +25,7 @@ BEGIN_FUNCTION q8dw_ukernel_9c8__aarch32_neon
 	.arch armv7-a
 	.fpu neon
 #endif
-	
+
 	# Load params
 	# - r12 = quantization_params
 	LDR r12, [sp, 12]
