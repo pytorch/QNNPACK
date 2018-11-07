@@ -175,8 +175,7 @@ typedef void (*q8gemm_ukernel_function)(
     size_t k,
     const uint8_t* a,
     size_t a_stride,
-    const uint8_t* b,
-    const int32_t* bias,
+    const void* w,
     uint8_t* c,
     size_t c_stride,
     const union qnnp_conv_quantization_params* quantization_params);

@@ -95,26 +95,20 @@ enum qnnp_status qnnp_create_fully_connected_nc_q8(
   const uint32_t n_stride = (output_channels + (nr - 1)) & -nr;
   const uint32_t k_stride = (input_channels + (kr - 1)) & -kr;
 
-  fully_connected->packed_kernel = malloc(sizeof(uint8_t) * k_stride * n_stride);
+  fully_connected->packed_kernel = malloc(n_stride * (k_stride * sizeof(uint8_t) + sizeof(int32_t)));
   if (fully_connected->packed_kernel == NULL) {
     qnnp_log_error("failed to allocate %zu bytes for packed kernel data",
       sizeof(uint8_t) * k_stride * n_stride);
     goto error;
   }
-  memset(fully_connected->packed_kernel, kernel_zero_point, sizeof(uint8_t) * k_stride * n_stride);
+  memset(fully_connected->packed_kernel, kernel_zero_point, n_stride * (k_stride * sizeof(uint8_t) + sizeof(int32_t)));
 
-  pack_q8gemm_b(
+  pack_q8gemm_w(
       output_channels, input_channels,
-      nr, kr,
+      nr, nr, kr,
       kernel,
+      bias,
       fully_connected->packed_kernel);
-
-  fully_connected->bias = malloc(sizeof(int32_t) * n_stride);
-  if (fully_connected->bias == NULL) {
-    qnnp_log_error("failed to allocate %zu bytes for packed bias data", sizeof(int32_t) * n_stride);
-    goto error;
-  }
-  memcpy(fully_connected->bias, bias, sizeof(uint32_t) * output_channels);
 
   fully_connected->groups = 1;
   fully_connected->group_input_channels = input_channels;

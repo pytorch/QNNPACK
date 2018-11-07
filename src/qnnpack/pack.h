@@ -9,25 +9,34 @@
 #pragma once
 #include <qnnpack/math.h>
 
-static inline void pack_q8gemm_b(
-    size_t n,
-    size_t k,
+static inline void pack_q8gemm_w(
+    size_t nc,
+    size_t kc,
     uint32_t nr,
+    uint32_t np,
     uint32_t kr,
-    const uint8_t* b,
-    uint8_t* packed_b)
+    const uint8_t* k,
+    const int32_t* b,
+    void* packed_w)
 {
-  const size_t k_stride = (k + (kr - 1)) & -kr;
-  for (size_t nr_block_start = 0; nr_block_start < n; nr_block_start += nr) {
-    const size_t nr_block_size = min(n - nr_block_start, nr);
+  for (size_t nr_block_start = 0; nr_block_start < nc; nr_block_start += nr) {
+    const size_t nr_block_size = min(nc - nr_block_start, nr);
     for (size_t nr_block_offset = 0; nr_block_offset < nr_block_size; nr_block_offset++) {
-      for (size_t kr_block_start = 0; kr_block_start < k; kr_block_start += kr) {
-        const size_t kr_block_size = min(k - kr_block_start, kr);
+      *((int32_t*) packed_w) = b[nr_block_start + nr_block_offset];
+      packed_w = (void*) ((uintptr_t) packed_w + sizeof(int32_t));
+    }
+    packed_w = (void*) ((uintptr_t) packed_w + (nr - nr_block_size) * sizeof(uint32_t));
+    for (size_t kr_block_start = 0; kr_block_start < kc; kr_block_start += kr) {
+      const size_t kr_block_size = min(kc - kr_block_start, kr);
+      for (size_t nr_block_offset = 0; nr_block_offset < nr_block_size; nr_block_offset++) {
         for (size_t kr_block_offset = 0; kr_block_offset < kr_block_size; kr_block_offset++) {
-          packed_b[nr_block_start * k_stride + kr_block_start * nr + nr_block_offset * kr + kr_block_offset] =
-              b[(nr_block_start + nr_block_offset) * k + (kr_block_start + kr_block_offset)];
+          *((uint8_t*) packed_w) =
+            k[(nr_block_start + nr_block_offset) * kc + (kr_block_start + kr_block_offset)];
+          packed_w = (void*) ((uintptr_t) packed_w + sizeof(uint8_t));
         }
+        packed_w = (void*) ((uintptr_t) packed_w + (kr - kr_block_size) * sizeof(uint8_t));
       }
+      packed_w = (void*) ((uintptr_t) packed_w + ((nr - nr_block_size) & (np - 1)) * kr * sizeof(uint8_t));
     }
   }
 }

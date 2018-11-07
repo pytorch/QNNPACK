@@ -279,11 +279,12 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
 
     if (flags & QNNP_CONVOLUTION_FLAG_GEMM) {
       for (uint32_t group = 0; group < groups; group++) {
-        pack_q8gemm_b(
+        pack_q8gemm_w(
             group_output_channels, group_input_channels,
-            nr, kr,
+            nr, nr, kr,
             kernel + group * group_output_channels * group_input_channels,
-            convolution->packed_kernel + group * n_stride * k_stride);
+            bias + group * group_output_channels,
+            (void*) ((uintptr_t) convolution->packed_kernel + group * packed_group_weights_size));
       }
     } else if (flags & QNNP_CONVOLUTION_FLAG_XZP_GEMM) {
       for (uint32_t group = 0; group < groups; group++) {
@@ -598,8 +599,7 @@ struct q8gemm_context {
   size_t n_stride;
   const uint8_t* a;
   size_t a_stride;
-  const uint8_t* packed_b;
-  const int32_t* bias;
+  const uint8_t* packed_w;
   uint8_t* c;
   size_t c_stride;
   union qnnp_conv_quantization_params quantization_params;
@@ -623,8 +623,7 @@ static void compute_q8gemm(
   const size_t n_stride = context->n_stride;
   const uint8_t* restrict a = context->a;
   const size_t a_stride = context->a_stride;
-  const uint8_t* restrict packed_b = context->packed_b;
-  const int32_t* restrict bias = context->bias;
+  const void* restrict packed_w = context->packed_w;
   uint8_t* restrict c = context->c;
   const size_t c_stride = context->c_stride;
 
@@ -634,8 +633,7 @@ static void compute_q8gemm(
       k,
       a + (pixel_index + mr_block_start) * a_stride + group_index * k,
       a_stride,
-      packed_b + nr_block_start * k_stride + group_index * k_stride * n_stride,
-      bias + nr_block_start + group_index * n_stride,
+      (const void*) ((uintptr_t) packed_w + (nr_block_start + group_index * n_stride) * (k_stride * sizeof(uint8_t) + sizeof(int32_t))),
       c + (pixel_index + mr_block_start) * c_stride + nr_block_start + group_index * n,
       c_stride,
       &context->quantization_params);
@@ -819,7 +817,7 @@ static void compute_q8conv(
       kc,
       ks,
       indirect_a + (mr_block_start + (image_index + group_index * bs) * m_stride) * ks,
-      (void*) ((uintptr_t) packed_w + (nr_block_start + group_index * n_stride) * (kc_stride * sizeof(uint8_t) + sizeof(int32_t))),
+      (const void*) ((uintptr_t) packed_w + (nr_block_start + group_index * n_stride) * (kc_stride * sizeof(uint8_t) + sizeof(int32_t))),
       c + (mr_block_start + image_index * m) * c_stride + group_index * n + nr_block_start,
       c_stride,
       &context->quantization_params);
@@ -1010,8 +1008,7 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
           .n_stride = n_stride,
           .a = op->input,
           .a_stride = op->input_pixel_stride,
-          .packed_b = op->packed_kernel,
-          .bias = op->bias,
+          .packed_w = op->packed_kernel,
           .c = op->output,
           .c_stride = op->output_pixel_stride,
           .quantization_params = op->conv_quantization_params,

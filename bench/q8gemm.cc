@@ -19,6 +19,7 @@
 #include <qnnpack/AlignedAllocator.h>
 #include <qnnpack/q8gemm.h>
 #include <qnnpack/params.h>
+#include <qnnpack/pack.h>
 #include <qnnpack/requantization.h>
 
 #include <benchmark/benchmark.h>
@@ -35,11 +36,6 @@ inline uint32_t divideRoundUp(uint32_t x, uint32_t q)
 inline uint32_t roundUp(uint32_t x, uint32_t q)
 {
   return q * divideRoundUp(x, q);
-}
-
-inline uint32_t min(uint32_t a, uint32_t b)
-{
-  return a < b ? a : b;
 }
 
 #if QNNPACK_BENCHMARK_GEMMLOWP
@@ -79,7 +75,7 @@ struct GemmlowpOutputPipeline {
 
 class Q8GEMM : public benchmark::Fixture {
  public:
-  inline Q8GEMM(uint32_t mr, uint32_t nr, uint32_t kr) : mr_(mr), nr_(nr), kr_(kr), mc_(mr), nc_(nr), kc_(kr) {}
+  inline Q8GEMM(uint32_t mr, uint32_t nr, uint32_t np, uint32_t kr) : mr_(mr), nr_(nr), np_(np), kr_(kr), mc_(mr), nc_(nr), kc_(kr) {}
 
   virtual void SetUp(const benchmark::State&) override
   {
@@ -88,10 +84,13 @@ class Q8GEMM : public benchmark::Fixture {
 
     a_.resize(mc() * kc());
     std::generate(a_.begin(), a_.end(), std::ref(rng));
-    b_.resize(ncStride() * kcStride());
+    b_.resize(nc() * kc());
     std::generate(b_.begin(), b_.end(), std::ref(rng));
-    bias_.resize(roundUp(nc(), nr()));
+    bias_.resize(mc());
     std::generate(bias_.begin(), bias_.end(), std::ref(rng));
+    w_.resize(kcStride() * ncStride() + ncStride() * sizeof(int32_t) / sizeof(uint8_t));
+    std::fill(w_.begin(), w_.end(), 127);
+    pack_q8gemm_w(nc(), kc(), nr(), np(), kr(), b(), bias(), w());
     c_.resize(mc() * nc());
     std::fill(c_.begin(), c_.end(), 0xA5);
 
@@ -103,6 +102,8 @@ class Q8GEMM : public benchmark::Fixture {
     state.SetItemsProcessed(uint64_t(state.iterations()) * 2 * mc() * nc() * kc());
     a_.clear();
     b_.clear();
+    bias_.clear();
+    w_.clear();
     c_.clear();
   }
 
@@ -119,6 +120,14 @@ class Q8GEMM : public benchmark::Fixture {
   inline const int32_t* bias() const
   {
     return bias_.data();
+  }
+
+  inline uint8_t* w() {
+    return w_.data();
+  }
+
+  inline const uint8_t* w() const {
+    return w_.data();
   }
 
   inline uint8_t* c()
@@ -139,6 +148,11 @@ class Q8GEMM : public benchmark::Fixture {
   inline uint32_t nr() const
   {
     return nr_;
+  }
+
+  inline uint32_t np() const
+  {
+    return np_;
   }
 
   inline uint32_t nc() const
@@ -173,11 +187,13 @@ class Q8GEMM : public benchmark::Fixture {
 
  protected:
   std::vector<uint8_t> a_;
-  std::vector<uint8_t, AlignedAllocator<uint8_t, 32>> b_;
+  std::vector<uint8_t> b_;
   std::vector<int32_t> bias_;
+  std::vector<uint8_t, AlignedAllocator<uint8_t, 32>> w_;
   std::vector<uint8_t> c_;
   uint32_t mr_{0};
   uint32_t nr_{0};
+  uint32_t np_{0};
   uint32_t kr_{0};
   uint32_t mc_{mr_};
   uint32_t nc_{nr_};
@@ -185,10 +201,10 @@ class Q8GEMM : public benchmark::Fixture {
   qnnp_conv_quantization_params quantizationParams_;
 };
 
-template <uint32_t MR, uint32_t NR, uint32_t KR>
+template <uint32_t MR, uint32_t NR, uint32_t NP, uint32_t KR>
 class Q8GEMM_L1 : public Q8GEMM {
  public:
-  inline Q8GEMM_L1() : Q8GEMM(MR, NR, KR)
+  inline Q8GEMM_L1() : Q8GEMM(MR, NR, NP, KR)
   {
     cpuinfo_initialize();
     const size_t l1d_size = cpuinfo_get_l1d_cache(0)->size;
@@ -202,10 +218,10 @@ class Q8GEMM_L1 : public Q8GEMM {
   }
 };
 
-template <uint32_t MR, uint32_t NR, uint32_t KR>
+template <uint32_t MR, uint32_t NR, uint32_t NP, uint32_t KR>
 class Q8GEMM_Op : public Q8GEMM {
  public:
-  inline Q8GEMM_Op() : Q8GEMM(MR, NR, KR) {}
+  inline Q8GEMM_Op() : Q8GEMM(MR, NR, NP, KR) {}
 
   virtual void SetUp(const benchmark::State& state) override
   {
@@ -219,7 +235,7 @@ class Q8GEMM_Op : public Q8GEMM {
 
 class Q8GEMM_XZP : public Q8GEMM {
  public:
-  inline Q8GEMM_XZP(uint32_t mr, uint32_t nr, uint32_t kr) : Q8GEMM(mr, nr, kr) {}
+  inline Q8GEMM_XZP(uint32_t mr, uint32_t nr, uint32_t np, uint32_t kr) : Q8GEMM(mr, nr, np, kr) {}
   virtual void SetUp(const benchmark::State&) override
   {
     const uint_fast32_t seed = std::chrono::system_clock::now().time_since_epoch().count();
@@ -263,10 +279,10 @@ class Q8GEMM_XZP : public Q8GEMM {
   qnnp_q31_requantization_params requantizationParams_;
 };
 
-template <uint32_t MR, uint32_t NR, uint32_t KR>
+template <uint32_t MR, uint32_t NR, uint32_t NP, uint32_t KR>
 class Q8GEMM_XZP_L1 : public Q8GEMM_XZP {
  public:
-  inline Q8GEMM_XZP_L1() : Q8GEMM_XZP(MR, NR, KR)
+  inline Q8GEMM_XZP_L1() : Q8GEMM_XZP(MR, NR, NP, KR)
   {
     cpuinfo_initialize();
     const size_t l1d_size = cpuinfo_get_l1d_cache(0)->size;
@@ -280,10 +296,10 @@ class Q8GEMM_XZP_L1 : public Q8GEMM_XZP {
   }
 };
 
-template <uint32_t MR, uint32_t NR, uint32_t KR>
+template <uint32_t MR, uint32_t NR, uint32_t NP, uint32_t KR>
 class Q8GEMM_XZP_Op : public Q8GEMM_XZP {
  public:
-  inline Q8GEMM_XZP_Op() : Q8GEMM_XZP(MR, NR, KR) {}
+  inline Q8GEMM_XZP_Op() : Q8GEMM_XZP(MR, NR, NP, KR) {}
 
   virtual void SetUp(const benchmark::State& state) override
   {
@@ -295,10 +311,10 @@ class Q8GEMM_XZP_Op : public Q8GEMM_XZP {
   }
 };
 
-template <uint32_t MR, uint32_t NR, uint32_t KR>
+template <uint32_t MR, uint32_t NR, uint32_t NP, uint32_t KR>
 class COMPUTE_ROW_SUM_Op : public Q8GEMM_XZP {
  public:
-  inline COMPUTE_ROW_SUM_Op() : Q8GEMM_XZP(MR, NR, KR) {}
+  inline COMPUTE_ROW_SUM_Op() : Q8GEMM_XZP(MR, NR, NP, KR) {}
 
   virtual void SetUp(const benchmark::State& state) override
   {
@@ -545,6 +561,8 @@ static void SqueezeNetV10GemmArguments(benchmark::internal::Benchmark* b)
 
 static void GemmArguments(benchmark::internal::Benchmark* b)
 {
+  b->ArgNames({"M", "N", "K"});
+
   for (auto S = 15; S <= 128; S *= 2) {
     for (int K = 8; K <= 1024; K *= 2) {
       b->Args({S * S, K, K});
@@ -574,19 +592,19 @@ static void q8gemm_compute_row_sum(
 #endif /* CPUINFO_ARCH_ARM || CPUINFO_ARCH_ARM64 */
 
 #if CPUINFO_ARCH_ARM
-BENCHMARK_TEMPLATE_F(Q8GEMM_L1, 4x8__aarch32_neon, 4, 8, 1)(benchmark::State& state)
+BENCHMARK_TEMPLATE_F(Q8GEMM_L1, 4x8__aarch32_neon, 4, 8, 8, 1)(benchmark::State& state)
 {
   for (auto _ : state) {
     q8gemm_ukernel_4x8__aarch32_neon(
       mr(), nr(), kc(),
       a(), kc() * sizeof(uint8_t),
-      b(), bias(),
+      w(),
       c(), mr() * sizeof(uint8_t),
       quantizationParams());
   }
 }
 
-BENCHMARK_TEMPLATE_DEFINE_F(Q8GEMM_Op, 4x8__aarch32_neon, 4, 8, 1)(benchmark::State& state)
+BENCHMARK_TEMPLATE_DEFINE_F(Q8GEMM_Op, 4x8__aarch32_neon, 4, 8, 8, 1)(benchmark::State& state)
 {
   for (auto _ : state) {
     for (uint32_t m = 0; m < mc(); m += mr()) {
@@ -596,8 +614,7 @@ BENCHMARK_TEMPLATE_DEFINE_F(Q8GEMM_Op, 4x8__aarch32_neon, 4, 8, 1)(benchmark::St
         q8gemm_ukernel_4x8__aarch32_neon(
           mrr, nrr, kc(),
           a() + m * kc(), kc() * sizeof(uint8_t),
-          b() + n * kcStride(),
-          bias() + n,
+          w() + n * (kcStride() * sizeof(uint8_t) + sizeof(int32_t)),
           c() + m * nc() + n, nc() * sizeof(uint8_t),
           quantizationParams());
       }
@@ -609,8 +626,7 @@ BENCHMARK_REGISTER_F(Q8GEMM_Op, 4x8__aarch32_neon)->Apply(MobileNetV1GemmArgumen
 BENCHMARK_REGISTER_F(Q8GEMM_Op, 4x8__aarch32_neon)->Apply(SqueezeNetV10GemmArguments);
 BENCHMARK_REGISTER_F(Q8GEMM_Op, 4x8__aarch32_neon)->Apply(GemmArguments);
 
-BENCHMARK_TEMPLATE_F(Q8GEMM_XZP_L1, 4x8c2__aarch32_neon, 4, 8, 2)
-(benchmark::State& state)
+BENCHMARK_TEMPLATE_F(Q8GEMM_XZP_L1, 4x8c2__aarch32_neon, 4, 8, 8, 2)(benchmark::State& state)
 {
   for (auto _ : state) {
     q8gemm_compute_row_sum(a(), mr(), kc(), kc(), -64, as());
@@ -619,8 +635,7 @@ BENCHMARK_TEMPLATE_F(Q8GEMM_XZP_L1, 4x8c2__aarch32_neon, 4, 8, 2)
   }
 }
 
-BENCHMARK_TEMPLATE_DEFINE_F(Q8GEMM_XZP_Op, 4x8c2__aarch32_neon, 4, 8, 2)
-(benchmark::State& state)
+BENCHMARK_TEMPLATE_DEFINE_F(Q8GEMM_XZP_Op, 4x8c2__aarch32_neon, 4, 8, 8, 2)(benchmark::State& state)
 {
   for (auto _ : state) {
     q8gemm_compute_row_sum(a(), mc(), kc(), kc(), -64, as());
@@ -652,19 +667,19 @@ BENCHMARK_REGISTER_F(Q8GEMM_XZP_Op, 4x8c2__aarch32_neon)->Apply(GemmArguments);
 #endif
 
 #if CPUINFO_ARCH_ARM64
-BENCHMARK_TEMPLATE_F(Q8GEMM_L1, 8x8__aarch64_neon, 8, 8, 1)(benchmark::State& state)
+BENCHMARK_TEMPLATE_F(Q8GEMM_L1, 8x8__aarch64_neon, 8, 8, 8, 1)(benchmark::State& state)
 {
   for (auto _ : state) {
     q8gemm_ukernel_8x8__aarch64_neon(
       mr(), nr(), kc(),
       a(), kc() * sizeof(uint8_t),
-      b(), bias(),
+      w(),
       c(), mr() * sizeof(uint8_t),
       quantizationParams());
   }
 }
 
-BENCHMARK_TEMPLATE_DEFINE_F(Q8GEMM_Op, 8x8__aarch64_neon, 8, 8, 1)(benchmark::State& state)
+BENCHMARK_TEMPLATE_DEFINE_F(Q8GEMM_Op, 8x8__aarch64_neon, 8, 8, 8, 1)(benchmark::State& state)
 {
   for (auto _ : state) {
     for (uint32_t m = 0; m < mc(); m += mr()) {
@@ -674,8 +689,7 @@ BENCHMARK_TEMPLATE_DEFINE_F(Q8GEMM_Op, 8x8__aarch64_neon, 8, 8, 1)(benchmark::St
         q8gemm_ukernel_8x8__aarch64_neon(
           mrr, nrr, kc(),
           a() + m * kc(), kc() * sizeof(uint8_t),
-          b() + n * kcStride(),
-          bias() + n,
+          w() + n * (kcStride() * sizeof(uint8_t) + sizeof(int32_t)),
           c() + m * nc() + n, nc() * sizeof(uint8_t),
           quantizationParams());
       }
@@ -690,31 +704,31 @@ BENCHMARK_REGISTER_F(Q8GEMM_Op, 8x8__aarch64_neon)->Apply(GemmArguments);
 #endif
 
 #if CPUINFO_ARCH_ARM || CPUINFO_ARCH_ARM64
-BENCHMARK_TEMPLATE_F(Q8GEMM_L1, 4x8__neon, 4, 8, 1)(benchmark::State& state)
+BENCHMARK_TEMPLATE_F(Q8GEMM_L1, 4x8__neon, 4, 8, 8, 1)(benchmark::State& state)
 {
   for (auto _ : state) {
     q8gemm_ukernel_4x8__neon(
       mr(), nr(), kc(),
       a(), kc() * sizeof(uint8_t),
-      b(), bias(),
+      w(),
       c(), mr() * sizeof(uint8_t),
       quantizationParams());
   }
 }
 
-BENCHMARK_TEMPLATE_F(Q8GEMM_L1, 8x8__neon, 8, 8, 1)(benchmark::State& state)
+BENCHMARK_TEMPLATE_F(Q8GEMM_L1, 8x8__neon, 8, 8, 8, 1)(benchmark::State& state)
 {
   for (auto _ : state) {
     q8gemm_ukernel_8x8__neon(
       mr(), nr(), kc(),
       a(), kc() * sizeof(uint8_t),
-      b(), bias(),
+      w(),
       c(), mr() * sizeof(uint8_t),
       quantizationParams());
   }
 }
 
-BENCHMARK_TEMPLATE_DEFINE_F(Q8GEMM_Op, 4x8__neon, 4, 8, 1)(benchmark::State& state)
+BENCHMARK_TEMPLATE_DEFINE_F(Q8GEMM_Op, 4x8__neon, 4, 8, 8, 1)(benchmark::State& state)
 {
   for (auto _ : state) {
     for (uint32_t m = 0; m < mc(); m += mr()) {
@@ -724,8 +738,7 @@ BENCHMARK_TEMPLATE_DEFINE_F(Q8GEMM_Op, 4x8__neon, 4, 8, 1)(benchmark::State& sta
         q8gemm_ukernel_4x8__neon(
           mrr, nrr, kc(),
           a() + m * kc(), kc() * sizeof(uint8_t),
-          b() + n * kcStride(),
-          bias() + n,
+          w() + n * (kcStride() * sizeof(uint8_t) + sizeof(int32_t)),
           c() + m * nc() + n, nc() * sizeof(uint8_t),
           quantizationParams());
       }
@@ -738,7 +751,7 @@ BENCHMARK_REGISTER_F(Q8GEMM_Op, 4x8__neon)->Apply(MobileNetV1GemmArguments);
 BENCHMARK_REGISTER_F(Q8GEMM_Op, 4x8__neon)->Apply(SqueezeNetV10GemmArguments);
 BENCHMARK_REGISTER_F(Q8GEMM_Op, 4x8__neon)->Apply(GemmArguments);
 
-BENCHMARK_TEMPLATE_DEFINE_F(Q8GEMM_Op, 8x8__neon, 8, 8, 1)(benchmark::State& state)
+BENCHMARK_TEMPLATE_DEFINE_F(Q8GEMM_Op, 8x8__neon, 8, 8, 8, 1)(benchmark::State& state)
 {
   for (auto _ : state) {
     for (uint32_t m = 0; m < mc(); m += mr()) {
@@ -748,8 +761,7 @@ BENCHMARK_TEMPLATE_DEFINE_F(Q8GEMM_Op, 8x8__neon, 8, 8, 1)(benchmark::State& sta
         q8gemm_ukernel_8x8__neon(
           mrr, nrr, kc(),
           a() + m * kc(), kc() * sizeof(uint8_t),
-          b() + n * kcStride(),
-          bias() + n,
+          w() + n * (kcStride() * sizeof(uint8_t) + sizeof(int32_t)),
           c() + m * nc() + n, nc() * sizeof(uint8_t),
           quantizationParams());
       }
@@ -762,7 +774,7 @@ BENCHMARK_REGISTER_F(Q8GEMM_Op, 8x8__neon)->Apply(MobileNetV1GemmArguments);
 BENCHMARK_REGISTER_F(Q8GEMM_Op, 8x8__neon)->Apply(SqueezeNetV10GemmArguments);
 BENCHMARK_REGISTER_F(Q8GEMM_Op, 8x8__neon)->Apply(GemmArguments);
 
-BENCHMARK_TEMPLATE_F(Q8GEMM_XZP_L1, 4x8c2_neon, 4, 8, 2)(benchmark::State& state)
+BENCHMARK_TEMPLATE_F(Q8GEMM_XZP_L1, 4x8c2_neon, 4, 8, 8, 2)(benchmark::State& state)
 {
   for (auto _ : state) {
     q8gemm_compute_row_sum(a(), mr(), kc(), kc(), -64, as());
@@ -771,7 +783,7 @@ BENCHMARK_TEMPLATE_F(Q8GEMM_XZP_L1, 4x8c2_neon, 4, 8, 2)(benchmark::State& state
   }
 }
 
-BENCHMARK_TEMPLATE_DEFINE_F(Q8GEMM_XZP_Op, 4x8c2_neon, 4, 8, 2)(benchmark::State& state)
+BENCHMARK_TEMPLATE_DEFINE_F(Q8GEMM_XZP_Op, 4x8c2_neon, 4, 8, 8, 2)(benchmark::State& state)
 {
   for (auto _ : state) {
     q8gemm_compute_row_sum(a(), mc(), kc(), kc(), -64, as());
@@ -801,7 +813,7 @@ BENCHMARK_REGISTER_F(Q8GEMM_XZP_Op, 4x8c2_neon)->Apply(MobileNetV1GemmArguments)
 BENCHMARK_REGISTER_F(Q8GEMM_XZP_Op, 4x8c2_neon)->Apply(SqueezeNetV10GemmArguments);
 BENCHMARK_REGISTER_F(Q8GEMM_XZP_Op, 4x8c2_neon)->Apply(GemmArguments);
 
-BENCHMARK_TEMPLATE_DEFINE_F(COMPUTE_ROW_SUM_Op, compute_row_sum_neon, 4, 8, 2)(benchmark::State& state)
+BENCHMARK_TEMPLATE_DEFINE_F(COMPUTE_ROW_SUM_Op, compute_row_sum_neon, 4, 8, 8, 2)(benchmark::State& state)
 {
   for (auto _ : state) {
     const size_t block_size = 4;
@@ -820,31 +832,31 @@ BENCHMARK_REGISTER_F(COMPUTE_ROW_SUM_Op, compute_row_sum_neon)->Apply(GemmArgume
 #endif
 
 #if CPUINFO_ARCH_X86 || CPUINFO_ARCH_X86_64
-BENCHMARK_TEMPLATE_F(Q8GEMM_L1, 2x4c8__sse2, 2, 4, 8)(benchmark::State& state)
+BENCHMARK_TEMPLATE_F(Q8GEMM_L1, 2x4c8__sse2, 2, 4, 1, 8)(benchmark::State& state)
 {
   for (auto _ : state) {
     q8gemm_ukernel_2x4c8__sse2(
       mr(), nr(), kc(),
       a(), kc() * sizeof(uint8_t),
-      b(), bias(),
+      w(),
       c(), mr() * sizeof(uint8_t),
       quantizationParams());
   }
 }
 
-BENCHMARK_TEMPLATE_F(Q8GEMM_L1, 4x4c2__sse2, 4, 4, 2)(benchmark::State& state)
+BENCHMARK_TEMPLATE_F(Q8GEMM_L1, 4x4c2__sse2, 4, 4, 4, 2)(benchmark::State& state)
 {
   for (auto _ : state) {
     q8gemm_ukernel_4x4c2__sse2(
       mr(), nr(), kc(),
       a(), kc() * sizeof(uint8_t),
-      b(), bias(),
+      w(),
       c(), mr() * sizeof(uint8_t),
       quantizationParams());
   }
 }
 
-BENCHMARK_TEMPLATE_DEFINE_F(Q8GEMM_Op, 4x4c2__sse2, 4, 4, 2)(benchmark::State& state)
+BENCHMARK_TEMPLATE_DEFINE_F(Q8GEMM_Op, 4x4c2__sse2, 4, 4, 4, 2)(benchmark::State& state)
 {
   for (auto _ : state) {
     for (uint32_t m = 0; m < mc(); m += mr()) {
@@ -854,8 +866,7 @@ BENCHMARK_TEMPLATE_DEFINE_F(Q8GEMM_Op, 4x4c2__sse2, 4, 4, 2)(benchmark::State& s
         q8gemm_ukernel_2x4c8__sse2(
           mrr, nrr, kc(),
           a() + m * kc(), kc() * sizeof(uint8_t),
-          b() + n * kcStride(),
-          bias() + n,
+          w() + n * (kcStride() * sizeof(uint8_t) + sizeof(int32_t)),
           c() + m * nc() + n, nc() * sizeof(uint8_t),
           quantizationParams());
       }

@@ -14,8 +14,7 @@
 #     size_t k,
 #     const uint8_t*restrict a,
 #     size_t a_stride,
-#     const uint8_t*restrict b,
-#     const int32_t*restrict bias,
+#     const void*restrict w,
 #     uint8_t*restrict c,
 #     size_t c_stride,
 #     const union qnnp_conv_quantization_params quantization_params[restrict static 1])
@@ -27,12 +26,12 @@ BEGIN_FUNCTION q8gemm_ukernel_8x8__aarch64_neon
         STP d9, d8, [sp, -64]
 
         # Load bias0123, bias4567
-        LD1 {v8.4s, v9.4s}, [x6]
+        LD1 {v8.4s, v9.4s}, [x5], 32
 
         MOV x9, 2
 
         # Load params
-        LDR x8, [sp, 8]
+        LDR x8, [sp]
 
         # Load a_zero_point
         LD1R {v24.8b}, [x8], x9
@@ -119,7 +118,7 @@ BEGIN_FUNCTION q8gemm_ukernel_8x8__aarch64_neon
         LD1 {v27.8b}, [x5], 8
         USUBL v27.8h, v27.8b, v25.8b
 
-        # va0 - va7 := va - va_offset
+        # va0 - va7 := va - va_zero_point
         LD1 {v0.8b}, [x3], 8
         USUBL v0.8h, v0.8b, v24.8b
         LD1 {v1.8b}, [x9], 8
@@ -660,30 +659,29 @@ BEGIN_FUNCTION q8gemm_ukernel_8x8__aarch64_neon
         UMAX v20.16b, v20.16b, v31.16b
 
         // Compute c0-c7
-        LDR  x8, [sp]
 
-        ADD  x9, x7,  x8
+        ADD  x9, x6,  x7
         CMP x0, 2
-        CSEL x9, x7, x9, LO
+        CSEL x9, x6, x9, LO
 
-        ADD x10, x9,  x8
+        ADD x10, x9,  x7
         CSEL x10, x9, x10, LS
 
-        ADD x11, x10, x8
+        ADD x11, x10, x7
         CMP x0, 4
         CSEL x11, x10, x11, LO
 
-        ADD x12, x11, x8
+        ADD x12, x11, x7
         CSEL x12, x11, x12, LS
 
-        ADD x13, x12, x8
+        ADD x13, x12, x7
         CMP x0, 6
         CSEL x13, x12, x13, LO
 
-        ADD x14, x13, x8
+        ADD x14, x13, x7
         CSEL x14, x13, x14, LS
 
-        ADD x15, x14, x8
+        ADD x15, x14, x7
         CMP x0, 8
         CSEL x15, x14, x15, NE
 
@@ -691,7 +689,7 @@ BEGIN_FUNCTION q8gemm_ukernel_8x8__aarch64_neon
         B.NE 4f
 
         // Store results
-        ST1  {v8.d}[0],  [x7]
+        ST1  {v8.d}[0],  [x6]
         ST1  {v8.d}[1],  [x9]
         ST1 {v12.d}[0], [x10]
         ST1 {v12.d}[1], [x11]
@@ -712,7 +710,7 @@ BEGIN_FUNCTION q8gemm_ukernel_8x8__aarch64_neon
         CMP x1, 4
         B.LO 5f
 
-        ST1  {v8.s}[0],  [x7], 4
+        ST1  {v8.s}[0],  [x6], 4
         ST1  {v8.s}[2],  [x9], 4
         ST1 {v12.s}[0], [x10], 4
         ST1 {v12.s}[2], [x11], 4
@@ -731,7 +729,7 @@ BEGIN_FUNCTION q8gemm_ukernel_8x8__aarch64_neon
         CMP x1, 2
         B.LO 6f
 
-        ST1  {v8.h}[0],  [x7], 2
+        ST1  {v8.h}[0],  [x6], 2
         ST1  {v8.h}[4],  [x9], 2
         ST1 {v12.h}[0], [x10], 2
         ST1 {v12.h}[4], [x11], 2
@@ -750,7 +748,7 @@ BEGIN_FUNCTION q8gemm_ukernel_8x8__aarch64_neon
         CMP x1, 1
         B.LO 7f
 
-        ST1  {v8.b}[0],  [x7]
+        ST1  {v8.b}[0],  [x6]
         ST1  {v8.b}[8],  [x9]
         ST1 {v12.b}[0], [x10]
         ST1 {v12.b}[8], [x11]
