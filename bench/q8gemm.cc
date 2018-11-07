@@ -84,13 +84,13 @@ class Q8GEMM : public benchmark::Fixture {
 
     a_.resize(mc() * kc());
     std::generate(a_.begin(), a_.end(), std::ref(rng));
-    b_.resize(nc() * kc());
+    k_.resize(nc() * kc());
+    std::generate(k_.begin(), k_.end(), std::ref(rng));
+    b_.resize(mc());
     std::generate(b_.begin(), b_.end(), std::ref(rng));
-    bias_.resize(mc());
-    std::generate(bias_.begin(), bias_.end(), std::ref(rng));
     w_.resize(kcStride() * ncStride() + ncStride() * sizeof(int32_t) / sizeof(uint8_t));
     std::fill(w_.begin(), w_.end(), 127);
-    pack_q8gemm_w(nc(), kc(), nr(), np(), kr(), b(), bias(), w());
+    pack_q8gemm_w(nc(), kc(), nr(), np(), kr(), k(), b(), w());
     c_.resize(mc() * nc());
     std::fill(c_.begin(), c_.end(), 0xA5);
 
@@ -101,8 +101,8 @@ class Q8GEMM : public benchmark::Fixture {
   {
     state.SetItemsProcessed(uint64_t(state.iterations()) * 2 * mc() * nc() * kc());
     a_.clear();
+    k_.clear();
     b_.clear();
-    bias_.clear();
     w_.clear();
     c_.clear();
   }
@@ -112,14 +112,14 @@ class Q8GEMM : public benchmark::Fixture {
     return a_.data();
   }
 
-  inline const uint8_t* b() const
+  inline const uint8_t* k() const
   {
-    return b_.data();
+    return k_.data();
   }
 
-  inline const int32_t* bias() const
+  inline const int32_t* b() const
   {
-    return bias_.data();
+    return b_.data();
   }
 
   inline uint8_t* w() {
@@ -187,8 +187,8 @@ class Q8GEMM : public benchmark::Fixture {
 
  protected:
   std::vector<uint8_t> a_;
-  std::vector<uint8_t> b_;
-  std::vector<int32_t> bias_;
+  std::vector<uint8_t> k_;
+  std::vector<int32_t> b_;
   std::vector<uint8_t, AlignedAllocator<uint8_t, 32>> w_;
   std::vector<uint8_t> c_;
   uint32_t mr_{0};
@@ -243,10 +243,10 @@ class Q8GEMM_XZP : public Q8GEMM {
 
     a_.resize(mc() * kc());
     std::generate(a_.begin(), a_.end(), std::ref(rng));
-    b_.resize(ncStride() * kcStride());
+    k_.resize(ncStride() * kcStride());
+    std::generate(k_.begin(), k_.end(), std::ref(rng));
+    b_.resize(roundUp(nc(), nr()));
     std::generate(b_.begin(), b_.end(), std::ref(rng));
-    bias_.resize(roundUp(nc(), nr()));
-    std::generate(bias_.begin(), bias_.end(), std::ref(rng));
     c_.resize(mc() * nc());
     std::fill(c_.begin(), c_.end(), 0xA5);
     as_.resize(roundUp(mc(), mr()));
@@ -259,7 +259,7 @@ class Q8GEMM_XZP : public Q8GEMM {
   {
     state.SetItemsProcessed(uint64_t(state.iterations()) * 2 * mc() * nc() * kc());
     a_.clear();
-    b_.clear();
+    k_.clear();
     c_.clear();
     as_.clear();
   }
@@ -329,7 +329,7 @@ class COMPUTE_ROW_SUM_Op : public Q8GEMM_XZP {
   {
     state.SetItemsProcessed(uint64_t(state.iterations()) * (mc() * kc()));
     a_.clear();
-    b_.clear();
+    k_.clear();
     c_.clear();
     as_.clear();
   }
@@ -349,10 +349,10 @@ class GEMMLOWP : public benchmark::Fixture {
 
     a_.resize(mc() * kc());
     std::generate(a_.begin(), a_.end(), std::ref(rng));
-    b_.resize(nc() * kc());
+    k_.resize(nc() * kc());
+    std::generate(k_.begin(), k_.end(), std::ref(rng));
+    b_.resize(nc());
     std::generate(b_.begin(), b_.end(), std::ref(rng));
-    bias_.resize(nc());
-    std::generate(bias_.begin(), bias_.end(), std::ref(rng));
     c_.resize(mc() * nc());
     std::fill(c_.begin(), c_.end(), 0xA5);
 
@@ -363,7 +363,7 @@ class GEMMLOWP : public benchmark::Fixture {
   {
     state.SetItemsProcessed(uint64_t(state.iterations()) * 2 * mc() * nc() * kc());
     a_.clear();
-    b_.clear();
+    k_.clear();
     c_.clear();
   }
 
@@ -372,14 +372,14 @@ class GEMMLOWP : public benchmark::Fixture {
     return a_.data();
   }
 
-  inline const uint8_t* b() const
+  inline const uint8_t* k() const
   {
-    return b_.data();
+    return k_.data();
   }
 
-  inline const int32_t* bias() const
+  inline const int32_t* b() const
   {
-    return bias_.data();
+    return b_.data();
   }
 
   inline uint8_t* c()
@@ -407,8 +407,8 @@ class GEMMLOWP : public benchmark::Fixture {
 
  private:
   std::vector<uint8_t> a_;
-  std::vector<uint8_t> b_;
-  std::vector<int32_t> bias_;
+  std::vector<uint8_t> k_;
+  std::vector<int32_t> b_;
   std::vector<uint8_t> c_;
   uint32_t mc_;
   uint32_t nc_;
@@ -631,7 +631,7 @@ BENCHMARK_TEMPLATE_F(Q8GEMM_XZP_L1, 4x8c2__aarch32_neon, 4, 8, 8, 2)(benchmark::
   for (auto _ : state) {
     q8gemm_compute_row_sum(a(), mr(), kc(), kc(), -64, as());
     q8gemm_xzp_ukernel_4x8c2__aarch32_neon(
-        mr(), nr(), kc(), a(), kc(), b(), bias(), c(), mr(), as(), requantizationParams());
+        mr(), nr(), kc(), a(), kc(), k(), b(), c(), mr(), as(), requantizationParams());
   }
 }
 
@@ -649,8 +649,8 @@ BENCHMARK_TEMPLATE_DEFINE_F(Q8GEMM_XZP_Op, 4x8c2__aarch32_neon, 4, 8, 8, 2)(benc
             kc(),
             a() + m * kc(),
             kc(),
-            b() + n * kcStride(),
-            bias() + n,
+            k() + n * kcStride(),
+            b() + n,
             c() + m * nc() + n,
             nc(),
             as() + m,
@@ -779,7 +779,7 @@ BENCHMARK_TEMPLATE_F(Q8GEMM_XZP_L1, 4x8c2_neon, 4, 8, 8, 2)(benchmark::State& st
   for (auto _ : state) {
     q8gemm_compute_row_sum(a(), mr(), kc(), kc(), -64, as());
     q8gemm_xzp_ukernel_4x8c2__neon(
-        mr(), nr(), kc(), a(), kc(), b(), bias(), c(), mr(), as(),requantizationParams());
+        mr(), nr(), kc(), a(), kc(), k(), b(), c(), mr(), as(),requantizationParams());
   }
 }
 
@@ -797,8 +797,8 @@ BENCHMARK_TEMPLATE_DEFINE_F(Q8GEMM_XZP_Op, 4x8c2_neon, 4, 8, 8, 2)(benchmark::St
             kc(),
             a() + m * kc(),
             kc(),
-            b() + n * kcStride(),
-            bias() + n,
+            k() + n * kcStride(),
+            b() + n,
             c() + m * nc() + n,
             nc(),
             as() + m,
@@ -885,9 +885,9 @@ BENCHMARK_DEFINE_F(GEMMLOWP, single_threaded)(benchmark::State& state)
 {
   for (auto _ : state) {
     gemmlowp::MatrixMap<const uint8_t, gemmlowp::MapOrder::RowMajor> AM(a(), mc(), kc(), kc());
-    gemmlowp::MatrixMap<const uint8_t, gemmlowp::MapOrder::ColMajor> BM(b(), kc(), nc(), kc());
+    gemmlowp::MatrixMap<const uint8_t, gemmlowp::MapOrder::ColMajor> BM(k(), kc(), nc(), kc());
     gemmlowp::MatrixMap<uint8_t, gemmlowp::MapOrder::RowMajor> CM(c(), mc(), nc(), nc());
-    const auto& output_pipeline = GemmlowpOutputPipeline::Make(bias(), nc(), 127, 1, 2, 0, 255);
+    const auto& output_pipeline = GemmlowpOutputPipeline::Make(b(), nc(), 127, 1, 2, 0, 255);
     gemmlowp::GemmWithOutputPipeline<uint8_t, uint8_t, gemmlowp::L8R8WithLhsNonzeroBitDepthParams>(
         &threadingContext, AM, BM, &CM, 2, 1, output_pipeline);
   }

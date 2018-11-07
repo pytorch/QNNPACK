@@ -306,19 +306,19 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
       }
     }
 
-    convolution->bias = malloc(sizeof(int32_t) * groups * n_stride);
-    if (convolution->bias == NULL) {
-      qnnp_log_error("failed to allocate %zu bytes for packed bias data", sizeof(int32_t) * groups * n_stride);
-      goto error;
-    }
-    for (uint32_t group = 0; group < groups; group++) {
-      memcpy(
-        (int32_t*) convolution->bias + group * n_stride,
-        bias + group * group_output_channels,
-        sizeof(int32_t) * group_output_channels);
-    }
-
     if (flags & QNNP_CONVOLUTION_FLAG_XZP_GEMM) {
+      convolution->bias = malloc(sizeof(int32_t) * groups * n_stride);
+      if (convolution->bias == NULL) {
+        qnnp_log_error("failed to allocate %zu bytes for packed bias data", sizeof(int32_t) * groups * n_stride);
+        goto error;
+      }
+      for (uint32_t group = 0; group < groups; group++) {
+        memcpy(
+          (int32_t*) convolution->bias + group * n_stride,
+          bias + group * group_output_channels,
+          sizeof(int32_t) * group_output_channels);
+      }
+
       /* compute row sum for b and fold into bias */
       int32_t* bias_buf = (int32_t*) malloc(sizeof(int32_t) * groups * n_stride);
       const int32_t zero_point_product = group_input_channels * input_zero_point * kernel_zero_point;
