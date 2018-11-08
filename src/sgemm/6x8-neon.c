@@ -69,6 +69,20 @@ void sgemm_ukernel_6x8__neon(
       const float32x4_t vb0123 = vld1q_f32(w); w += 4;
       const float32x4_t vb4567 = vld1q_f32(w); w += 4;
 
+#if defined(__aarch64__)
+      vacc0x0123 = vfmaq_lane_f32(vacc0x0123, vb0123, va0, 0);
+      vacc0x4567 = vfmaq_lane_f32(vacc0x4567, vb4567, va0, 0);
+      vacc1x0123 = vfmaq_lane_f32(vacc1x0123, vb0123, va1, 0);
+      vacc1x4567 = vfmaq_lane_f32(vacc1x4567, vb4567, va1, 0);
+      vacc2x0123 = vfmaq_lane_f32(vacc2x0123, vb0123, va2, 0);
+      vacc2x4567 = vfmaq_lane_f32(vacc2x4567, vb4567, va2, 0);
+      vacc3x0123 = vfmaq_lane_f32(vacc3x0123, vb0123, va3, 0);
+      vacc3x4567 = vfmaq_lane_f32(vacc3x4567, vb4567, va3, 0);
+      vacc4x0123 = vfmaq_lane_f32(vacc4x0123, vb0123, va4, 0);
+      vacc4x4567 = vfmaq_lane_f32(vacc4x4567, vb4567, va4, 0);
+      vacc5x0123 = vfmaq_lane_f32(vacc5x0123, vb0123, va5, 0);
+      vacc5x4567 = vfmaq_lane_f32(vacc5x4567, vb4567, va5, 0);
+#else
       vacc0x0123 = vmlaq_lane_f32(vacc0x0123, vb0123, va0, 0);
       vacc0x4567 = vmlaq_lane_f32(vacc0x4567, vb4567, va0, 0);
       vacc1x0123 = vmlaq_lane_f32(vacc1x0123, vb0123, va1, 0);
@@ -81,12 +95,27 @@ void sgemm_ukernel_6x8__neon(
       vacc4x4567 = vmlaq_lane_f32(vacc4x4567, vb4567, va4, 0);
       vacc5x0123 = vmlaq_lane_f32(vacc5x0123, vb0123, va5, 0);
       vacc5x4567 = vmlaq_lane_f32(vacc5x4567, vb4567, va5, 0);
+#endif
     }
 
     {
       const float32x4_t vb0123 = vld1q_f32(w); w += 4;
       const float32x4_t vb4567 = vld1q_f32(w); w += 4;
 
+#if defined(__aarch64__)
+      vacc0x0123 = vfmaq_lane_f32(vacc0x0123, vb0123, va0, 1);
+      vacc0x4567 = vfmaq_lane_f32(vacc0x4567, vb4567, va0, 1);
+      vacc1x0123 = vfmaq_lane_f32(vacc1x0123, vb0123, va1, 1);
+      vacc1x4567 = vfmaq_lane_f32(vacc1x4567, vb4567, va1, 1);
+      vacc2x0123 = vfmaq_lane_f32(vacc2x0123, vb0123, va2, 1);
+      vacc2x4567 = vfmaq_lane_f32(vacc2x4567, vb4567, va2, 1);
+      vacc3x0123 = vfmaq_lane_f32(vacc3x0123, vb0123, va3, 1);
+      vacc3x4567 = vfmaq_lane_f32(vacc3x4567, vb4567, va3, 1);
+      vacc4x0123 = vfmaq_lane_f32(vacc4x0123, vb0123, va4, 1);
+      vacc4x4567 = vfmaq_lane_f32(vacc4x4567, vb4567, va4, 1);
+      vacc5x0123 = vfmaq_lane_f32(vacc5x0123, vb0123, va5, 1);
+      vacc5x4567 = vfmaq_lane_f32(vacc5x4567, vb4567, va5, 1);
+#else
       vacc0x0123 = vmlaq_lane_f32(vacc0x0123, vb0123, va0, 1);
       vacc0x4567 = vmlaq_lane_f32(vacc0x4567, vb4567, va0, 1);
       vacc1x0123 = vmlaq_lane_f32(vacc1x0123, vb0123, va1, 1);
@@ -99,6 +128,7 @@ void sgemm_ukernel_6x8__neon(
       vacc4x4567 = vmlaq_lane_f32(vacc4x4567, vb4567, va4, 1);
       vacc5x0123 = vmlaq_lane_f32(vacc5x0123, vb0123, va5, 1);
       vacc5x4567 = vmlaq_lane_f32(vacc5x4567, vb4567, va5, 1);
+#endif
     }
   }
   if (k != 0) {
@@ -112,6 +142,20 @@ void sgemm_ukernel_6x8__neon(
     const float32x4_t vb0123 = vld1q_f32(w); w += 4;
     const float32x4_t vb4567 = vld1q_f32(w); w += 4;
 
+#if defined(__aarch64__)
+    vacc0x0123 = vfmaq_f32(vacc0x0123, vb0123, va0);
+    vacc0x4567 = vfmaq_f32(vacc0x4567, vb4567, va0);
+    vacc1x0123 = vfmaq_f32(vacc1x0123, vb0123, va1);
+    vacc1x4567 = vfmaq_f32(vacc1x4567, vb4567, va1);
+    vacc2x0123 = vfmaq_f32(vacc2x0123, vb0123, va2);
+    vacc2x4567 = vfmaq_f32(vacc2x4567, vb4567, va2);
+    vacc3x0123 = vfmaq_f32(vacc3x0123, vb0123, va3);
+    vacc3x4567 = vfmaq_f32(vacc3x4567, vb4567, va3);
+    vacc4x0123 = vfmaq_f32(vacc4x0123, vb0123, va4);
+    vacc4x4567 = vfmaq_f32(vacc4x4567, vb4567, va4);
+    vacc5x0123 = vfmaq_f32(vacc5x0123, vb0123, va5);
+    vacc5x4567 = vfmaq_f32(vacc5x4567, vb4567, va5);
+#else
     vacc0x0123 = vmlaq_f32(vacc0x0123, vb0123, va0);
     vacc0x4567 = vmlaq_f32(vacc0x4567, vb4567, va0);
     vacc1x0123 = vmlaq_f32(vacc1x0123, vb0123, va1);
@@ -124,6 +168,7 @@ void sgemm_ukernel_6x8__neon(
     vacc4x4567 = vmlaq_f32(vacc4x4567, vb4567, va4);
     vacc5x0123 = vmlaq_f32(vacc5x0123, vb0123, va5);
     vacc5x4567 = vmlaq_f32(vacc5x4567, vb4567, va5);
+#endif
   }
   const float32x4_t vmax = vld1q_dup_f32(&clamping_params->max);
   vacc0x0123 = vminq_f32(vacc0x0123, vmax);
