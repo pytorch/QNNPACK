@@ -68,6 +68,34 @@
       .testMicroKernel(q8conv_ukernel_4x8__aarch32_neon);
   }
 
+  TEST(Q8CONV_4x8_AARCH32_NEON, k_eq_8_azp_only) {
+    GemmTester()
+      .mr(4)
+      .nr(8)
+      .np(8)
+      .kr(1)
+      .m(4)
+      .n(8)
+      .k(8)
+      .aZeroPoint(255)
+      .bZeroPoint(0)
+      .testMicroKernel(q8conv_ukernel_4x8__aarch32_neon);
+  }
+
+  TEST(Q8CONV_4x8_AARCH32_NEON, k_eq_8_bzp_only) {
+    GemmTester()
+      .mr(4)
+      .nr(8)
+      .np(8)
+      .kr(1)
+      .m(4)
+      .n(8)
+      .k(8)
+      .aZeroPoint(0)
+      .bZeroPoint(255)
+      .testMicroKernel(q8conv_ukernel_4x8__aarch32_neon);
+  }
+
   TEST(Q8CONV_4x8_AARCH32_NEON, k_gt_8) {
     for (size_t k = 9; k < 16; k++) {
       GemmTester()
@@ -95,6 +123,40 @@
         .k(k)
         .aStride(37)
         .cStride(17)
+        .testMicroKernel(q8conv_ukernel_4x8__aarch32_neon);
+    }
+  }
+
+  TEST(Q8CONV_4x8_AARCH32_NEON, k_gt_8_azp_only) {
+    for (size_t k = 9; k < 16; k++) {
+      GemmTester()
+        .mr(4)
+        .nr(8)
+        .np(8)
+        .kr(1)
+        .m(4)
+        .n(8)
+        .k(k)
+        .aStride(37)
+        .aZeroPoint(255)
+        .bZeroPoint(0)
+        .testMicroKernel(q8conv_ukernel_4x8__aarch32_neon);
+    }
+  }
+
+  TEST(Q8CONV_4x8_AARCH32_NEON, k_gt_8_bzp_only) {
+    for (size_t k = 9; k < 16; k++) {
+      GemmTester()
+        .mr(4)
+        .nr(8)
+        .np(8)
+        .kr(1)
+        .m(4)
+        .n(8)
+        .k(k)
+        .aStride(37)
+        .aZeroPoint(0)
+        .bZeroPoint(255)
         .testMicroKernel(q8conv_ukernel_4x8__aarch32_neon);
     }
   }
@@ -225,6 +287,34 @@
       .testMicroKernel(q8conv_ukernel_8x8__aarch64_neon);
   }
 
+  TEST(Q8CONV_8x8_AARCH64_NEON, k_eq_8_azp_only) {
+    GemmTester()
+      .mr(8)
+      .nr(8)
+      .np(8)
+      .kr(1)
+      .m(8)
+      .n(8)
+      .k(8)
+      .aZeroPoint(255)
+      .bZeroPoint(0)
+      .testMicroKernel(q8conv_ukernel_8x8__aarch64_neon);
+  }
+
+  TEST(Q8CONV_8x8_AARCH64_NEON, k_eq_8_bzp_only) {
+    GemmTester()
+      .mr(8)
+      .nr(8)
+      .np(8)
+      .kr(1)
+      .m(8)
+      .n(8)
+      .k(8)
+      .aZeroPoint(0)
+      .bZeroPoint(255)
+      .testMicroKernel(q8conv_ukernel_8x8__aarch64_neon);
+  }
+
   TEST(Q8CONV_8x8_AARCH64_NEON, k_gt_8) {
     for (size_t k = 9; k < 16; k++) {
       GemmTester()
@@ -252,6 +342,40 @@
         .k(k)
         .aStride(37)
         .cStride(17)
+        .testMicroKernel(q8conv_ukernel_8x8__aarch64_neon);
+    }
+  }
+
+  TEST(Q8CONV_8x8_AARCH64_NEON, k_gt_8_azp_only) {
+    for (size_t k = 9; k < 16; k++) {
+      GemmTester()
+        .mr(8)
+        .nr(8)
+        .np(8)
+        .kr(1)
+        .m(8)
+        .n(8)
+        .k(k)
+        .aStride(37)
+        .aZeroPoint(255)
+        .bZeroPoint(0)
+        .testMicroKernel(q8conv_ukernel_8x8__aarch64_neon);
+    }
+  }
+
+  TEST(Q8CONV_8x8_AARCH64_NEON, k_gt_8_bzp_only) {
+    for (size_t k = 9; k < 16; k++) {
+      GemmTester()
+        .mr(8)
+        .nr(8)
+        .np(8)
+        .kr(1)
+        .m(8)
+        .n(8)
+        .k(k)
+        .aStride(37)
+        .aZeroPoint(0)
+        .bZeroPoint(255)
         .testMicroKernel(q8conv_ukernel_8x8__aarch64_neon);
     }
   }
@@ -382,6 +506,34 @@
       .testMicroKernel(q8conv_ukernel_4x8__neon);
   }
 
+  TEST(Q8CONV_4x8_NEON, k_eq_8_azp_only) {
+    GemmTester()
+      .mr(4)
+      .nr(8)
+      .np(8)
+      .kr(1)
+      .m(4)
+      .n(8)
+      .k(8)
+      .aZeroPoint(255)
+      .bZeroPoint(0)
+      .testMicroKernel(q8conv_ukernel_4x8__neon);
+  }
+
+  TEST(Q8CONV_4x8_NEON, k_eq_8_bzp_only) {
+    GemmTester()
+      .mr(4)
+      .nr(8)
+      .np(8)
+      .kr(1)
+      .m(4)
+      .n(8)
+      .k(8)
+      .aZeroPoint(0)
+      .bZeroPoint(255)
+      .testMicroKernel(q8conv_ukernel_4x8__neon);
+  }
+
   TEST(Q8CONV_4x8_NEON, k_gt_8) {
     for (size_t k = 9; k < 16; k++) {
       GemmTester()
@@ -409,6 +561,40 @@
         .k(k)
         .aStride(37)
         .cStride(17)
+        .testMicroKernel(q8conv_ukernel_4x8__neon);
+    }
+  }
+
+  TEST(Q8CONV_4x8_NEON, k_gt_8_azp_only) {
+    for (size_t k = 9; k < 16; k++) {
+      GemmTester()
+        .mr(4)
+        .nr(8)
+        .np(8)
+        .kr(1)
+        .m(4)
+        .n(8)
+        .k(k)
+        .aStride(37)
+        .aZeroPoint(255)
+        .bZeroPoint(0)
+        .testMicroKernel(q8conv_ukernel_4x8__neon);
+    }
+  }
+
+  TEST(Q8CONV_4x8_NEON, k_gt_8_bzp_only) {
+    for (size_t k = 9; k < 16; k++) {
+      GemmTester()
+        .mr(4)
+        .nr(8)
+        .np(8)
+        .kr(1)
+        .m(4)
+        .n(8)
+        .k(k)
+        .aStride(37)
+        .aZeroPoint(0)
+        .bZeroPoint(255)
         .testMicroKernel(q8conv_ukernel_4x8__neon);
     }
   }
@@ -537,6 +723,34 @@
       .testMicroKernel(q8conv_ukernel_8x8__neon);
   }
 
+  TEST(Q8CONV_8x8_NEON, k_eq_8_azp_only) {
+    GemmTester()
+      .mr(8)
+      .nr(8)
+      .np(8)
+      .kr(1)
+      .m(8)
+      .n(8)
+      .k(8)
+      .aZeroPoint(255)
+      .bZeroPoint(0)
+      .testMicroKernel(q8conv_ukernel_8x8__neon);
+  }
+
+  TEST(Q8CONV_8x8_NEON, k_eq_8_bzp_only) {
+    GemmTester()
+      .mr(8)
+      .nr(8)
+      .np(8)
+      .kr(1)
+      .m(8)
+      .n(8)
+      .k(8)
+      .aZeroPoint(0)
+      .bZeroPoint(255)
+      .testMicroKernel(q8conv_ukernel_8x8__neon);
+  }
+
   TEST(Q8CONV_8x8_NEON, k_gt_8) {
     for (size_t k = 9; k < 16; k++) {
       GemmTester()
@@ -564,6 +778,40 @@
         .k(k)
         .aStride(37)
         .cStride(17)
+        .testMicroKernel(q8conv_ukernel_8x8__neon);
+    }
+  }
+
+  TEST(Q8CONV_8x8_NEON, k_gt_8_azp_only) {
+    for (size_t k = 9; k < 16; k++) {
+      GemmTester()
+        .mr(8)
+        .nr(8)
+        .np(8)
+        .kr(1)
+        .m(8)
+        .n(8)
+        .k(k)
+        .aStride(37)
+        .aZeroPoint(255)
+        .bZeroPoint(0)
+        .testMicroKernel(q8conv_ukernel_8x8__neon);
+    }
+  }
+
+  TEST(Q8CONV_8x8_NEON, k_gt_8_bzp_only) {
+    for (size_t k = 9; k < 16; k++) {
+      GemmTester()
+        .mr(8)
+        .nr(8)
+        .np(8)
+        .kr(1)
+        .m(8)
+        .n(8)
+        .k(k)
+        .aStride(37)
+        .aZeroPoint(0)
+        .bZeroPoint(255)
         .testMicroKernel(q8conv_ukernel_8x8__neon);
     }
   }
@@ -694,6 +942,34 @@
       .testMicroKernel(q8conv_ukernel_4x4c2__sse2);
   }
 
+  TEST(Q8CONV_4x4c2_SSE2, k_eq_8_azp_only) {
+    GemmTester()
+      .mr(4)
+      .nr(4)
+      .np(4)
+      .kr(2)
+      .m(4)
+      .n(4)
+      .k(8)
+      .aZeroPoint(255)
+      .bZeroPoint(0)
+      .testMicroKernel(q8conv_ukernel_4x4c2__sse2);
+  }
+
+  TEST(Q8CONV_4x4c2_SSE2, k_eq_8_bzp_only) {
+    GemmTester()
+      .mr(4)
+      .nr(4)
+      .np(4)
+      .kr(2)
+      .m(4)
+      .n(4)
+      .k(8)
+      .aZeroPoint(0)
+      .bZeroPoint(255)
+      .testMicroKernel(q8conv_ukernel_4x4c2__sse2);
+  }
+
   TEST(Q8CONV_4x4c2_SSE2, k_gt_8) {
     for (size_t k = 9; k < 16; k++) {
       GemmTester()
@@ -721,6 +997,40 @@
         .k(k)
         .aStride(37)
         .cStride(17)
+        .testMicroKernel(q8conv_ukernel_4x4c2__sse2);
+    }
+  }
+
+  TEST(Q8CONV_4x4c2_SSE2, k_gt_8_azp_only) {
+    for (size_t k = 9; k < 16; k++) {
+      GemmTester()
+        .mr(4)
+        .nr(4)
+        .np(4)
+        .kr(2)
+        .m(4)
+        .n(4)
+        .k(k)
+        .aStride(37)
+        .aZeroPoint(255)
+        .bZeroPoint(0)
+        .testMicroKernel(q8conv_ukernel_4x4c2__sse2);
+    }
+  }
+
+  TEST(Q8CONV_4x4c2_SSE2, k_gt_8_bzp_only) {
+    for (size_t k = 9; k < 16; k++) {
+      GemmTester()
+        .mr(4)
+        .nr(4)
+        .np(4)
+        .kr(2)
+        .m(4)
+        .n(4)
+        .k(k)
+        .aStride(37)
+        .aZeroPoint(0)
+        .bZeroPoint(255)
         .testMicroKernel(q8conv_ukernel_4x4c2__sse2);
     }
   }

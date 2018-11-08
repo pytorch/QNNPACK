@@ -131,6 +131,24 @@ class GemmTester {
     return this->cStride_ == 0 ? n() : this->cStride_;
   }
 
+  inline GemmTester& aZeroPoint(uint8_t aZeroPoint) {
+    this->aZeroPoint_ = aZeroPoint;
+    return *this;
+  }
+
+  inline uint8_t aZeroPoint() const {
+    return this->aZeroPoint_;
+  }
+
+  inline GemmTester& bZeroPoint(uint8_t bZeroPoint) {
+    this->bZeroPoint_ = bZeroPoint;
+    return *this;
+  }
+
+  inline uint8_t bZeroPoint() const {
+    return this->bZeroPoint_;
+  }
+
   inline GemmTester& qmin(uint8_t qmin) {
     this->qmin_ = qmin;
     return *this;
@@ -168,9 +186,6 @@ class GemmTester {
     auto s32rng = std::bind(std::uniform_int_distribution<int32_t>(-10000, 10000), rng);
     auto u8rng = std::bind(std::uniform_int_distribution<uint8_t>(), rng);
 
-    const uint8_t aZeroPoint = 127;
-    const uint8_t bZeroPoint = 127;
-
     std::vector<uint8_t> a((m() - 1) * aStride() + k() + 8);
     std::vector<uint8_t> b(n() * k());
     std::vector<int32_t> bias(nr());
@@ -187,10 +202,10 @@ class GemmTester {
       std::generate(bias.begin(), bias.end(), std::ref(s32rng));
       std::fill(c.begin(), c.end(), 0xA5);
 
-      std::fill(packedW.begin(), packedW.end(), bZeroPoint);
+      std::fill(packedW.begin(), packedW.end(), bZeroPoint());
       pack_q8gemm_w(n(), k(),
         nr(), np(), kr(),
-        aZeroPoint, bZeroPoint,
+        aZeroPoint(), bZeroPoint(),
         b.data(), bias.data(), packedW.data());
 
       ASSERT_NE(*std::max_element(a.cbegin(), a.cend()), *std::min_element(a.cbegin(), a.cend()));
@@ -205,8 +220,8 @@ class GemmTester {
             ASSERT_LT(mIndex * n() + nIndex, acc.size());
             ASSERT_LT(mIndex * k() + kIndex, a.size());
             acc[mIndex * n() + nIndex] +=
-                (int32_t(aPtr[mIndex * aStride() + kIndex]) - int32_t(aZeroPoint)) *
-                (int32_t(b[nIndex * k() + kIndex]) - int32_t(bZeroPoint));
+                (int32_t(aPtr[mIndex * aStride() + kIndex]) - int32_t(aZeroPoint())) *
+                (int32_t(b[nIndex * k() + kIndex]) - int32_t(bZeroPoint()));
           }
           acc[mIndex * n() + nIndex] += bias[nIndex];
         }
@@ -228,7 +243,7 @@ class GemmTester {
       const float requantizationScale = 1.0f / float(cScale);
       const union qnnp_conv_quantization_params quantizationParams =
         qnnp_compute_conv_quantization_params(
-          aZeroPoint, bZeroPoint,
+          aZeroPoint(), bZeroPoint(),
           requantizationScale, cZeroPoint, qmin(), qmax());
       const union qnnp_q31_requantization_params scalarRequantizationParams =
         qnnp_compute_scalar_requantization_params(
@@ -272,9 +287,6 @@ class GemmTester {
     auto s32rng = std::bind(std::uniform_int_distribution<int32_t>(-10000, 10000), rng);
     auto u8rng = std::bind(std::uniform_int_distribution<uint8_t>(), rng);
 
-    const uint8_t aZeroPoint = 127;
-    const uint8_t bZeroPoint = 127;
-
     std::vector<uint8_t> a((mr() - 1) * aStride() + k() + 8);
     std::vector<uint8_t> b(n() * ks() * k());
     std::vector<uint8_t, AlignedAllocator<uint8_t, 32>> packedW((ks() * packedK() + sizeof(int32_t) / sizeof(uint8_t)) * packedN());
@@ -292,9 +304,9 @@ class GemmTester {
       std::generate(bias.begin(), bias.end(), std::ref(s32rng));
       std::fill(c.begin(), c.end(), 0xA5);
 
-      std::fill(packedW.begin(), packedW.end(), bZeroPoint);
+      std::fill(packedW.begin(), packedW.end(), bZeroPoint());
       pack_q8conv_w(n(), ks(), k(), np(), kr(),
-        aZeroPoint, bZeroPoint,
+        aZeroPoint(), bZeroPoint(),
         b.data(), bias.data(), packedW.data());
 
       ASSERT_NE(*std::max_element(a.cbegin(), a.cend()), *std::min_element(a.cbegin(), a.cend()));
@@ -324,8 +336,8 @@ class GemmTester {
                 ASSERT_LT(kBlockStart + kBlockOffset, aStride());
 
                 acc[mIndex * n() + nIndex] +=
-                  (int32_t(im2col[ksIndex * mr() + mIndex][kBlockStart + kBlockOffset]) - int32_t(aZeroPoint)) *
-                  (int32_t(b[(nIndex * ks() + ksIndex) * k() + kBlockStart + kBlockOffset]) - int32_t(bZeroPoint));
+                  (int32_t(im2col[ksIndex * mr() + mIndex][kBlockStart + kBlockOffset]) - int32_t(aZeroPoint())) *
+                  (int32_t(b[(nIndex * ks() + ksIndex) * k() + kBlockStart + kBlockOffset]) - int32_t(bZeroPoint()));
               }
             }
           }
@@ -349,7 +361,7 @@ class GemmTester {
       const float requantizationScale = 1.0f / float(cScale);
       const union qnnp_conv_quantization_params quantizationParams =
         qnnp_compute_conv_quantization_params(
-          aZeroPoint, bZeroPoint,
+          aZeroPoint(), bZeroPoint(),
           requantizationScale, cZeroPoint, qmin(), qmax());
       const union qnnp_q31_requantization_params scalarRequantizationParams =
         qnnp_compute_scalar_requantization_params(
@@ -411,9 +423,6 @@ class GemmTester {
     std::random_device rng_device;
     auto rng = std::bind(std::uniform_int_distribution<uint8_t>(), std::mt19937(rng_device()));
 
-    const uint8_t aZeroPoint = 0x80;
-    const uint8_t bZeroPoint = 0x80;
-
     std::vector<uint8_t> a((m() - 1) * aStride() + k() + 8);
     std::vector<uint8_t, AlignedAllocator<uint8_t, 32>> b(n() * k());
     std::vector<uint8_t, AlignedAllocator<uint8_t, 32>> packedB(packedN() * packedK());
@@ -448,9 +457,9 @@ class GemmTester {
       ASSERT_NE(*std::max_element(b.cbegin(), b.cend()), *std::min_element(b.cbegin(), b.cend()));
 
       /* compute row sums of a and b */
-      q8gemm_compute_row_sum(aPtr, m(), k(), aStride(), -bZeroPoint, as.data(), q8sum_rows);
-      q8gemm_compute_row_sum(b.data(), n(), k(), k(), -aZeroPoint, biasBuf.data(), q8sum_rows);
-      const int32_t zeropoint_product = k() * aZeroPoint * bZeroPoint;
+      q8gemm_compute_row_sum(aPtr, m(), k(), aStride(), -bZeroPoint(), as.data(), q8sum_rows);
+      q8gemm_compute_row_sum(b.data(), n(), k(), k(), -aZeroPoint(), biasBuf.data(), q8sum_rows);
+      const int32_t zeropoint_product = k() * aZeroPoint() * bZeroPoint();
       for (size_t nIndex = 0; nIndex < n(); nIndex++) {
         biasBuf[nIndex] += bias[nIndex] + zeropoint_product;
       }
@@ -472,16 +481,16 @@ class GemmTester {
                 bAcc += (int32_t) b[nIndex * k() + kBlockStart + kBlockOffset];
               }
               cAcc[mIndex * n() + nIndex] +=
-                  ((int32_t) aPtr[mIndex * aStride() + kBlockStart + kBlockOffset] - (int32_t) aZeroPoint) *
-                  ((int32_t) b[nIndex * k() + kBlockStart + kBlockOffset] - (int32_t) bZeroPoint);
+                  (int32_t(aPtr[mIndex * aStride() + kBlockStart + kBlockOffset]) - int32_t(aZeroPoint())) *
+                  (int32_t(b[nIndex * k() + kBlockStart + kBlockOffset]) - int32_t(bZeroPoint()));
             }
           }
           if (mIndex == 0) {
-            biasRef[nIndex] += bAcc * (-aZeroPoint) + k() * aZeroPoint * bZeroPoint;
+            biasRef[nIndex] += bAcc * (-aZeroPoint()) + k() * aZeroPoint() * bZeroPoint();
           }
           cAcc[mIndex * n() + nIndex] += bias[nIndex];
         }
-        asRef[mIndex] *= -bZeroPoint;
+        asRef[mIndex] *= -bZeroPoint();
       }
 
       for (size_t mIndex = 0; mIndex < m(); mIndex++) {
@@ -751,6 +760,8 @@ class GemmTester {
   size_t ks_{1};
   size_t aStride_{0};
   size_t cStride_{0};
+  uint8_t aZeroPoint_{127};
+  uint8_t bZeroPoint_{127};
   uint8_t qmin_{0};
   uint8_t qmax_{255};
   size_t iterations_{15};

@@ -125,6 +125,24 @@ class DepthwiseMicrokernelTester {
     }
   }
 
+  inline DepthwiseMicrokernelTester& inputZeroPoint(uint8_t inputZeroPoint) {
+    this->inputZeroPoint_ = inputZeroPoint;
+    return *this;
+  }
+
+  inline uint8_t inputZeroPoint() const {
+    return this->inputZeroPoint_;
+  }
+
+  inline DepthwiseMicrokernelTester& kernelZeroPoint(uint8_t kernelZeroPoint) {
+    this->kernelZeroPoint_ = kernelZeroPoint;
+    return *this;
+  }
+
+  inline uint8_t kernelZeroPoint() const {
+    return this->kernelZeroPoint_;
+  }
+
   inline DepthwiseMicrokernelTester& qmin(uint8_t qmin) {
     this->qmin_ = qmin;
     return *this;
@@ -169,8 +187,6 @@ class DepthwiseMicrokernelTester {
     std::vector<const uint8_t*> indirectInput(kernelSize() + (width() * subsampling() - 1) * kernelHeight());
 
     const uint8_t* inputPtr = input.data() + 8;
-    const uint8_t inputZeroPoint = 127;
-    const uint8_t kernelZeroPoint = 127;
 
     for (size_t iteration = 0; iteration < iterations(); iteration++) {
       std::generate(input.begin(), input.end(), std::ref(u8rng));
@@ -201,7 +217,7 @@ class DepthwiseMicrokernelTester {
       } else {
         pack_q8dw_w(
           kernelHeight(), kernelWidth(), channels(), cr(),
-          inputZeroPoint, kernelZeroPoint,
+          inputZeroPoint(), kernelZeroPoint(),
           kernel.data(), bias.data(), packedWeights.data());
       }
       for (size_t i = 0; i < kernelSize() + (width() * subsampling() - 1) * kernelHeight(); i++) {
@@ -215,8 +231,8 @@ class DepthwiseMicrokernelTester {
           for (size_t kx = 0; kx < kernelWidth(); kx++) {
             for (size_t ky = 0; ky < kernelHeight(); ky++) {
               acc +=
-                (int32_t(indirectInput[(x * subsampling() + kx) * kernelHeight() + ky][c]) - int32_t(inputZeroPoint)) *
-                (int32_t(kernel[(c * kernelHeight() + ky) * kernelWidth() + kx]) - int32_t(kernelZeroPoint));
+                (int32_t(indirectInput[(x * subsampling() + kx) * kernelHeight() + ky][c]) - int32_t(inputZeroPoint())) *
+                (int32_t(kernel[(c * kernelHeight() + ky) * kernelWidth() + kx]) - int32_t(kernelZeroPoint()));
             }
           }
           accumulators[x * channels() + c] = acc;
@@ -235,7 +251,7 @@ class DepthwiseMicrokernelTester {
       const float requantizationScale = 1.0f / float(outputScale);
       const union qnnp_conv_quantization_params quantizationParams =
         qnnp_compute_conv_quantization_params(
-          inputZeroPoint, kernelZeroPoint,
+          inputZeroPoint(), kernelZeroPoint(),
           requantizationScale, outputZeroPoint, qmin(), qmax());
       const union qnnp_q31_requantization_params scalarRequantizationParams =
         qnnp_compute_scalar_requantization_params(
@@ -283,6 +299,8 @@ class DepthwiseMicrokernelTester {
   uint32_t kernelWidth_{1};
   uint32_t inputStride_{0};
   uint32_t outputStride_{0};
+  uint8_t inputZeroPoint_{127};
+  uint8_t kernelZeroPoint_{127};
   uint8_t qmin_{0};
   uint8_t qmax_{255};
   size_t iterations_{3};
