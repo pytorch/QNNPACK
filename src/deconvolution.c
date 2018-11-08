@@ -153,11 +153,12 @@ enum qnnp_status qnnp_create_deconvolution2d_nhwc_q8(
 
   for (uint32_t group = 0; group < groups; group++) {
     pack_q8deconv_w(
-        group_output_channels, kernel_size, group_input_channels,
-        nr, kr,
-        kernel + group * group_output_channels * kernel_size * group_input_channels,
-        bias + group * group_output_channels,
-        (void*) ((uintptr_t) deconvolution->packed_kernel + group * packed_group_weights_size));
+      group_output_channels, kernel_size, group_input_channels,
+      nr, kr,
+      input_zero_point, kernel_zero_point,
+      kernel + group * group_output_channels * kernel_size * group_input_channels,
+      bias + group * group_output_channels,
+      (void*) ((uintptr_t) deconvolution->packed_kernel + group * packed_group_weights_size));
   }
 
   if (flags & QNNP_CONVOLUTION_FLAG_ZERO) {

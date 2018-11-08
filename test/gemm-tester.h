@@ -188,7 +188,10 @@ class GemmTester {
       std::fill(c.begin(), c.end(), 0xA5);
 
       std::fill(packedW.begin(), packedW.end(), bZeroPoint);
-      pack_q8gemm_w(n(), k(), nr(), np(), kr(), b.data(), bias.data(), packedW.data());
+      pack_q8gemm_w(n(), k(),
+        nr(), np(), kr(),
+        aZeroPoint, bZeroPoint,
+        b.data(), bias.data(), packedW.data());
 
       ASSERT_NE(*std::max_element(a.cbegin(), a.cend()), *std::min_element(a.cbegin(), a.cend()));
       ASSERT_NE(*std::max_element(b.cbegin(), b.cend()), *std::min_element(b.cbegin(), b.cend()));
@@ -290,7 +293,9 @@ class GemmTester {
       std::fill(c.begin(), c.end(), 0xA5);
 
       std::fill(packedW.begin(), packedW.end(), bZeroPoint);
-      pack_q8conv_w(n(), ks(), k(), np(), kr(), b.data(), bias.data(), packedW.data());
+      pack_q8conv_w(n(), ks(), k(), np(), kr(),
+        aZeroPoint, bZeroPoint,
+        b.data(), bias.data(), packedW.data());
 
       ASSERT_NE(*std::max_element(a.cbegin(), a.cend()), *std::min_element(a.cbegin(), a.cend()));
       ASSERT_NE(*std::max_element(b.cbegin(), b.cend()), *std::min_element(b.cbegin(), b.cend()));

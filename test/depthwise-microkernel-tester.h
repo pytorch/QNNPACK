@@ -201,6 +201,7 @@ class DepthwiseMicrokernelTester {
       } else {
         pack_q8dw_w(
           kernelHeight(), kernelWidth(), channels(), cr(),
+          inputZeroPoint, kernelZeroPoint,
           kernel.data(), bias.data(), packedWeights.data());
       }
       for (size_t i = 0; i < kernelSize() + (width() * subsampling() - 1) * kernelHeight(); i++) {

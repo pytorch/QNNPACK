@@ -36,15 +36,11 @@ BEGIN_FUNCTION q8dw_ukernel_9c8__aarch32_neon
 	STR r0, [sp, #-8]
 	STR r3, [sp, #-4]
 
-	MOV r4, 2
+	MOV r4, 4
 
 	# Load o:
 	# - lr = o = output
 	LDR lr, [sp, 100]
-
-	# Load input zero point:
-	# - d30 = vinput_zero_point
-	VLD1.8 {d30[]}, [r12], r4
 
 	# Load kernel zero point:
 	# - d31 = vkernel_zero_point
@@ -119,13 +115,13 @@ BEGIN_FUNCTION q8dw_ukernel_9c8__aarch32_neon
 	VLD1.8 {d8}, [r5]!
 	VLD1.8 {d10}, [r3]!
 
-	VSUBL.U8 q2, d4, d30
+	VMOVL.U8 q2, d4
 	VSUBL.U8 q3, d6, d31
 
 	VLD1.8 {d12}, [r6]!
 	VLD1.8 {d14}, [r3]!
 
-	VSUBL.U8 q4, d8, d30
+	VMOVL.U8 q4, d8
 	VSUBL.U8 q5, d10, d31
 
 	VMLAL.S16 q0, d4, d6
@@ -134,7 +130,7 @@ BEGIN_FUNCTION q8dw_ukernel_9c8__aarch32_neon
 	VLD1.8 {d4}, [r7]!
 	VLD1.8 {d6}, [r3]!
 
-	VSUBL.U8 q6, d12, d30
+	VMOVL.U8 q6, d12
 	VSUBL.U8 q7, d14, d31
 
 	VMLAL.S16 q0, d8, d10
@@ -143,7 +139,7 @@ BEGIN_FUNCTION q8dw_ukernel_9c8__aarch32_neon
 	VLD1.8 {d8}, [r8]!
 	VLD1.8 {d10}, [r3]!
 
-	VSUBL.U8 q2, d4, d30
+	VMOVL.U8 q2, d4
 	VSUBL.U8 q3, d6, d31
 
 	VMLAL.S16 q0, d12, d14
@@ -152,7 +148,7 @@ BEGIN_FUNCTION q8dw_ukernel_9c8__aarch32_neon
 	VLD1.8 {d12}, [r9]!
 	VLD1.8 {d14}, [r3]!
 
-	VSUBL.U8 q4, d8, d30
+	VMOVL.U8 q4, d8
 	VSUBL.U8 q5, d10, d31
 
 	VMLAL.S16 q0, d4, d6
@@ -161,7 +157,7 @@ BEGIN_FUNCTION q8dw_ukernel_9c8__aarch32_neon
 	VLD1.8 {d4}, [r10]!
 	VLD1.8 {d6}, [r3]!
 
-	VSUBL.U8 q6, d12, d30
+	VMOVL.U8 q6, d12
 	VSUBL.U8 q7, d14, d31
 
 	VMLAL.S16 q0, d8, d10
@@ -170,7 +166,7 @@ BEGIN_FUNCTION q8dw_ukernel_9c8__aarch32_neon
 	VLD1.8 {d8}, [r11]!
 	VLD1.8 {d10}, [r3]!
 
-	VSUBL.U8 q2, d4, d30
+	VMOVL.U8 q2, d4
 	VSUBL.U8 q3, d6, d31
 
 	VMLAL.S16 q0, d12, d14
@@ -179,13 +175,13 @@ BEGIN_FUNCTION q8dw_ukernel_9c8__aarch32_neon
 	VLD1.8 {d12}, [r12]!
 	VLD1.8 {d14}, [r3]!
 
-	VSUBL.U8 q4, d8, d30
+	VMOVL.U8 q4, d8
 	VSUBL.U8 q5, d10, d31
 
 	VMLAL.S16 q0, d4, d6
 	VMLAL.S16 q1, d5, d7
 
-	VSUBL.U8 q6, d12, d30
+	VMOVL.U8 q6, d12
 	VSUBL.U8 q7, d14, d31
 
 	VMLAL.S16 q0, d8, d10
@@ -247,7 +243,7 @@ BEGIN_FUNCTION q8dw_ukernel_9c8__aarch32_neon
 	VLD1.8 {d12}, [r6]!
 	VLD1.8 {d14}, [r3]!
 
-	VSUBL.U8 q2, d4, d30
+	VMOVL.U8 q2, d4
 	VSUBL.U8 q3, d6, d31
 
 	VSHL.U64 d8, d8, d22
@@ -257,7 +253,7 @@ BEGIN_FUNCTION q8dw_ukernel_9c8__aarch32_neon
 
 	VSHL.U64 d12, d12, d22
 
-	VSUBL.U8 q4, d8, d30
+	VMOVL.U8 q4, d8
 	VSUBL.U8 q5, d10, d31
 
 	VMLAL.S16 q0, d4, d6
@@ -268,7 +264,7 @@ BEGIN_FUNCTION q8dw_ukernel_9c8__aarch32_neon
 
 	VSHL.U64 d16, d16, d22
 
-	VSUBL.U8 q6, d12, d30
+	VMOVL.U8 q6, d12
 	VSUBL.U8 q7, d14, d31
 
 	VMLAL.S16 q0, d8, d10
@@ -279,7 +275,7 @@ BEGIN_FUNCTION q8dw_ukernel_9c8__aarch32_neon
 
 	VSHL.U64 d4, d4, d22
 
-	VSUBL.U8 q8, d16, d30
+	VMOVL.U8 q8, d16
 	VSUBL.U8 q9, d18, d31
 
 	VMLAL.S16 q0, d12, d14
@@ -290,7 +286,7 @@ BEGIN_FUNCTION q8dw_ukernel_9c8__aarch32_neon
 
 	VSHL.U64 d8, d8, d22
 
-	VSUBL.U8 q2, d4, d30
+	VMOVL.U8 q2, d4
 	VSUBL.U8 q3, d6, d31
 
 	VMLAL.S16 q0, d16, d18
@@ -301,7 +297,7 @@ BEGIN_FUNCTION q8dw_ukernel_9c8__aarch32_neon
 
 	VSHL.U64 d12, d12, d22
 
-	VSUBL.U8 q4, d8, d30
+	VMOVL.U8 q4, d8
 	VSUBL.U8 q5, d10, d31
 
 	VMLAL.S16 q0, d4, d6
@@ -312,7 +308,7 @@ BEGIN_FUNCTION q8dw_ukernel_9c8__aarch32_neon
 
 	VSHL.U64 d16, d16, d22
 
-	VSUBL.U8 q6, d12, d30
+	VMOVL.U8 q6, d12
 	VSUBL.U8 q7, d14, d31
 
 	VMLAL.S16 q0, d8, d10
@@ -320,13 +316,13 @@ BEGIN_FUNCTION q8dw_ukernel_9c8__aarch32_neon
 
 	VSHL.U64 d4, d4, d22
 
-	VSUBL.U8 q8, d16, d30
+	VMOVL.U8 q8, d16
 	VSUBL.U8 q9, d18, d31
 
 	VMLAL.S16 q0, d12, d14
 	VMLAL.S16 q1, d13, d15
 
-	VSUBL.U8 q2, d4, d30
+	VMOVL.U8 q2, d4
 	VSUBL.U8 q3, d6, d31
 
 	VMLAL.S16 q0, d16, d18

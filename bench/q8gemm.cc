@@ -90,7 +90,11 @@ class Q8GEMM : public benchmark::Fixture {
     std::generate(b_.begin(), b_.end(), std::ref(rng));
     w_.resize(kcStride() * ncStride() + ncStride() * sizeof(int32_t) / sizeof(uint8_t));
     std::fill(w_.begin(), w_.end(), 127);
-    pack_q8gemm_w(nc(), kc(), nr(), np(), kr(), k(), b(), w());
+    pack_q8gemm_w(
+      nc(), kc(),
+      nr(), np(), kr(),
+      127, int32_t(kc()) * 127 * 127,
+      k(), b(), w());
     c_.resize(mc() * nc());
     std::fill(c_.begin(), c_.end(), 0xA5);
 

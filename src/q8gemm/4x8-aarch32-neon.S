@@ -33,29 +33,25 @@ BEGIN_FUNCTION q8gemm_ukernel_4x8__aarch32_neon
 
 	VPUSH {d8-d15}
 	# Load quantization params
-	# - r4 = quantization_params
-	LDR r4, [sp, 96]
+	# - r7 = quantization_params
+	LDR r7, [sp, 96]
 
 	# Load bias0123, bias4567
 	VLDM ip!, {d16-d19}
-	ADD r5, r4, 2
 
 	# Load a_stride
 	# - r6 = a_stride
 	LDR r6, [sp, 80]
 	CMP r0, 2
 
-	# Load a_zero_point:
-	# - d14 = a_zero_point
-	VLD1.8 {d14[]}, [r4]
 	ADD r4, r3, r6
 
 	# Load b_zero_point:
 	# - d15 = b_zero_point	
-	VLD1.8 {d15[]}, [r5]
+	VLD1.8 {d15[]}, [r7]
 	MOVLO r4, r3
 
-	ADD r7, r5, 2
+	ADD r7, r7, 4
 	ADD r5, r4, r6
 
 	# q10 := vacc1x0123
@@ -98,25 +94,25 @@ BEGIN_FUNCTION q8gemm_ukernel_4x8__aarch32_neon
 	# - d5 = a2
 	VLD1.8 {d5}, [r5]!
 
-	# q0 = va0 = a0 - a_zero_point
-	VSUBL.U8 q0, d1, d14
+	# q0 = va0 = a0
+	VMOVL.U8 q0, d1
 
 	# Load a3
 	# - d7 = a3
 	VLD1.8 {d7}, [r6]!
 
-	# q1 = va1 = a1 - a_zero_point
-	VSUBL.U8 q1, d3, d14
+	# q1 = va1 = a1
+	VMOVL.U8 q1, d3
 
 	# q4 = b0:7 - b_zero_point
 	# - d8 = vb0123 (channel 0)
 	# - d9 = vb4567 (channel 0)
 	VSUBL.U8 q4, d9, d15
 
-	# q2 = va2 = a2 - a_zero_point
-	VSUBL.U8 q2, d5, d14
-	# q3 = va3 = a3 - a_zero_point
-	VSUBL.U8 q3, d7, d14
+	# q2 = va2 = a2
+	VMOVL.U8 q2, d5
+	# q3 = va3 = a3
+	VMOVL.U8 q3, d7
 
 	### Channel 0 ###
 
@@ -391,29 +387,29 @@ BEGIN_FUNCTION q8gemm_ukernel_4x8__aarch32_neon
 	# - d5 = a2
 	VLD1.8 {d5}, [r5]
 
-	# q0 = va0 = a0 - a_zero_point
+	# q0 = va0 = a0
 	VSHL.U64 d1, d1, d13
-	VSUBL.U8 q0, d1, d14
+	VMOVL.U8 q0, d1
 
 	# Load a3
 	# - d7 = a3
 	VLD1.8 {d7}, [r6]
 
-	# q1 = va1 = a1 - a_zero_point
+	# q1 = va1 = a1
 	VSHL.U64 d3, d3, d13
-	VSUBL.U8 q1, d3, d14
+	VMOVL.U8 q1, d3
 
 	# q4 = b0:7 - b_zero_point
 	# - d8 = vb0123 (channel 0)
 	# - d9 = vb4567 (channel 0)
 	VSUBL.U8 q4, d9, d15
 
-	# q2 = va2 = a2 - a_zero_point
+	# q2 = va2 = a2
 	VSHL.U64 d5, d5, d13
-	VSUBL.U8 q2, d5, d14
-	# q3 = va3 = a3 - a_zero_point
+	VMOVL.U8 q2, d5
+	# q3 = va3 = a3
 	VSHL.U64 d7, d7, d13
-	VSUBL.U8 q3, d7, d14
+	VMOVL.U8 q3, d7
 
 	### Channel 0 ###
 

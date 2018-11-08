@@ -106,8 +106,8 @@ enum qnnp_status qnnp_create_fully_connected_nc_q8(
   pack_q8gemm_w(
       output_channels, input_channels,
       nr, nr, kr,
-      kernel,
-      bias,
+      input_zero_point, kernel_zero_point,
+      kernel, bias,
       fully_connected->packed_kernel);
 
   fully_connected->groups = 1;

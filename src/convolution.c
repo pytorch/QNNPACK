@@ -221,6 +221,7 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
       pack_q8dw_w(
         kernel_height, kernel_width,
         groups, cr,
+        input_zero_point, kernel_zero_point,
         kernel, bias, convolution->packed_kernel);
     } else {
       // kernel size == 25
@@ -282,6 +283,7 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
         pack_q8gemm_w(
             group_output_channels, group_input_channels,
             nr, nr, kr,
+            input_zero_point, kernel_zero_point,
             kernel + group * group_output_channels * group_input_channels,
             bias + group * group_output_channels,
             (void*) ((uintptr_t) convolution->packed_kernel + group * packed_group_weights_size));
@@ -300,6 +302,7 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
         pack_q8conv_w(
             group_output_channels, kernel_size, group_input_channels,
             nr, kr,
+            input_zero_point, kernel_zero_point,
             kernel + group * group_output_channels * kernel_size * group_input_channels,
             bias + group * group_output_channels,
             (void*) ((uintptr_t) convolution->packed_kernel + group * packed_group_weights_size));

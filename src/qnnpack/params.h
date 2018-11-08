@@ -126,8 +126,8 @@ union qnnp_q31_requantization_params {
 
 union qnnp_conv_quantization_params {
   struct {
-    int32_t input_zero_point;
     int32_t kernel_zero_point;
+    int32_t input_zero_point;
     int32_t multiplier;
     int32_t remainder_mask;
     int32_t remainder_threshold;
@@ -138,8 +138,8 @@ union qnnp_conv_quantization_params {
   } scalar;
 #if CPUINFO_ARCH_ARM || CPUINFO_ARCH_ARM64
   struct {
-    int16_t input_zero_point;
     int16_t kernel_zero_point;
+    int16_t input_zero_point;
     int32_t multiplier;
     int32_t right_shift;
     int16_t output_zero_point;
@@ -149,8 +149,8 @@ union qnnp_conv_quantization_params {
 #endif /* CPUINFO_ARCH_ARM || CPUINFO_ARCH_ARM64 */
 #if CPUINFO_ARCH_X86 || CPUINFO_ARCH_X86_64
   struct {
-    QNNP_ALIGN(16) int16_t input_zero_point[8];
     QNNP_ALIGN(16) int16_t kernel_zero_point[8];
+    QNNP_ALIGN(16) int16_t input_zero_point[8];
     QNNP_ALIGN(16) uint32_t multiplier[4];
     QNNP_ALIGN(16) uint64_t rounding[2];
     QNNP_ALIGN(16) int32_t remainder_mask[4];

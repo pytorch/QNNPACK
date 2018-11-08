@@ -41,7 +41,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 
 	# q10 := vacc1x0123
 	VMOV.I32 q10, q8
-	MOV r4, 2
+	MOV r4, 4
 	# q11 := vacc1x4567
 	VMOV.I32 q11, q9
 	# Load a
@@ -51,9 +51,6 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 	VMOV.I32 q12, q8
 	# q13 := vacc2x4567
 	VMOV.I32 q13, q9
-	# Load a_zero_point:
-	# - d14 = a_zero_point
-	VLD1.8 {d14[]}, [r9], r4
 	# q14 := vacc3x0123
 	VMOV.I32 q14, q8
 	# Load b_zero_point:
@@ -95,25 +92,25 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 	# - d5 = va2
 	VLD1.8 {d5}, [r6]!
 
-	# q0 = va0 = a0 - va_zero_point
-	VSUBL.U8 q0, d1, d14
+	# q0 = va0 = a0
+	VMOVL.U8 q0, d1
 
 	# Load va3
 	# - d7 = va3
 	VLD1.8 {d7}, [r7]!
 
-	# q1 = va1 = a1 - va_zero_point
-	VSUBL.U8 q1, d3, d14
+	# q1 = va1 = a1
+	VMOVL.U8 q1, d3
 
 	# q4 = b0:7 - vb_zero_point
 	# - d8 = vb0123 (channel 0)
 	# - d9 = vb4567 (channel 0)
 	VSUBL.U8 q4, d9, d15
 
-	# q2 = va2 = a2 - va_zero_point
-	VSUBL.U8 q2, d5, d14
-	# q3 = va3 = a3 - va_zero_point
-	VSUBL.U8 q3, d7, d14
+	# q2 = va2 = a2
+	VMOVL.U8 q2, d5
+	# q3 = va3 = a3
+	VMOVL.U8 q3, d7
 
 	### Channel 0 ###
 
@@ -388,29 +385,29 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 	# - d5 = a2
 	VLD1.8 {d5}, [r6]
 
-	# q0 = va0 = a0 - va_zero_point
+	# q0 = va0 = a0
 	VSHL.U64 d1, d1, d13
-	VSUBL.U8 q0, d1, d14
+	VMOVL.U8 q0, d1
 
 	# Load a3
 	# - d7 = a3
 	VLD1.8 {d7}, [r7]
 
-	# q1 = va1 = a1 - va_zero_point
+	# q1 = va1 = a1
 	VSHL.U64 d3, d3, d13
-	VSUBL.U8 q1, d3, d14
+	VMOVL.U8 q1, d3
 
 	# q4 = b0:7 - vb_zero_point
 	# - d8 = vb0123 (channel 0)
 	# - d9 = vb4567 (channel 0)
 	VSUBL.U8 q4, d9, d15
 
-	# q2 = va2 = a2 - va_zero_point
+	# q2 = va2 = a2
 	VSHL.U64 d5, d5, d13
-	VSUBL.U8 q2, d5, d14
-	# q3 = va3 = a3 - va_zero_point
+	VMOVL.U8 q2, d5
+	# q3 = va3 = a3
 	VSHL.U64 d7, d7, d13
-	VSUBL.U8 q3, d7, d14
+	VMOVL.U8 q3, d7
 
 	### Channel 0 ###
 
