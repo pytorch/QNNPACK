@@ -15,6 +15,8 @@
 	#else
 		#define QNNP_UNREACHABLE do { __builtin_trap(); } while (0)
 	#endif
+#elif defined(_MSC_VER)
+	#define QNNP_UNREACHABLE __assume(0)
 #else
 	#define QNNP_UNREACHABLE do { } while (0)
 #endif
