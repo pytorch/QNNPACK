@@ -194,7 +194,7 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
     flags |= QNNP_CONVOLUTION_FLAG_DW;
   }
 #endif
-  if (kernel_size == 9 && dilation_width == 1 && group_input_channels == 1 && group_output_channels == 1 && groups > 1) {
+  if (kernel_size == 9 && group_input_channels == 1 && group_output_channels == 1 && groups > 1) {
     flags |= QNNP_CONVOLUTION_FLAG_DW;
   } else if (kernel_size == 1 && subsampling_height == 1 && subsampling_width == 1) {
     if (group_input_channels >= qnnp_params.q8conv_xzp.kthreshold) {
@@ -481,9 +481,9 @@ enum qnnp_status qnnp_setup_convolution2d_nhwc_q8(
       }
       convolution->multipass_acc = multipass_acc;
     }
-    const size_t subsampling_width = convolution->stride_width;
+    const size_t width_step = convolution->dilation_width == 1 ? convolution->stride_width : kernel_width;
     const size_t indirection_buffer_size = sizeof(void*) * batch_size * output_height *
-      (kernel_size + (output_width * subsampling_width - 1) * kernel_height);
+      (kernel_size + (output_width * width_step - 1) * kernel_height);
 
     const void** indirection_buffer =
       (const void**) realloc(convolution->indirection_buffer, indirection_buffer_size);
@@ -508,10 +508,10 @@ enum qnnp_status qnnp_setup_convolution2d_nhwc_q8(
               for (size_t output_x = 0; output_x < output_width; output_x++) {
                 for (size_t kernel_x = 0; kernel_x < kernel_width; kernel_x++) {
                   const size_t input_x =
-                    output_x * subsampling_width + kernel_x * convolution->dilation_width - convolution->input_padding_left;
+                    output_x * convolution->stride_width + kernel_x * convolution->dilation_width - convolution->input_padding_left;
                   const size_t index =
-                    (image * output_height + output_y) * (kernel_size + (output_width * subsampling_width - 1) * kernel_height) +
-                    output_x * subsampling_width * kernel_height + kernel_x * kernel_height + kernel_y;
+                    (image * output_height + output_y) * (kernel_size + (output_width * width_step - 1) * kernel_height) +
+                    output_x * width_step * kernel_height + kernel_x * kernel_height + kernel_y;
                   if (input_x < input_width) {
                     indirection_buffer[index] = input + ((image * input_height + input_y) * input_width + input_x) * input_pixel_stride;
                   } else {
@@ -523,8 +523,8 @@ enum qnnp_status qnnp_setup_convolution2d_nhwc_q8(
               for (size_t output_x = 0; output_x < output_width; output_x++) {
                 for (size_t kernel_x = 0; kernel_x < kernel_width; kernel_x++) {
                   const size_t index =
-                    (image * output_height + output_y) * (kernel_size + (output_width * subsampling_width - 1) * kernel_height) +
-                    output_x * subsampling_width * kernel_height + kernel_x * kernel_height + kernel_y;
+                    (image * output_height + output_y) * (kernel_size + (output_width * width_step - 1) * kernel_height) +
+                    output_x * width_step * kernel_height + kernel_x * kernel_height + kernel_y;
                   indirection_buffer[index] = zero;
                 }
               }
@@ -891,7 +891,7 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
     const size_t kernel_height = op->kernel_height;
     const size_t kernel_width = op->kernel_width;
     const size_t kernel_size = kernel_height * kernel_width;
-    const size_t subsampling_width = op->stride_width;
+    const size_t width_step = op->dilation_width == 1 ? op->stride_width : op->kernel_width;
     const size_t output_height = op->output_height;
     const size_t output_width = op->output_width;
 
@@ -899,8 +899,8 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
       struct q8dw_context q8dw_context = {
           .groups = groups,
           .indirection_buffer = (const uint8_t**) op->indirection_buffer,
-          .indirection_buffer_row_stride = kernel_size + (output_width * subsampling_width - 1) * kernel_height,
-          .indirection_buffer_col_stride = kernel_height * subsampling_width * sizeof(void*),
+          .indirection_buffer_row_stride = kernel_size + (output_width * width_step - 1) * kernel_height,
+          .indirection_buffer_col_stride = kernel_height * width_step * sizeof(void*),
           .packed_kernel = op->packed_kernel,
           .bias = op->bias,
           .multipass_acc = NULL,
@@ -921,8 +921,8 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
       struct q8dw_context q8dw_context = {
           .groups = groups,
           .indirection_buffer = (const uint8_t**) op->indirection_buffer,
-          .indirection_buffer_row_stride = kernel_size + (output_width * subsampling_width - 1) * kernel_height,
-          .indirection_buffer_col_stride = kernel_height * subsampling_width * sizeof(void*),
+          .indirection_buffer_row_stride = kernel_size + (output_width * width_step - 1) * kernel_height,
+          .indirection_buffer_col_stride = kernel_height * width_step * sizeof(void*),
           .packed_kernel = op->packed_kernel,
           .bias = op->bias,
           .multipass_acc = op->multipass_acc,
