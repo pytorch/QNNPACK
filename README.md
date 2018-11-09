@@ -37,6 +37,68 @@ To cross-compile for iOS, clone [ios-cmake](https://github.com/leetal/ios-cmake)
 | i386         | `scripts/build-ios-i386.sh`   | iPhone Simulator (32-bit) |
 | x86_64       | `scripts/build-ios-x86_64.sh` | iPhone Simulator (64-bit) |
 
+## End-to-End Benchmarking
+
+Caffe2 backend of PyTorch 1.0 natively integrates QNNPACK, and provides a [pre-trained quantized MobileNet v2 model](https://github.com/caffe2/models/tree/master/mobilenet_v2_quantized). Below are instructions for benchmarking this model end-to-end with QNNPACK.
+
+### ARMv7 (32-bit) Android
+
+```bash
+# Clone PyTorch 1.0 repo
+git clone --recursive https://github.com/pytorch/pytorch.git
+cd pytorch
+
+# Optional: update QNNPACK submodule to latest revision
+git submodule update --remote third_party/QNNPACK
+
+# Build Caffe2 (including binaries) for Android
+scripts/build_android.sh -DANDROID_TOOLCHAIN=clang -DBUILD_BINARY=ON
+
+# Download model weights and copy them to Android device
+wget https://s3.amazonaws.com/download.caffe2.ai/models/mobilenet_v2_1.0_224_quant/init_net.pb
+adb push init_net.pb /data/local/tmp/init_net.pb
+
+# Download model graph and copy it to Android device
+wget https://s3.amazonaws.com/download.caffe2.ai/models/mobilenet_v2_1.0_224_quant/predict_net.pb
+adb push predict_net.pb /data/local/tmp/predict_net.pb
+
+# Run speed benchmark with 50 warm-up iterations and 10 measurement iterations
+adb shell /data/local/tmp/speed_benchmark \
+	--net /data/local/tmp/predict_net.pb \
+	--init_net /data/local/tmp/init_net.pb \
+	--input data --input_dims 1,3,224,224 --input_type float \
+	--warmup 50 --iter 10
+```
+
+### ARM64 (64-bit) Android
+
+```bash
+# Clone PyTorch 1.0 repo
+git clone --recursive https://github.com/pytorch/pytorch.git
+cd pytorch
+
+# Optional: update QNNPACK submodule to latest revision
+git submodule update --remote third_party/QNNPACK
+
+# Build Caffe2 (including binaries) for Android
+scripts/build_android.sh -DANDROID_ABI=arm64-v8a -DANDROID_TOOLCHAIN=clang -DBUILD_BINARY=ON
+
+# Download model weights and copy them to Android device
+wget https://s3.amazonaws.com/download.caffe2.ai/models/mobilenet_v2_1.0_224_quant/init_net.pb
+adb push init_net.pb /data/local/tmp/init_net.pb
+
+# Download model graph and copy it to Android device
+wget https://s3.amazonaws.com/download.caffe2.ai/models/mobilenet_v2_1.0_224_quant/predict_net.pb
+adb push predict_net.pb /data/local/tmp/predict_net.pb
+
+# Run speed benchmark with 50 warm-up iterations and 10 measurement iterations
+adb shell /data/local/tmp/speed_benchmark \
+	--net /data/local/tmp/predict_net.pb \
+	--init_net /data/local/tmp/init_net.pb \
+	--input data --input_dims 1,3,224,224 --input_type float \
+	--warmup 50 --iter 10
+```
+
 ## Acknowledgements
 
 QNNPACK is developed by Marat Dukhan, Yiming Wu, Hao Lu, and Bert Maher. We thank Andrew Tulloch and Yangqing Jia for advice during the development of QNNPACK.
