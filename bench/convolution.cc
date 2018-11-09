@@ -677,6 +677,7 @@ static void DWConv3x3d2(benchmark::internal::Benchmark* b) {
 
 static void DWConv5x5(benchmark::internal::Benchmark* b) {
   b->ArgNames({"N", "H", "W", "KH", "KW", "S", "D", "G", "GCin", "GCout"});
+
   /********************** 96 x 96 *********************/
   /*       N   H   W  KH  KW  S  D    G   GCin  GCout */
   b->Args({1, 96, 96,  5,  5, 1, 1,  512,    1,    1});
