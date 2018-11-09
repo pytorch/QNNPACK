@@ -9,7 +9,7 @@ QNNPACK provides standard CMake-based build scripts.
 
 ### Native compilation
 
-Users are recommended to use `scripts/build-local.sh` script to build QNNPACK for the host machine. 
+Users are recommended to use `scripts/build-local.sh` script to build QNNPACK for the host machine.
 
 ### Cross-compilation for Android
 
@@ -97,6 +97,37 @@ adb shell /data/local/tmp/speed_benchmark \
 	--init_net /data/local/tmp/init_net.pb \
 	--input data --input_dims 1,3,224,224 --input_type float \
 	--warmup 50 --iter 10
+```
+
+### PEP (Performance Evaluation Platform) Method
+
+[Facebook AI Performance Evaluation Platform](https://github.com/facebook/FAI-PEP) is a framework and backend agnostic benchmarking platform to compare machine learning inferencing runtime metrics on a set of models and a variety of backends.
+
+We use PEP to produce the results we have in our [blog](https://code.fb.com/ml-applications/qnnpack/)
+
+With an ARMv7 device connected:
+
+```bash
+# Clone PyTorch 1.0 repo
+mkdir ~/Code && cd ~/Code
+git clone --recursive https://github.com/pytorch/pytorch.git
+cd pytorch
+
+# Optional: update QNNPACK submodule to latest revision
+git submodule update --remote third_party/QNNPACK
+
+# Clone PEP repo
+cd ~/Code
+git clone --recursive https://github.com/facebook/FAI-PEP.git aibench
+cd aibench
+
+# Run PEP benchmark with cool specifications. Try changing that cmd with more specifications!
+# First time compile could take 20+ minutes
+./benchmarking/run_bench.py \
+  --platform android \
+  -b ~/Code/aibench/specifications/models/caffe2/mobilenet_v2/mobilenet_v2_quant.json \
+  --platform android --repo_dir ~/Code/pytorch \
+  --frameworks_dir ~/Code/aibench/specifications/frameworks --framework caffe2
 ```
 
 ## Acknowledgements
