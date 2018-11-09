@@ -47,7 +47,7 @@ BEGIN_FUNCTION q8gemm_ukernel_4x8__aarch32_neon
 	ADD r4, r3, r6
 
 	# Load b_zero_point:
-	# - d15 = b_zero_point	
+	# - d15 = b_zero_point
 	VLD1.8 {d15[]}, [r7]
 	MOVLO r4, r3
 
