@@ -473,7 +473,7 @@ enum qnnp_status qnnp_setup_convolution2d_nhwc_q8(
   if (convolution->flags & QNNP_CONVOLUTION_FLAG_DW) {
     if (kernel_size == 25) {
       size_t packed_output_stride = (output_pixel_stride + 7) & -8;
-      size_t multipass_acc_size = sizeof(int32_t) * convolution->output_width * convolution->output_height * packed_output_stride;
+      size_t multipass_acc_size = sizeof(int32_t) * batch_size * convolution->output_width * convolution->output_height * packed_output_stride;
       void* multipass_acc = (void*) realloc(convolution->multipass_acc, multipass_acc_size);
       if (multipass_acc == NULL) {
         qnnp_log_error("failed to allocate %zu bytes for multipass accumulators", multipass_acc_size);
