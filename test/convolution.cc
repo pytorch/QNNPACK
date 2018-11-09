@@ -492,3 +492,79 @@ TEST(CONVOLUTION, depthwise_3x3d2x1) {
     .iterations(3)
     .test();
 }
+
+TEST(CONVOLUTION, depthwise_5x5) {
+  ConvolutionTester()
+    .inputSize(15, 14)
+    .padding(2, 2)
+    .kernelSize(5, 5)
+    .groups(27)
+    .iterations(3)
+    .test();
+}
+
+TEST(CONVOLUTION, depthwise_5x5s2) {
+  ConvolutionTester()
+    .inputSize(15, 14)
+    .padding(2, 2)
+    .kernelSize(5, 5)
+    .subsampling(2)
+    .groups(27)
+    .iterations(3)
+    .test();
+}
+
+TEST(CONVOLUTION, depthwise_5x5s1x2) {
+  ConvolutionTester()
+    .inputSize(15, 14)
+    .padding(2, 2)
+    .kernelSize(5, 5)
+    .subsampling(1, 2)
+    .groups(27)
+    .iterations(3)
+    .test();
+}
+
+TEST(CONVOLUTION, depthwise_5x5s2x1) {
+  ConvolutionTester()
+    .inputSize(15, 14)
+    .padding(2, 2)
+    .kernelSize(5, 5)
+    .subsampling(2, 1)
+    .groups(27)
+    .iterations(3)
+    .test();
+}
+
+TEST(CONVOLUTION, depthwise_5x5d2) {
+  ConvolutionTester()
+    .inputSize(15, 14)
+    .padding(2, 2)
+    .kernelSize(5, 5)
+    .dilation(2)
+    .groups(27)
+    .iterations(3)
+    .test();
+}
+
+TEST(CONVOLUTION, depthwise_5x5d1x2) {
+  ConvolutionTester()
+    .inputSize(15, 14)
+    .padding(2, 2)
+    .kernelSize(5, 5)
+    .dilation(1, 2)
+    .groups(27)
+    .iterations(3)
+    .test();
+}
+
+TEST(CONVOLUTION, depthwise_5x5d2x1) {
+  ConvolutionTester()
+    .inputSize(15, 14)
+    .padding(2, 2)
+    .kernelSize(5, 5)
+    .dilation(2, 1)
+    .groups(27)
+    .iterations(3)
+    .test();
+}
