@@ -45,6 +45,7 @@ DECLARE_Q8UPDW_FUNCTION(q8updw_ukernel_9c8__sse2)
     const union qnnp_conv_quantization_params* quantization_params);
 
 DECLARE_Q8MPDW_FUNCTION(q8mpdw_ukernel_25c8__neon)
+DECLARE_Q8MPDW_FUNCTION(q8mpdw_ukernel_25c8__sse2)
 
 #ifdef __cplusplus
 } /* extern "C" */

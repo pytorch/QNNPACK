@@ -107,6 +107,7 @@ def main(args):
                         build.cc("q8gemm/2x4c8-sse2.c"),
                         build.cc("q8gemm/4x4c2-sse2.c"),
                         build.cc("q8conv/4x4c2-sse2.c"),
+                        build.cc("q8mpdw/25c8-sse2.c"),
                         build.cc("q8updw/9c8-sse2.c"),
                     ]
             build.static_library("qnnpack", qnnpack_objects)

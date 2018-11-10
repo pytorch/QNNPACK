@@ -88,6 +88,10 @@ static void init(void) {
       .updw = q8updw_ukernel_9c8__neon,
       .cr = 8,
   };
+  qnnp_params.q8dw25 = (struct q8mpdw_parameters) {
+      .mpdw = q8mpdw_ukernel_25c8__neon,
+      .cr = 8,
+  };
 #elif CPUINFO_ARCH_X86 || CPUINFO_ARCH_X86_64
   if (!cpuinfo_has_x86_sse2()) {
     qnnp_log_error("QNNPACK initialization failed: SSE2 is not supported");
@@ -105,6 +109,10 @@ static void init(void) {
   };
   qnnp_params.q8dw9 = (struct q8updw_parameters) {
       .updw = q8updw_ukernel_9c8__sse2,
+      .cr = 8,
+  };
+  qnnp_params.q8dw25 = (struct q8mpdw_parameters) {
+      .mpdw = q8mpdw_ukernel_25c8__sse2,
       .cr = 8,
   };
 #else

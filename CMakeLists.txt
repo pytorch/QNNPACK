@@ -165,6 +165,7 @@ SET(QNNPACK_X86_SSE2_UKERNELS
   src/q8gemm/2x4c8-sse2.c
   src/q8gemm/4x4c2-sse2.c
   src/q8conv/4x4c2-sse2.c
+  src/q8mpdw/25c8-sse2.c
   src/q8updw/9c8-sse2.c)
 
 SET(QNNPACK_UKERNELS ${QNNPACK_PSIMD_UKERNELS})
