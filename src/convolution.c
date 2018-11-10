@@ -205,6 +205,7 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
   if (flags & QNNP_CONVOLUTION_FLAG_DW) {
     const uint32_t cr = qnnp_params.q8dw9.cr;
     const uint32_t c_stride = (groups + (cr - 1)) & -cr;
+    convolution->group_stride = c_stride;
     const size_t packed_weights_size = (sizeof(uint8_t) * kernel_size + sizeof(int32_t)) * c_stride;
     convolution->packed_kernel = malloc(packed_weights_size);
     if (convolution->packed_kernel == NULL) {
@@ -230,12 +231,12 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
         kernel_height, kernel_width,
         groups, cr,
         0, kernel_height, 2, 4,
-        kernel, bias, convolution->packed_kernel + (10 + sizeof(int32_t) / sizeof(uint8_t)) * groups, false);
+        kernel, bias, convolution->packed_kernel + (10 + sizeof(int32_t) / sizeof(uint8_t)) * c_stride, false);
       pack_q8dw_w_dilation(
         kernel_height, kernel_width,
         groups, cr,
         0, kernel_height, 4, 5,
-        kernel, bias, convolution->packed_kernel + (20 + sizeof(int32_t) / sizeof(uint8_t)) * groups, false);
+        kernel, bias, convolution->packed_kernel + (20 + sizeof(int32_t) / sizeof(uint8_t)) * c_stride, false);
     }
 
     if (flags & QNNP_CONVOLUTION_FLAG_ZERO) {
@@ -466,16 +467,6 @@ enum qnnp_status qnnp_setup_convolution2d_nhwc_q8(
   const size_t output_height = convolution->output_height;
   const size_t output_width = convolution->output_width;
   if (convolution->flags & QNNP_CONVOLUTION_FLAG_DW) {
-    if (kernel_size == 25) {
-      size_t packed_output_stride = (output_pixel_stride + 7) & -8;
-      size_t multipass_acc_size = sizeof(int32_t) * batch_size * convolution->output_width * convolution->output_height * packed_output_stride;
-      void* multipass_acc = (void*) realloc(convolution->multipass_acc, multipass_acc_size);
-      if (multipass_acc == NULL) {
-        qnnp_log_error("failed to allocate %zu bytes for multipass accumulators", multipass_acc_size);
-        return qnnp_status_out_of_memory;
-      }
-      convolution->multipass_acc = multipass_acc;
-    }
     const size_t width_step = convolution->dilation_width == 1 ? convolution->stride_width : kernel_width;
     const size_t indirection_buffer_size = sizeof(void*) * batch_size * output_height *
       (kernel_size + (output_width * width_step - 1) * kernel_height);
@@ -828,12 +819,12 @@ struct q8dw_context {
   size_t indirection_buffer_col_stride;
   const uint8_t* packed_kernel;
   const int32_t* bias;
-  int32_t* multipass_acc;
   uint8_t* output;
   size_t output_height;
   size_t output_width;
   size_t output_row_stride;
   size_t output_col_increment;
+  size_t acc_row_stride;
   union qnnp_conv_quantization_params quantization_params;
   const q8dw_ukernel_function ukernel;
   const q8dw_multipass_ukernel_function ukernel_mp;
@@ -863,15 +854,15 @@ static void compute_q8dw_multipass(
     size_t output_y)
 {
   const size_t output_height = context->output_height;
-  const size_t acc_row_stride = (context->output_row_stride + 7) & -8;
-  const size_t acc_offset = (image * output_height + output_y) * acc_row_stride;
+  const size_t multipass_acc_size = sizeof(int32_t) * context->acc_row_stride;
+  QNNP_ALIGN(16) int32_t multipass_acc[multipass_acc_size];
 
   context->ukernel_mp(
     context->groups,
     context->output_width,
     context->indirection_buffer + (image * output_height + output_y) * context->indirection_buffer_row_stride,
     context->packed_kernel,
-    context->multipass_acc + acc_offset,
+    multipass_acc,
     context->output + (image * output_height + output_y) * context->output_row_stride,
     context->indirection_buffer_col_stride,
     context->output_col_increment,
@@ -898,7 +889,6 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
           .indirection_buffer_col_stride = kernel_height * width_step * sizeof(void*),
           .packed_kernel = op->packed_kernel,
           .bias = op->bias,
-          .multipass_acc = NULL,
           .output = op->output,
           .output_height = output_height,
           .output_width = output_width,
@@ -920,10 +910,10 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
           .indirection_buffer_col_stride = kernel_height * width_step * sizeof(void*),
           .packed_kernel = op->packed_kernel,
           .bias = op->bias,
-          .multipass_acc = op->multipass_acc,
           .output = op->output,
           .output_height = output_height,
           .output_width = output_width,
+          .acc_row_stride = op->group_stride,
           .output_row_stride = output_width * op->output_pixel_stride,
           .output_col_increment = (op->output_pixel_stride - groups) * sizeof(uint8_t),
           .quantization_params = op->conv_quantization_params,
