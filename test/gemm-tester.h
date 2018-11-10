@@ -113,6 +113,10 @@ class GemmTester {
     return n() % np() == 0 ? n() : (n() / np() + 1) * np();
   }
 
+  inline size_t biasN() const {
+    return n() % nr() == 0 ? n() : (n() / nr() + 1) * nr();
+  }
+
   inline GemmTester& aStride(size_t aStride) {
     this->aStride_ = aStride;
     return *this;
@@ -189,7 +193,7 @@ class GemmTester {
     std::vector<uint8_t> a((m() - 1) * aStride() + k() + 8);
     std::vector<uint8_t> b(n() * k());
     std::vector<int32_t> bias(nr());
-    std::vector<uint8_t, AlignedAllocator<uint8_t, 32>> packedW(packedN() * packedK() + packedN() * sizeof(uint32_t) / sizeof(uint8_t));
+    std::vector<uint8_t, AlignedAllocator<uint8_t, 32>> packedW(packedN() * packedK() + biasN() * sizeof(uint32_t) / sizeof(uint8_t));
     std::vector<uint8_t> c((m() - 1) * cStride() + n());
     std::vector<int32_t> acc(m() * n());
     std::vector<uint8_t> cRef(m() * n());
@@ -574,7 +578,7 @@ class GemmTester {
 
     std::vector<uint16_t> a((m() - 1) * aStride() + k() + 4);
     std::vector<uint16_t> b(n() * k());
-    std::vector<uint16_t, AlignedAllocator<uint16_t, 32>> packedW(packedN() * packedK() + packedN());
+    std::vector<uint16_t, AlignedAllocator<uint16_t, 32>> packedW(packedN() * packedK() + biasN());
     std::vector<uint16_t> bias(nr());
     std::vector<uint16_t> c((mr() - 1) * cStride() + nr());
     std::vector<float> cRef(m() * n());
@@ -672,7 +676,7 @@ class GemmTester {
     std::vector<float> a((m() - 1) * aStride() + k());
     std::vector<float> b(n() * k());
     std::vector<float> bias(nr());
-    std::vector<float, AlignedAllocator<float, 32>> packedW(packedN() * packedK() + packedN());
+    std::vector<float, AlignedAllocator<float, 32>> packedW(packedN() * packedK() + biasN());
     std::vector<float> c((mr() - 1) * cStride() + nr());
     std::vector<float> cRef(m() * n());
 
