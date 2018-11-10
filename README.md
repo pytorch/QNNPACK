@@ -41,6 +41,33 @@ To cross-compile for iOS, clone [ios-cmake](https://github.com/leetal/ios-cmake)
 
 Caffe2 backend of PyTorch 1.0 natively integrates QNNPACK, and provides a [pre-trained quantized MobileNet v2 model](https://github.com/caffe2/models/tree/master/mobilenet_v2_quantized). Below are instructions for benchmarking this model end-to-end with QNNPACK.
 
+### Raspberry Pi 2 or 3
+
+```bash
+# Clone PyTorch 1.0 repo
+git clone --recursive https://github.com/pytorch/pytorch.git
+cd pytorch
+
+# Optional: update QNNPACK submodule to latest revision
+git submodule update --remote third_party/QNNPACK
+
+# Build Caffe2 (including binaries) for the host system
+# Use only 1 thread for build to avoid out-of-memory failures
+MAX_JOBS=1 scripts/build_local.sh -DBUILD_BINARY=ON -DBUILD_PYTHON=OFF \
+	-DUSE_OBSERVERS=OFF -DUSE_DISTRIBUTED=OFF
+
+# Download model weights
+wget https://s3.amazonaws.com/download.caffe2.ai/models/mobilenet_v2_1.0_224_quant/init_net.pb
+
+# Download model graph
+wget https://s3.amazonaws.com/download.caffe2.ai/models/mobilenet_v2_1.0_224_quant/predict_net.pb
+
+# Run speed benchmark with 50 warm-up iterations and 10 measurement iterations
+build/bin/speed_benchmark --net predict_net.pb --init_net init_net.pb \
+	--input data --input_dims 1,3,224,224 --input_type float \
+	--warmup 50 --iter 10
+```
+
 ### ARMv7 (32-bit) Android
 
 ```bash
