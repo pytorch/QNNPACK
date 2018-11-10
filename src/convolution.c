@@ -814,6 +814,7 @@ static void compute_q8conv(
 
 struct q8dw_context {
   size_t groups;
+  size_t group_stride;
   const uint8_t** indirection_buffer;
   size_t indirection_buffer_row_stride;
   size_t indirection_buffer_col_stride;
@@ -824,7 +825,6 @@ struct q8dw_context {
   size_t output_width;
   size_t output_row_stride;
   size_t output_col_increment;
-  size_t acc_row_stride;
   union qnnp_conv_quantization_params quantization_params;
   union {
     const q8updw_ukernel_function unipass_ukernel;
@@ -856,8 +856,7 @@ static void compute_q8mpdw(
     size_t output_y)
 {
   const size_t output_height = context->output_height;
-  const size_t multipass_acc_size = sizeof(int32_t) * context->acc_row_stride;
-  QNNP_ALIGN(16) int32_t multipass_acc[multipass_acc_size];
+  QNNP_ALIGN(16) int32_t multipass_acc[context->group_stride];
 
   context->multipass_ukernel(
     context->groups,
@@ -907,6 +906,7 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
     } else if (kernel_size == 25) {
       struct q8dw_context q8dw_context = {
           .groups = groups,
+          .group_stride = op->group_stride,
           .indirection_buffer = (const uint8_t**) op->indirection_buffer,
           .indirection_buffer_row_stride = kernel_size + (output_width * width_step - 1) * kernel_height,
           .indirection_buffer_col_stride = kernel_height * width_step * sizeof(void*),
@@ -915,7 +915,6 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
           .output = op->output,
           .output_height = output_height,
           .output_width = output_width,
-          .acc_row_stride = op->group_stride,
           .output_row_stride = output_width * op->output_pixel_stride,
           .output_col_increment = (op->output_pixel_stride - groups) * sizeof(uint8_t),
           .quantization_params = op->conv_quantization_params,
