@@ -83,8 +83,8 @@ def main(args):
                     build.cc("q8gemm/6x4-neon.c"),
                     build.cc("q8conv/4x8-neon.c"),
                     build.cc("q8conv/8x8-neon.c"),
-                    build.cc("q8dw/9c8-neon.c"),
-                    build.cc("q8dw/25c8-neon.c"),
+                    build.cc("q8updw/9c8-neon.c"),
+                    build.cc("q8mpdw/25c8-neon.c"),
                     build.cc("sgemm/5x8-neon.c"),
                     build.cc("sgemm/6x8-neon.c"),
                 ]
@@ -93,7 +93,7 @@ def main(args):
                     build.cc("q8gemm/4x8-aarch32-neon.S"),
                     build.cc("q8gemm/4x8c2-xzp-aarch32-neon.S"),
                     build.cc("q8conv/4x8-aarch32-neon.S"),
-                    build.cc("q8dw/9c8-aarch32-neon.S"),
+                    build.cc("q8updw/9c8-aarch32-neon.S"),
                     build.cc("hgemm/8x8-aarch32-neonfp16arith.S"),
                 ]
             if build.target.is_arm64:
@@ -107,7 +107,7 @@ def main(args):
                         build.cc("q8gemm/2x4c8-sse2.c"),
                         build.cc("q8gemm/4x4c2-sse2.c"),
                         build.cc("q8conv/4x4c2-sse2.c"),
-                        build.cc("q8dw/9c8-sse2.c"),
+                        build.cc("q8updw/9c8-sse2.c"),
                     ]
             build.static_library("qnnpack", qnnpack_objects)
 
@@ -120,7 +120,8 @@ def main(args):
 
         build.unittest("q8gemm-test", build.cxx("q8gemm.cc"))
         build.unittest("q8conv-test", build.cxx("q8conv.cc"))
-        build.unittest("q8dw-test", build.cxx("q8dw.cc"))
+        build.unittest("q8updw-test", build.cxx("q8updw.cc"))
+        build.unittest("q8mpdw-test", build.cxx("q8mpdw.cc"))
         build.unittest("hgemm-test", build.cxx("hgemm.cc"))
         build.unittest("sgemm-test", build.cxx("sgemm.cc"))
         build.unittest("convolution-test", build.cxx("convolution.cc"))

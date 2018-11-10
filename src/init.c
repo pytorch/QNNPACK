@@ -61,12 +61,12 @@ static void init(void) {
     default:
       break;
   }
-  qnnp_params.q8dw9 = (struct q8dw_parameters) {
-      .dw = q8dw_ukernel_9c8__aarch32_neon,
+  qnnp_params.q8dw9 = (struct q8updw_parameters) {
+      .updw = q8updw_ukernel_9c8__aarch32_neon,
       .cr = 8,
   };
-  qnnp_params.q8dw25 = (struct q8dw_multipass_parameters) {
-      .dw = q8dw_ukernel_25c8__neon,
+  qnnp_params.q8dw25 = (struct q8mpdw_parameters) {
+      .mpdw = q8mpdw_ukernel_25c8__neon,
       .cr = 8,
   };
   qnnp_params.q8sum_rows = (struct q8sum_rows_parameters) {
@@ -84,8 +84,8 @@ static void init(void) {
   qnnp_params.q8conv_xzp = (struct q8conv_xzp_parameters) {
       .kthreshold = SIZE_MAX,
   };
-  qnnp_params.q8dw9 = (struct q8dw_parameters) {
-      .dw = q8dw_ukernel_9c8__neon,
+  qnnp_params.q8dw9 = (struct q8updw_parameters) {
+      .updw = q8updw_ukernel_9c8__neon,
       .cr = 8,
   };
 #elif CPUINFO_ARCH_X86 || CPUINFO_ARCH_X86_64
@@ -103,8 +103,8 @@ static void init(void) {
   qnnp_params.q8conv_xzp = (struct q8conv_xzp_parameters) {
       .kthreshold = SIZE_MAX,
   };
-  qnnp_params.q8dw9 = (struct q8dw_parameters) {
-      .dw = q8dw_ukernel_9c8__sse2,
+  qnnp_params.q8dw9 = (struct q8updw_parameters) {
+      .updw = q8updw_ukernel_9c8__sse2,
       .cr = 8,
   };
 #else

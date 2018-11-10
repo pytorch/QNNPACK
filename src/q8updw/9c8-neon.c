@@ -11,7 +11,7 @@
 #include <qnnpack/q8dw.h>
 
 
-void q8dw_ukernel_9c8__neon(
+void q8updw_ukernel_9c8__neon(
     size_t channels,
     size_t output_width,
     const uint8_t** input,

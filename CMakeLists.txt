@@ -145,8 +145,8 @@ SET(QNNPACK_ARM_NEON_UKERNELS
   src/q8gemm/6x4-neon.c
   src/q8conv/4x8-neon.c
   src/q8conv/8x8-neon.c
-  src/q8dw/9c8-neon.c
-  src/q8dw/25c8-neon.c
+  src/q8updw/9c8-neon.c
+  src/q8mpdw/25c8-neon.c
   src/sgemm/5x8-neon.c
   src/sgemm/6x8-neon.c)
 
@@ -154,7 +154,7 @@ SET(QNNPACK_AARCH32_ASM_UKERNELS
   src/q8gemm/4x8-aarch32-neon.S
   src/q8gemm/4x8c2-xzp-aarch32-neon.S
   src/q8conv/4x8-aarch32-neon.S
-  src/q8dw/9c8-aarch32-neon.S
+  src/q8updw/9c8-aarch32-neon.S
   src/hgemm/8x8-aarch32-neonfp16arith.S)
 
 SET(QNNPACK_AARCH64_ASM_UKERNELS
@@ -165,7 +165,7 @@ SET(QNNPACK_X86_SSE2_UKERNELS
   src/q8gemm/2x4c8-sse2.c
   src/q8gemm/4x4c2-sse2.c
   src/q8conv/4x4c2-sse2.c
-  src/q8dw/9c8-sse2.c)
+  src/q8updw/9c8-sse2.c)
 
 SET(QNNPACK_UKERNELS ${QNNPACK_PSIMD_UKERNELS})
 IF(CMAKE_SYSTEM_PROCESSOR MATCHES "^armv[5-8]" OR IOS_ARCH MATCHES "^armv7")
@@ -345,14 +345,23 @@ IF(QNNPACK_BUILD_TESTS)
   TARGET_LINK_LIBRARIES(q8conv-test PRIVATE qnnpack cpuinfo fp16 gtest gtest_main)
   ADD_TEST(q8conv-test q8conv-test)
 
-  ADD_EXECUTABLE(q8dw-test test/q8dw.cc)
-  SET_TARGET_PROPERTIES(q8dw-test PROPERTIES
+  ADD_EXECUTABLE(q8updw-test test/q8updw.cc)
+  SET_TARGET_PROPERTIES(q8updw-test PROPERTIES
     CXX_STANDARD 11
     CXX_STANDARD_REQUIRED YES
     CXX_EXTENSIONS NO)
-  TARGET_INCLUDE_DIRECTORIES(q8dw-test PRIVATE src test)
-  TARGET_LINK_LIBRARIES(q8dw-test PRIVATE qnnpack cpuinfo fp16 gtest gtest_main)
-  ADD_TEST(q8dw-test q8dw-test)
+  TARGET_INCLUDE_DIRECTORIES(q8updw-test PRIVATE src test)
+  TARGET_LINK_LIBRARIES(q8updw-test PRIVATE qnnpack cpuinfo fp16 gtest gtest_main)
+  ADD_TEST(q8updw-test q8updw-test)
+
+  ADD_EXECUTABLE(q8mpdw-test test/q8mpdw.cc)
+  SET_TARGET_PROPERTIES(q8mpdw-test PROPERTIES
+    CXX_STANDARD 11
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO)
+  TARGET_INCLUDE_DIRECTORIES(q8mpdw-test PRIVATE src test)
+  TARGET_LINK_LIBRARIES(q8mpdw-test PRIVATE qnnpack cpuinfo fp16 gtest gtest_main)
+  ADD_TEST(q8mpdw-test q8mpdw-test)
 
   ADD_EXECUTABLE(hgemm-test test/hgemm.cc)
   SET_TARGET_PROPERTIES(hgemm-test PROPERTIES

@@ -826,18 +826,20 @@ struct q8dw_context {
   size_t output_col_increment;
   size_t acc_row_stride;
   union qnnp_conv_quantization_params quantization_params;
-  const q8dw_ukernel_function ukernel;
-  const q8dw_multipass_ukernel_function ukernel_mp;
+  union {
+    const q8updw_ukernel_function unipass_ukernel;
+    const q8mpdw_ukernel_function multipass_ukernel;
+  };
 };
 
-static void compute_q8dw(
+static void compute_q8updw(
     const struct q8dw_context context[restrict static 1],
     size_t image,
     size_t output_y)
 {
   const size_t output_height = context->output_height;
 
-  context->ukernel(
+  context->unipass_ukernel(
     context->groups,
     context->output_width,
     context->indirection_buffer + (image * output_height + output_y) * context->indirection_buffer_row_stride,
@@ -848,7 +850,7 @@ static void compute_q8dw(
     &context->quantization_params);
 }
 
-static void compute_q8dw_multipass(
+static void compute_q8mpdw(
     const struct q8dw_context context[restrict static 1],
     size_t image,
     size_t output_y)
@@ -857,7 +859,7 @@ static void compute_q8dw_multipass(
   const size_t multipass_acc_size = sizeof(int32_t) * context->acc_row_stride;
   QNNP_ALIGN(16) int32_t multipass_acc[multipass_acc_size];
 
-  context->ukernel_mp(
+  context->multipass_ukernel(
     context->groups,
     context->output_width,
     context->indirection_buffer + (image * output_height + output_y) * context->indirection_buffer_row_stride,
@@ -895,11 +897,11 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
           .output_row_stride = output_width * op->output_pixel_stride,
           .output_col_increment = (op->output_pixel_stride - groups) * sizeof(uint8_t),
           .quantization_params = op->conv_quantization_params,
-          .ukernel = qnnp_params.q8dw9.dw,
+          .unipass_ukernel = qnnp_params.q8dw9.updw,
       };
       pthreadpool_compute_2d(
           threadpool,
-          (pthreadpool_function_2d_t) compute_q8dw,
+          (pthreadpool_function_2d_t) compute_q8updw,
           &q8dw_context,
           batch_size, output_height);
     } else if (kernel_size == 25) {
@@ -917,11 +919,11 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
           .output_row_stride = output_width * op->output_pixel_stride,
           .output_col_increment = (op->output_pixel_stride - groups) * sizeof(uint8_t),
           .quantization_params = op->conv_quantization_params,
-          .ukernel_mp = qnnp_params.q8dw25.dw,
+          .multipass_ukernel = qnnp_params.q8dw25.mpdw,
       };
       pthreadpool_compute_2d(
           threadpool,
-          (pthreadpool_function_2d_t) compute_q8dw_multipass,
+          (pthreadpool_function_2d_t) compute_q8mpdw,
           &q8dw_context,
           batch_size, output_height);
     } else {
