@@ -122,8 +122,8 @@ enum qnnp_status qnnp_create_fully_connected_nc_q8(
       input_zero_point, kernel_zero_point,
       requantization_scale, output_zero_point, output_min, output_max);
 
+  fully_connected->ukernel_type = qnnp_ukernel_type_gemm;
   fully_connected->format = qnnp_format_quint8;
-  fully_connected->flags = QNNP_CONVOLUTION_FLAG_GEMM;
 
   *fully_connected_out = fully_connected;
   return qnnp_status_success;

@@ -21,6 +21,7 @@
 #include <qnnpack/convolution.h>
 #include <qnnpack/requantization.h>
 #include <qnnpack/log.h>
+#include <qnnpack/common.h>
 #include <qnnpack/math.h>
 #include <qnnpack/pack.h>
 #include <qnnpack/params.h>
@@ -188,103 +189,87 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
 
   const size_t kernel_size = kernel_height * kernel_width;
 
-  uint32_t flags = 0;
+  enum qnnp_ukernel_type ukernel_type = qnnp_ukernel_type_none;
+  const bool any_padding = (input_padding_left | input_padding_top | input_padding_right | input_padding_bottom) != 0;
   if ((kernel_size == 9 || kernel_size == 25) && group_input_channels == 1 && group_output_channels == 1 && groups > 1) {
-    flags |= QNNP_CONVOLUTION_FLAG_DW;
-  } else if (kernel_size == 1 && subsampling_height == 1 && subsampling_width == 1) {
-    if (group_input_channels >= qnnp_params.q8conv_xzp.kthreshold) {
-      flags |= QNNP_CONVOLUTION_FLAG_XZP_GEMM;
-    } else {
-      flags |= QNNP_CONVOLUTION_FLAG_GEMM;
-    }
+    ukernel_type = qnnp_ukernel_type_dwconv;
+  } else if (kernel_size == 1 && subsampling_height == 1 && subsampling_width == 1 && !any_padding) {
+    ukernel_type = group_input_channels >= qnnp_params.q8conv_xzp.kthreshold ?
+      qnnp_ukernel_type_xzp_gemm : qnnp_ukernel_type_gemm;
+  } else {
+    ukernel_type = qnnp_ukernel_type_conv;
   }
-  if ((input_padding_left | input_padding_top | input_padding_right | input_padding_bottom) != 0) {
-    flags |= QNNP_CONVOLUTION_FLAG_ZERO;
-  }
+  size_t zero_size = 0, zero_offset = 0;
 
-  if (flags & QNNP_CONVOLUTION_FLAG_DW) {
-    const uint32_t cr = qnnp_params.q8dw9.cr;
-    const uint32_t c_stride = (groups + (cr - 1)) & -cr;
-    convolution->group_stride = c_stride;
-    const size_t packed_weights_size = (sizeof(uint8_t) * kernel_size + sizeof(int32_t)) * c_stride;
-    convolution->packed_kernel = malloc(packed_weights_size);
-    if (convolution->packed_kernel == NULL) {
-      qnnp_log_error("failed to allocate %zu bytes for packed kernel data", packed_weights_size);
-      goto error;
-    }
-
-    if (kernel_size == 9) {
-      pack_q8dw_w(
-        kernel_height, kernel_width,
-        groups, cr,
-        input_zero_point, kernel_zero_point,
-        kernel, bias, convolution->packed_kernel);
-    } else {
-      // kernel size == 25
-      /* change this later */
-      pack_q8dw_w_dilation(
-        kernel_height, kernel_width,
-        groups, cr,
-        0, kernel_height, 0, 2,
-        kernel, bias, convolution->packed_kernel, true);
-      pack_q8dw_w_dilation(
-        kernel_height, kernel_width,
-        groups, cr,
-        0, kernel_height, 2, 4,
-        kernel, bias, convolution->packed_kernel + (10 + sizeof(int32_t) / sizeof(uint8_t)) * c_stride, false);
-      pack_q8dw_w_dilation(
-        kernel_height, kernel_width,
-        groups, cr,
-        0, kernel_height, 4, 5,
-        kernel, bias, convolution->packed_kernel + (20 + sizeof(int32_t) / sizeof(uint8_t)) * c_stride, false);
-    }
-
-    if (flags & QNNP_CONVOLUTION_FLAG_ZERO) {
-      const size_t zero_size = sizeof(uint8_t) * c_stride + (groups >= 8 ? 0 : 8);
-      convolution->zero = malloc(zero_size);
-      if (convolution->zero == NULL) {
-        qnnp_log_error("failed to allocate %zu bytes for zero padding", zero_size);
+  switch (ukernel_type) {
+    case qnnp_ukernel_type_dwconv:
+    {
+      const uint32_t cr = qnnp_params.q8dw9.cr;
+      const uint32_t c_stride = (groups + (cr - 1)) & -cr;
+      convolution->group_stride = c_stride;
+      const size_t packed_weights_size = (sizeof(uint8_t) * kernel_size + sizeof(int32_t)) * c_stride;
+      convolution->packed_kernel = malloc(packed_weights_size);
+      if (convolution->packed_kernel == NULL) {
+        qnnp_log_error("failed to allocate %zu bytes for packed kernel data", packed_weights_size);
         goto error;
       }
-      memset(convolution->zero, input_zero_point, zero_size);
-    }
-  } else {
-    uint32_t nr = qnnp_params.q8conv.nr;
-    uint32_t kr = qnnp_params.q8conv.kr;
 
-    if (flags & QNNP_CONVOLUTION_FLAG_XZP_GEMM) {
-      nr = qnnp_params.q8conv_xzp.nr;
-      kr = qnnp_params.q8conv_xzp.kr;
-    }
+      switch (kernel_size) {
+        case 9:
+          pack_q8dw_w(
+            kernel_height, kernel_width,
+            groups, cr,
+            input_zero_point, kernel_zero_point,
+            kernel, bias, convolution->packed_kernel);
+          break;
+        case 25:
+          /* change this later */
+          pack_q8dw_w_dilation(
+            kernel_height, kernel_width,
+            groups, cr,
+            0, kernel_height, 0, 2,
+            kernel, bias, convolution->packed_kernel, true);
+          pack_q8dw_w_dilation(
+            kernel_height, kernel_width,
+            groups, cr,
+            0, kernel_height, 2, 4,
+            kernel, bias, convolution->packed_kernel + (10 + sizeof(int32_t) / sizeof(uint8_t)) * c_stride, false);
+          pack_q8dw_w_dilation(
+            kernel_height, kernel_width,
+            groups, cr,
+            0, kernel_height, 4, 5,
+            kernel, bias, convolution->packed_kernel + (20 + sizeof(int32_t) / sizeof(uint8_t)) * c_stride, false);
+          break;
+        default:
+          QNNP_UNREACHABLE;
+      }
 
-    const uint32_t n_stride = (group_output_channels + (nr - 1)) & -nr;
-    const uint32_t k_stride = (group_input_channels + (kr - 1)) & -kr;
-
-    const size_t packed_group_weights_size =
-      (sizeof(uint8_t) * kernel_size * k_stride + sizeof(int32_t)) * n_stride;
-    convolution->packed_kernel = malloc(packed_group_weights_size * groups);
-    if (convolution->packed_kernel == NULL) {
-      qnnp_log_error("failed to allocate %zu bytes for packed weights data", packed_group_weights_size * groups);
-      goto error;
+      if (groups >= 8) {
+        zero_size = sizeof(uint8_t) * c_stride;
+        zero_offset = 0;
+      } else {
+        zero_size = sizeof(uint8_t) * c_stride + 8;
+        zero_offset = sizeof(uint8_t) * 8;
+      }
+      break;
     }
-    if (flags & QNNP_CONVOLUTION_FLAG_XZP_GEMM) {
+    case qnnp_ukernel_type_xzp_gemm:
+    {
+      const uint32_t nr = qnnp_params.q8conv_xzp.nr;
+      const uint32_t kr = qnnp_params.q8conv_xzp.kr;
+      const uint32_t n_stride = (group_output_channels + (nr - 1)) & -nr;
+      const uint32_t k_stride = (group_input_channels + (kr - 1)) & -kr;
+
+      const size_t packed_group_weights_size =
+        (sizeof(uint8_t) * kernel_size * k_stride + sizeof(int32_t)) * n_stride;
+      convolution->packed_kernel = malloc(packed_group_weights_size * groups);
+      if (convolution->packed_kernel == NULL) {
+        qnnp_log_error("failed to allocate %zu bytes for packed weights data", packed_group_weights_size * groups);
+        goto error;
+      }
       /* The XZP ukernel needs the padding to be 0 */
       memset(convolution->packed_kernel, 0, sizeof(uint8_t) * groups * kernel_size * k_stride * n_stride);
-    } else {
-      memset(convolution->packed_kernel, kernel_zero_point, packed_group_weights_size * groups);
-    }
 
-    if (flags & QNNP_CONVOLUTION_FLAG_GEMM) {
-      for (uint32_t group = 0; group < groups; group++) {
-        pack_q8gemm_w(
-            group_output_channels, group_input_channels,
-            nr, nr, kr,
-            input_zero_point, kernel_zero_point,
-            kernel + group * group_output_channels * group_input_channels,
-            bias + group * group_output_channels,
-            (void*) ((uintptr_t) convolution->packed_kernel + group * packed_group_weights_size));
-      }
-    } else if (flags & QNNP_CONVOLUTION_FLAG_XZP_GEMM) {
       for (uint32_t group = 0; group < groups; group++) {
         const uint32_t kc = qnnp_params.q8conv_xzp.kc;
         pack_q8gemm_b_diagonal(
@@ -293,19 +278,7 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
             kernel + group * group_output_channels * group_input_channels,
             convolution->packed_kernel + group * n_stride * k_stride);
       }
-    } else {
-      for (uint32_t group = 0; group < groups; group++) {
-        pack_q8conv_w(
-            group_output_channels, kernel_size, group_input_channels,
-            nr, kr,
-            input_zero_point, kernel_zero_point,
-            kernel + group * group_output_channels * kernel_size * group_input_channels,
-            bias + group * group_output_channels,
-            (void*) ((uintptr_t) convolution->packed_kernel + group * packed_group_weights_size));
-      }
-    }
 
-    if (flags & QNNP_CONVOLUTION_FLAG_XZP_GEMM) {
       convolution->bias = malloc(sizeof(int32_t) * groups * n_stride);
       if (convolution->bias == NULL) {
         qnnp_log_error("failed to allocate %zu bytes for packed bias data", sizeof(int32_t) * groups * n_stride);
@@ -342,17 +315,74 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
         }
       }
       free(bias_buf);
+      break;
     }
+    case qnnp_ukernel_type_gemm:
+    case qnnp_ukernel_type_conv:
+    {
+      const uint32_t nr = qnnp_params.q8conv.nr;
+      const uint32_t kr = qnnp_params.q8conv.kr;
+      const uint32_t n_stride = (group_output_channels + (nr - 1)) & -nr;
+      const uint32_t k_stride = (group_input_channels + (kr - 1)) & -kr;
 
-    if (flags & QNNP_CONVOLUTION_FLAG_ZERO) {
-      const size_t zero_size = sizeof(uint8_t) * k_stride + (group_input_channels >= 8 ? 0 : 8);
-      convolution->zero = malloc(zero_size);
-      if (convolution->zero == NULL) {
-        qnnp_log_error("failed to allocate %zu bytes for zero padding", zero_size);
+      const size_t packed_group_weights_size =
+        (sizeof(uint8_t) * kernel_size * k_stride + sizeof(int32_t)) * n_stride;
+      convolution->packed_kernel = malloc(packed_group_weights_size * groups);
+      if (convolution->packed_kernel == NULL) {
+        qnnp_log_error("failed to allocate %zu bytes for packed weights data", packed_group_weights_size * groups);
         goto error;
       }
-      memset(convolution->zero, input_zero_point, zero_size);
+      memset(convolution->packed_kernel, kernel_zero_point, packed_group_weights_size * groups);
+
+      switch (ukernel_type) {
+        case qnnp_ukernel_type_gemm:
+          for (uint32_t group = 0; group < groups; group++) {
+            pack_q8gemm_w(
+                group_output_channels, group_input_channels,
+                nr, nr, kr,
+                input_zero_point, kernel_zero_point,
+                kernel + group * group_output_channels * group_input_channels,
+                bias + group * group_output_channels,
+                (void*) ((uintptr_t) convolution->packed_kernel + group * packed_group_weights_size));
+          }
+          break;
+        case qnnp_ukernel_type_conv:
+          for (uint32_t group = 0; group < groups; group++) {
+            pack_q8conv_w(
+                group_output_channels, kernel_size, group_input_channels,
+                nr, kr,
+                input_zero_point, kernel_zero_point,
+                kernel + group * group_output_channels * kernel_size * group_input_channels,
+                bias + group * group_output_channels,
+                (void*) ((uintptr_t) convolution->packed_kernel + group * packed_group_weights_size));
+          }
+          break;
+        default:
+          QNNP_UNREACHABLE;
+      }
+
+      if (group_input_channels >= 8) {
+        zero_size = sizeof(uint8_t) * k_stride;
+        zero_offset = 0;
+      } else {
+        zero_size = sizeof(uint8_t) * k_stride + 8;
+        zero_offset = 8;
+      }
+      break;
     }
+    default:
+      QNNP_UNREACHABLE;
+  }
+
+  if (any_padding) {
+    void* zero_buffer = malloc(zero_size);
+    if (zero_buffer == NULL) {
+      qnnp_log_error("failed to allocate %zu bytes for zero padding", zero_size);
+      goto error;
+    }
+    memset(zero_buffer, input_zero_point, zero_size);
+    convolution->zero_buffer = zero_buffer;
+    convolution->zero_pointer = (void*) ((uintptr_t) zero_buffer + zero_offset);
   }
 
   convolution->input_padding_top = input_padding_top;
@@ -373,7 +403,7 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
   convolution->input_zero_point = input_zero_point;
   convolution->kernel_zero_point = kernel_zero_point;
 
-  if (flags & QNNP_CONVOLUTION_FLAG_XZP_GEMM) {
+  if (ukernel_type == qnnp_ukernel_type_xzp_gemm) {
     convolution->requantization_params =
       qnnp_compute_requantization_params(
         convolution_scale, output_zero_point, output_min, output_max);
@@ -384,8 +414,8 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
         convolution_scale, output_zero_point, output_min, output_max);
   }
 
+  convolution->ukernel_type = ukernel_type;
   convolution->format = qnnp_format_quint8;
-  convolution->flags = flags;
 
   *convolution_out = convolution;
   return qnnp_status_success;
@@ -443,142 +473,145 @@ enum qnnp_status qnnp_setup_convolution2d_nhwc_q8(
   convolution->output = output;
   convolution->output_pixel_stride = output_pixel_stride;
 
-  if (convolution->flags & QNNP_CONVOLUTION_FLAG_GEMM) {
-    /* Convolution maps directly to GEMM and doesn't use indirection buffer */
-    return qnnp_status_success;
-  }
-
-  const size_t groups = convolution->groups;
-
-  if (convolution->flags & QNNP_CONVOLUTION_FLAG_XZP_GEMM) {
-    void* a_sum = (void*) realloc(convolution->a_sum, sizeof(int32_t) * batch_size * groups * input_height * input_width);
-    if (a_sum == NULL) {
-      qnnp_log_error("failed to allocate %zu bytes for a row sum data",
-        sizeof(int32_t) * batch_size * groups * input_height * input_width);
-      return qnnp_status_out_of_memory;
+  switch (convolution->ukernel_type) {
+    case qnnp_ukernel_type_gemm:
+      /* Convolution maps directly to GEMM and doesn't use indirection buffer */
+      return qnnp_status_success;
+    case qnnp_ukernel_type_xzp_gemm:
+    {
+      const size_t groups = convolution->groups;
+      void* a_sum = (void*) realloc(convolution->a_sum, sizeof(int32_t) * batch_size * groups * input_height * input_width);
+      if (a_sum == NULL) {
+        qnnp_log_error("failed to allocate %zu bytes for row sum data",
+          sizeof(int32_t) * batch_size * groups * input_height * input_width);
+        return qnnp_status_out_of_memory;
+      }
+      convolution->a_sum = a_sum;
+      return qnnp_status_success;
     }
-    convolution->a_sum = a_sum;
-    return qnnp_status_success;
-  }
+    case qnnp_ukernel_type_conv:
+    {
+      const size_t groups = convolution->groups;
+      const size_t kernel_height = convolution->kernel_height;
+      const size_t kernel_width = convolution->kernel_width;
+      const size_t kernel_size = kernel_height * kernel_width;
+      const size_t output_height = convolution->output_height;
+      const size_t output_width = convolution->output_width;
+      const size_t output_size = output_height * output_width;
+      const size_t output_tile_size = qnnp_params.q8conv.mr;
+      const size_t tiled_output_size = round_up(output_size, output_tile_size);
+      const size_t indirection_buffer_size = sizeof(void*) * batch_size * groups * tiled_output_size * kernel_size;
 
-  const size_t kernel_height = convolution->kernel_height;
-  const size_t kernel_width = convolution->kernel_width;
-  const size_t kernel_size = kernel_height * kernel_width;
-  const size_t output_height = convolution->output_height;
-  const size_t output_width = convolution->output_width;
-  if (convolution->flags & QNNP_CONVOLUTION_FLAG_DW) {
-    const size_t width_step = convolution->dilation_width == 1 ? convolution->stride_width : kernel_width;
-    const size_t indirection_buffer_size = sizeof(void*) * batch_size * output_height *
-      (kernel_size + (output_width * width_step - 1) * kernel_height);
+      const void** indirection_buffer = (const void**) realloc(convolution->indirection_buffer, indirection_buffer_size);
+      if (indirection_buffer == NULL) {
+        qnnp_log_error("failed to allocate %zu bytes for indirection buffer", indirection_buffer_size);
+        return qnnp_status_out_of_memory;
+      }
+      convolution->indirection_buffer = indirection_buffer;
 
-    const void** indirection_buffer =
-      (const void**) realloc(convolution->indirection_buffer, indirection_buffer_size);
-    if (indirection_buffer == NULL) {
-      qnnp_log_error("failed to allocate %zu bytes for indirection buffer", indirection_buffer_size);
-      return qnnp_status_out_of_memory;
-    }
-    convolution->indirection_buffer = indirection_buffer;
-
-    const void* zero = convolution->zero;
-    if (groups < 8) {
-      zero = (const void*) ((uintptr_t) zero + 8);
-    }
-
-    for (size_t group = 0; group < groups; group++) {
-      for (size_t image = 0; image < batch_size; image++) {
-        for (size_t output_y = 0; output_y < output_height; output_y++) {
-          for (size_t kernel_y = 0; kernel_y < kernel_height; kernel_y++) {
-            const size_t input_y =
-              output_y * convolution->stride_height + kernel_y * convolution->dilation_height - convolution->input_padding_top;
-            if (input_y < input_height) {
-              for (size_t output_x = 0; output_x < output_width; output_x++) {
-                for (size_t kernel_x = 0; kernel_x < kernel_width; kernel_x++) {
-                  const size_t input_x =
-                    output_x * convolution->stride_width + kernel_x * convolution->dilation_width - convolution->input_padding_left;
-                  const size_t index =
-                    (image * output_height + output_y) * (kernel_size + (output_width * width_step - 1) * kernel_height) +
-                    output_x * width_step * kernel_height + kernel_x * kernel_height + kernel_y;
-                  if (input_x < input_width) {
-                    indirection_buffer[index] = input + ((image * input_height + input_y) * input_width + input_x) * input_pixel_stride;
-                  } else {
+      const void* zero = convolution->zero_pointer;
+      const struct fxdiv_divisor_size_t output_width_divisor = fxdiv_init_size_t(output_width);
+      for (size_t group = 0; group < groups; group++) {
+        for (size_t image = 0; image < batch_size; image++) {
+          for (size_t output_tile_start = 0; output_tile_start < tiled_output_size; output_tile_start += output_tile_size) {
+            for (size_t output_tile_offset = 0; output_tile_offset < output_tile_size; output_tile_offset++) {
+              const size_t tiled_output_index = output_tile_start + output_tile_offset;
+              const size_t output_index = min(tiled_output_index, output_size - 1);
+              const struct fxdiv_result_size_t output_index_components =
+                fxdiv_divide_size_t(output_index, output_width_divisor);
+              const size_t output_y = output_index_components.quotient;
+              const size_t output_x = output_index_components.remainder;
+              for (size_t kernel_y = 0; kernel_y < kernel_height; kernel_y++) {
+                const size_t input_y =
+                  output_y * convolution->stride_height + kernel_y * convolution->dilation_height - convolution->input_padding_top;
+                if (input_y < input_height) {
+                  for (size_t kernel_x = 0; kernel_x < kernel_width; kernel_x++) {
+                    const size_t input_x =
+                      output_x * convolution->stride_width + kernel_x * convolution->dilation_width - convolution->input_padding_left;
+                    const size_t index =
+                      (group * batch_size + image) * tiled_output_size * kernel_size + output_tile_start * kernel_size + (kernel_y * kernel_width + kernel_x) * output_tile_size + output_tile_offset;
+                    if (input_x < input_width) {
+                      indirection_buffer[index] =
+                        input + ((image * input_height + input_y) * input_width + input_x) * input_pixel_stride + group * convolution->group_input_channels;
+                    } else {
+                      indirection_buffer[index] = zero;
+                    }
+                  }
+                } else {
+                  for (size_t kernel_x = 0; kernel_x < kernel_width; kernel_x++) {
+                    const size_t index =
+                      (group * batch_size + image) * tiled_output_size * kernel_size + output_tile_start * kernel_size + (kernel_y * kernel_width + kernel_x) * output_tile_size + output_tile_offset;
                     indirection_buffer[index] = zero;
                   }
-                }
-              }
-            } else {
-              for (size_t output_x = 0; output_x < output_width; output_x++) {
-                for (size_t kernel_x = 0; kernel_x < kernel_width; kernel_x++) {
-                  const size_t index =
-                    (image * output_height + output_y) * (kernel_size + (output_width * width_step - 1) * kernel_height) +
-                    output_x * width_step * kernel_height + kernel_x * kernel_height + kernel_y;
-                  indirection_buffer[index] = zero;
                 }
               }
             }
           }
         }
       }
+      return qnnp_status_success;
     }
-  } else {
-    const size_t output_size = output_height * output_width;
-    const size_t output_tile_size = qnnp_params.q8conv.mr;
-    const size_t tiled_output_size = round_up(output_size, output_tile_size);
-    const size_t indirection_buffer_size = sizeof(void*) * batch_size * groups * tiled_output_size * kernel_size;
+    case qnnp_ukernel_type_dwconv:
+    {
+      const size_t groups = convolution->groups;
+      const size_t kernel_height = convolution->kernel_height;
+      const size_t kernel_width = convolution->kernel_width;
+      const size_t kernel_size = kernel_height * kernel_width;
+      const size_t output_height = convolution->output_height;
+      const size_t output_width = convolution->output_width;
+      const size_t width_step = convolution->dilation_width == 1 ? convolution->stride_width : kernel_width;
+      const size_t indirection_buffer_size = sizeof(void*) * batch_size * output_height *
+        (kernel_size + (output_width * width_step - 1) * kernel_height);
 
-    const void** indirection_buffer = (const void**) realloc(convolution->indirection_buffer, indirection_buffer_size);
-    if (indirection_buffer == NULL) {
-      qnnp_log_error("failed to allocate %zu bytes for indirection buffer", indirection_buffer_size);
-      return qnnp_status_out_of_memory;
-    }
-    convolution->indirection_buffer = indirection_buffer;
+      const void** indirection_buffer =
+        (const void**) realloc(convolution->indirection_buffer, indirection_buffer_size);
+      if (indirection_buffer == NULL) {
+        qnnp_log_error("failed to allocate %zu bytes for indirection buffer", indirection_buffer_size);
+        return qnnp_status_out_of_memory;
+      }
+      convolution->indirection_buffer = indirection_buffer;
 
-    const void* zero = convolution->zero;
-    if (convolution->group_input_channels < 8) {
-      zero = (const void*) ((uintptr_t) zero + 8);
-    }
-
-    const struct fxdiv_divisor_size_t output_width_divisor = fxdiv_init_size_t(output_width);
-    for (size_t group = 0; group < groups; group++) {
-      for (size_t image = 0; image < batch_size; image++) {
-        for (size_t output_tile_start = 0; output_tile_start < tiled_output_size; output_tile_start += output_tile_size) {
-          for (size_t output_tile_offset = 0; output_tile_offset < output_tile_size; output_tile_offset++) {
-            const size_t tiled_output_index = output_tile_start + output_tile_offset;
-            const size_t output_index = min(tiled_output_index, output_size - 1);
-            const struct fxdiv_result_size_t output_index_components =
-              fxdiv_divide_size_t(output_index, output_width_divisor);
-            const size_t output_y = output_index_components.quotient;
-            const size_t output_x = output_index_components.remainder;
+      const void* zero = convolution->zero_pointer;
+      for (size_t group = 0; group < groups; group++) {
+        for (size_t image = 0; image < batch_size; image++) {
+          for (size_t output_y = 0; output_y < output_height; output_y++) {
             for (size_t kernel_y = 0; kernel_y < kernel_height; kernel_y++) {
               const size_t input_y =
                 output_y * convolution->stride_height + kernel_y * convolution->dilation_height - convolution->input_padding_top;
               if (input_y < input_height) {
-                for (size_t kernel_x = 0; kernel_x < kernel_width; kernel_x++) {
-                  const size_t input_x =
-                    output_x * convolution->stride_width + kernel_x * convolution->dilation_width - convolution->input_padding_left;
-                  const size_t index =
-                    (group * batch_size + image) * tiled_output_size * kernel_size + output_tile_start * kernel_size + (kernel_y * kernel_width + kernel_x) * output_tile_size + output_tile_offset;
-                  if (input_x < input_width) {
-                    indirection_buffer[index] =
-                      input + ((image * input_height + input_y) * input_width + input_x) * input_pixel_stride + group * convolution->group_input_channels;
-                  } else {
-                    indirection_buffer[index] = zero;
+                for (size_t output_x = 0; output_x < output_width; output_x++) {
+                  for (size_t kernel_x = 0; kernel_x < kernel_width; kernel_x++) {
+                    const size_t input_x =
+                      output_x * convolution->stride_width + kernel_x * convolution->dilation_width - convolution->input_padding_left;
+                    const size_t index =
+                      (image * output_height + output_y) * (kernel_size + (output_width * width_step - 1) * kernel_height) +
+                      output_x * width_step * kernel_height + kernel_x * kernel_height + kernel_y;
+                    if (input_x < input_width) {
+                      indirection_buffer[index] = input + ((image * input_height + input_y) * input_width + input_x) * input_pixel_stride;
+                    } else {
+                      indirection_buffer[index] = zero;
+                    }
                   }
                 }
               } else {
-                for (size_t kernel_x = 0; kernel_x < kernel_width; kernel_x++) {
-                  const size_t index =
-                    (group * batch_size + image) * tiled_output_size * kernel_size + output_tile_start * kernel_size + (kernel_y * kernel_width + kernel_x) * output_tile_size + output_tile_offset;
-                  indirection_buffer[index] = zero;
+                for (size_t output_x = 0; output_x < output_width; output_x++) {
+                  for (size_t kernel_x = 0; kernel_x < kernel_width; kernel_x++) {
+                    const size_t index =
+                      (image * output_height + output_y) * (kernel_size + (output_width * width_step - 1) * kernel_height) +
+                      output_x * width_step * kernel_height + kernel_x * kernel_height + kernel_y;
+                    indirection_buffer[index] = zero;
+                  }
                 }
               }
             }
           }
         }
       }
+      return qnnp_status_success;
     }
+    default:
+      QNNP_UNREACHABLE;
   }
-
-  return qnnp_status_success;
 }
 
 struct q8gemm_context {
@@ -872,124 +905,138 @@ static void compute_q8mpdw(
 
 enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
 {
-  if (op->flags & QNNP_CONVOLUTION_FLAG_DW) {
-    const size_t batch_size = op->batch_size;
-    const size_t groups = op->groups;
-    const size_t kernel_height = op->kernel_height;
-    const size_t kernel_width = op->kernel_width;
-    const size_t kernel_size = kernel_height * kernel_width;
-    const size_t width_step = op->dilation_width == 1 ? op->stride_width : op->kernel_width;
-    const size_t output_height = op->output_height;
-    const size_t output_width = op->output_width;
+  switch (op->ukernel_type) {
+    case qnnp_ukernel_type_dwconv:
+    {
+      const size_t batch_size = op->batch_size;
+      const size_t groups = op->groups;
+      const size_t kernel_height = op->kernel_height;
+      const size_t kernel_width = op->kernel_width;
+      const size_t kernel_size = kernel_height * kernel_width;
+      const size_t width_step = op->dilation_width == 1 ? op->stride_width : op->kernel_width;
+      const size_t output_height = op->output_height;
+      const size_t output_width = op->output_width;
 
-    if (kernel_size == 9) {
-      struct q8dw_context q8dw_context = {
-          .groups = groups,
-          .indirection_buffer = (const uint8_t**) op->indirection_buffer,
-          .indirection_buffer_row_stride = kernel_size + (output_width * width_step - 1) * kernel_height,
-          .indirection_buffer_col_stride = kernel_height * width_step * sizeof(void*),
-          .packed_kernel = op->packed_kernel,
-          .bias = op->bias,
-          .output = op->output,
-          .output_height = output_height,
-          .output_width = output_width,
-          .output_row_stride = output_width * op->output_pixel_stride,
-          .output_col_increment = (op->output_pixel_stride - groups) * sizeof(uint8_t),
-          .quantization_params = op->conv_quantization_params,
-          .unipass_ukernel = qnnp_params.q8dw9.updw,
-      };
-      pthreadpool_compute_2d(
-          threadpool,
-          (pthreadpool_function_2d_t) compute_q8updw,
-          &q8dw_context,
-          batch_size, output_height);
-    } else if (kernel_size == 25) {
-      struct q8dw_context q8dw_context = {
-          .groups = groups,
-          .group_stride = op->group_stride,
-          .indirection_buffer = (const uint8_t**) op->indirection_buffer,
-          .indirection_buffer_row_stride = kernel_size + (output_width * width_step - 1) * kernel_height,
-          .indirection_buffer_col_stride = kernel_height * width_step * sizeof(void*),
-          .packed_kernel = op->packed_kernel,
-          .bias = op->bias,
-          .output = op->output,
-          .output_height = output_height,
-          .output_width = output_width,
-          .output_row_stride = output_width * op->output_pixel_stride,
-          .output_col_increment = (op->output_pixel_stride - groups) * sizeof(uint8_t),
-          .quantization_params = op->conv_quantization_params,
-          .multipass_ukernel = qnnp_params.q8dw25.mpdw,
-      };
-      pthreadpool_compute_2d(
-          threadpool,
-          (pthreadpool_function_2d_t) compute_q8mpdw,
-          &q8dw_context,
-          batch_size, output_height);
-    } else {
-      return qnnp_status_unsupported_parameter;
+      switch (kernel_size) {
+        case 9:
+        {
+          struct q8dw_context q8dw_context = {
+              .groups = groups,
+              .indirection_buffer = (const uint8_t**) op->indirection_buffer,
+              .indirection_buffer_row_stride = kernel_size + (output_width * width_step - 1) * kernel_height,
+              .indirection_buffer_col_stride = kernel_height * width_step * sizeof(void*),
+              .packed_kernel = op->packed_kernel,
+              .bias = op->bias,
+              .output = op->output,
+              .output_height = output_height,
+              .output_width = output_width,
+              .output_row_stride = output_width * op->output_pixel_stride,
+              .output_col_increment = (op->output_pixel_stride - groups) * sizeof(uint8_t),
+              .quantization_params = op->conv_quantization_params,
+              .unipass_ukernel = qnnp_params.q8dw9.updw,
+          };
+          pthreadpool_compute_2d(
+              threadpool,
+              (pthreadpool_function_2d_t) compute_q8updw,
+              &q8dw_context,
+              batch_size, output_height);
+          break;
+        }
+        case 25:
+        {
+          struct q8dw_context q8dw_context = {
+              .groups = groups,
+              .group_stride = op->group_stride,
+              .indirection_buffer = (const uint8_t**) op->indirection_buffer,
+              .indirection_buffer_row_stride = kernel_size + (output_width * width_step - 1) * kernel_height,
+              .indirection_buffer_col_stride = kernel_height * width_step * sizeof(void*),
+              .packed_kernel = op->packed_kernel,
+              .bias = op->bias,
+              .output = op->output,
+              .output_height = output_height,
+              .output_width = output_width,
+              .output_row_stride = output_width * op->output_pixel_stride,
+              .output_col_increment = (op->output_pixel_stride - groups) * sizeof(uint8_t),
+              .quantization_params = op->conv_quantization_params,
+              .multipass_ukernel = qnnp_params.q8dw25.mpdw,
+          };
+          pthreadpool_compute_2d(
+              threadpool,
+              (pthreadpool_function_2d_t) compute_q8mpdw,
+              &q8dw_context,
+              batch_size, output_height);
+          break;
+        }
+        default:
+          QNNP_UNREACHABLE;
+      }
+      break;
     }
-  } else if (op->flags & QNNP_CONVOLUTION_FLAG_XZP_GEMM) {
-    const size_t batch_size = op->batch_size;
-    const size_t groups = op->groups;
-    const size_t group_input_channels = op->group_input_channels;
-    const size_t group_output_channels = op->group_output_channels;
-    const uint32_t mr = qnnp_params.q8conv_xzp.mr;
-    const uint32_t nr = qnnp_params.q8conv_xzp.nr;
-    const uint32_t kr = qnnp_params.q8conv_xzp.kr;
-    const size_t k_stride = (group_input_channels + (kr - 1)) & -kr;
-    const size_t n_stride = (group_output_channels + (nr - 1)) & -nr;
+    case qnnp_ukernel_type_xzp_gemm:
+    {
+      const size_t batch_size = op->batch_size;
+      const size_t groups = op->groups;
+      const size_t group_input_channels = op->group_input_channels;
+      const size_t group_output_channels = op->group_output_channels;
+      const uint32_t mr = qnnp_params.q8conv_xzp.mr;
+      const uint32_t nr = qnnp_params.q8conv_xzp.nr;
+      const uint32_t kr = qnnp_params.q8conv_xzp.kr;
+      const size_t k_stride = (group_input_channels + (kr - 1)) & -kr;
+      const size_t n_stride = (group_output_channels + (nr - 1)) & -nr;
 
-    /* compute input row sum */
-    const size_t input_size = op->input_height * op->input_width;
-    int32_t* a_sum = (int32_t*) op->a_sum;
-    q8gemm_compute_row_sum(
-        op->input,
-        batch_size,
-        groups,
-        input_size, /* m */
-        group_input_channels, /* k */
-        op->input_pixel_stride, /* input stride */
-        -op->kernel_zero_point, /* multiplier */
-        a_sum,
-        input_size,
-        threadpool);
-    struct q8gemm_xzp_context q8gemm_xzp_context = {
-        .k = group_input_channels,
-        .k_stride = k_stride,
-        .n = group_output_channels,
-        .n_stride = n_stride,
-        .a = op->input,
-        .a_stride = op->input_pixel_stride,
-        .packed_b = op->packed_kernel,
-        .bias = op->bias,
-        .c = op->output,
-        .c_stride = op->output_pixel_stride,
-        .a_sum = a_sum,
-        .groups = op->groups,
-        .batch_size = batch_size,
-        .a_sum_stride = input_size,
-        .requantization_params = op->requantization_params,
-        .ukernel = qnnp_params.q8conv_xzp.gemm,
-    };
-    pthreadpool_compute_4d_tiled(
-        threadpool,
-        (pthreadpool_function_4d_tiled_t) compute_q8gemm_xzp,
-        &q8gemm_xzp_context,
-        groups, batch_size * input_size, input_size, group_output_channels,
-        1, input_size, mr, nr);
-  } else {
-    const size_t batch_size = op->batch_size;
-    const size_t groups = op->groups;
-    const size_t group_input_channels = op->group_input_channels;
-    const size_t group_output_channels = op->group_output_channels;
-    const uint32_t mr = qnnp_params.q8conv.mr;
-    const uint32_t nr = qnnp_params.q8conv.nr;
-    const uint32_t kr = qnnp_params.q8conv.kr;
-    const size_t k_stride = (group_input_channels + (kr - 1)) & -kr;
-    const size_t n_stride = (group_output_channels + (nr - 1)) & -nr;
+      /* compute input row sum */
+      const size_t input_size = op->input_height * op->input_width;
+      int32_t* a_sum = (int32_t*) op->a_sum;
+      q8gemm_compute_row_sum(
+          op->input,
+          batch_size,
+          groups,
+          /* m */ input_size,
+          /* k */ group_input_channels,
+          /* input stride */ op->input_pixel_stride,
+          /* multiplier */ -op->kernel_zero_point,
+          a_sum,
+          input_size,
+          threadpool);
+      struct q8gemm_xzp_context q8gemm_xzp_context = {
+          .k = group_input_channels,
+          .k_stride = k_stride,
+          .n = group_output_channels,
+          .n_stride = n_stride,
+          .a = op->input,
+          .a_stride = op->input_pixel_stride,
+          .packed_b = op->packed_kernel,
+          .bias = op->bias,
+          .c = op->output,
+          .c_stride = op->output_pixel_stride,
+          .a_sum = a_sum,
+          .groups = op->groups,
+          .batch_size = batch_size,
+          .a_sum_stride = input_size,
+          .requantization_params = op->requantization_params,
+          .ukernel = qnnp_params.q8conv_xzp.gemm,
+      };
+      pthreadpool_compute_4d_tiled(
+          threadpool,
+          (pthreadpool_function_4d_tiled_t) compute_q8gemm_xzp,
+          &q8gemm_xzp_context,
+          groups, batch_size * input_size, input_size, group_output_channels,
+          1, input_size, mr, nr);
+      break;
+    }
+    case qnnp_ukernel_type_gemm:
+    {
+      const size_t batch_size = op->batch_size;
+      const size_t groups = op->groups;
+      const size_t group_input_channels = op->group_input_channels;
+      const size_t group_output_channels = op->group_output_channels;
+      const uint32_t mr = qnnp_params.q8conv.mr;
+      const uint32_t nr = qnnp_params.q8conv.nr;
+      const uint32_t kr = qnnp_params.q8conv.kr;
+      const size_t k_stride = (group_input_channels + (kr - 1)) & -kr;
+      const size_t n_stride = (group_output_channels + (nr - 1)) & -nr;
 
-    const size_t output_size = op->output_height * op->output_width;
-    if (op->flags & QNNP_CONVOLUTION_FLAG_GEMM) {
+      const size_t output_size = op->output_height * op->output_width;
       struct q8gemm_context q8gemm_context = {
           .k = group_input_channels,
           .k_stride = k_stride,
@@ -1010,7 +1057,21 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
           &q8gemm_context,
           groups, batch_size * output_size, output_size, group_output_channels,
           1, output_size, mr, nr);
-    } else {
+      break;
+    }
+    case qnnp_ukernel_type_conv:
+    {
+      const size_t batch_size = op->batch_size;
+      const size_t groups = op->groups;
+      const size_t group_input_channels = op->group_input_channels;
+      const size_t group_output_channels = op->group_output_channels;
+      const uint32_t mr = qnnp_params.q8conv.mr;
+      const uint32_t nr = qnnp_params.q8conv.nr;
+      const uint32_t kr = qnnp_params.q8conv.kr;
+      const size_t k_stride = (group_input_channels + (kr - 1)) & -kr;
+      const size_t n_stride = (group_output_channels + (nr - 1)) & -nr;
+
+      const size_t output_size = op->output_height * op->output_width;
       const size_t kernel_size = op->kernel_height * op->kernel_width;
       const size_t m_stride = round_up(output_size, mr);
       struct q8conv_context q8conv_context = {
@@ -1036,7 +1097,10 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
           &q8conv_context,
           groups, batch_size, output_size, group_output_channels,
           1, 1, mr, nr);
+      break;
     }
+    default:
+      QNNP_UNREACHABLE;
   }
   return qnnp_status_success;
 }
@@ -1048,7 +1112,7 @@ enum qnnp_status qnnp_delete_operator(qnnp_operator_t op)
     free(op->packed_kernel);
     free(op->a_sum);
     free(op->bias);
-    free(op->zero);
+    free(op->zero_buffer);
     free(op);
     return qnnp_status_success;
   }

@@ -20,10 +20,13 @@ enum qnnp_format {
   qnnp_format_float16 = 0x01010101,
 };
 
-#define QNNP_CONVOLUTION_FLAG_GEMM     0x01
-#define QNNP_CONVOLUTION_FLAG_DW       0x02
-#define QNNP_CONVOLUTION_FLAG_XZP_GEMM 0x04
-#define QNNP_CONVOLUTION_FLAG_ZERO     0x10
+enum qnnp_ukernel_type {
+  qnnp_ukernel_type_none = 0,
+  qnnp_ukernel_type_conv,
+  qnnp_ukernel_type_gemm,
+  qnnp_ukernel_type_xzp_gemm,
+  qnnp_ukernel_type_dwconv,
+};
 
 struct qnnp_operator {
   size_t batch_size;
@@ -61,14 +64,15 @@ struct qnnp_operator {
   uint8_t kernel_zero_point;
 
   void* bias;
-  void* zero;
+  void* zero_buffer;
+  void* zero_pointer;
 
   union {
     union qnnp_q31_requantization_params requantization_params;
     union qnnp_conv_quantization_params conv_quantization_params;
   };
+  enum qnnp_ukernel_type ukernel_type;
   enum qnnp_format format;
-  uint32_t flags;
 };
 
 static inline uint32_t qnnp_operator_get_log2_output_element_size(const struct qnnp_operator* convolution) {

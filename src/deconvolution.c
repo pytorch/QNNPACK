@@ -134,8 +134,6 @@ enum qnnp_status qnnp_create_deconvolution2d_nhwc_q8(
     goto error;
   }
 
-  uint32_t flags = QNNP_CONVOLUTION_FLAG_ZERO;
-
   const uint32_t nr = qnnp_params.q8conv.nr;
   const uint32_t kr = qnnp_params.q8conv.kr;
 
@@ -161,15 +159,21 @@ enum qnnp_status qnnp_create_deconvolution2d_nhwc_q8(
       (void*) ((uintptr_t) deconvolution->packed_kernel + group * packed_group_weights_size));
   }
 
-  if (flags & QNNP_CONVOLUTION_FLAG_ZERO) {
-    const size_t zero_size = sizeof(uint8_t) * k_stride + (group_input_channels >= 8 ? 0 : 8);
-    deconvolution->zero = malloc(zero_size);
-    if (deconvolution->zero == NULL) {
-      qnnp_log_error("failed to allocate %zu bytes for zero padding", zero_size);
-      goto error;
-    }
-    memset(deconvolution->zero, input_zero_point, zero_size);
+  size_t zero_size = sizeof(uint8_t) * k_stride;
+  size_t zero_offset = 0;
+  if (group_input_channels < 8) {
+    zero_size += 8;
+    zero_offset = 8;
   }
+
+  void* zero_buffer = malloc(zero_size);
+  if (zero_buffer == NULL) {
+    qnnp_log_error("failed to allocate %zu bytes for zero padding", zero_size);
+    goto error;
+  }
+  memset(zero_buffer, input_zero_point, zero_size);
+  deconvolution->zero_buffer = zero_buffer;
+  deconvolution->zero_pointer = (void*) ((uintptr_t) zero_buffer + zero_offset);
 
   deconvolution->input_padding_top = input_padding_top;
   deconvolution->input_padding_right = input_padding_right;
@@ -196,8 +200,8 @@ enum qnnp_status qnnp_create_deconvolution2d_nhwc_q8(
       input_zero_point, kernel_zero_point,
       deconvolution_scale, output_zero_point, output_min, output_max);
 
+  deconvolution->ukernel_type = qnnp_ukernel_type_conv;
   deconvolution->format = qnnp_format_quint8;
-  deconvolution->flags = flags;
 
   *deconvolution_out = deconvolution;
   return qnnp_status_success;
@@ -269,11 +273,7 @@ enum qnnp_status qnnp_setup_deconvolution2d_nhwc_q8(
   }
   deconvolution->indirection_buffer = indirection_buffer;
 
-  const void* zero = deconvolution->zero;
-  if (deconvolution->group_input_channels < 8) {
-    zero = (const void*) ((uintptr_t) zero + 8);
-  }
-
+  const void* zero = deconvolution->zero_pointer;
   for (size_t group = 0; group < groups; group++) {
     for (size_t image = 0; image < batch_size; image++) {
       for (size_t output_tile_start = 0; output_tile_start < tiled_output_size; output_tile_start += output_tile_size) {
