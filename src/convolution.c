@@ -1104,17 +1104,3 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
   }
   return qnnp_status_success;
 }
-
-enum qnnp_status qnnp_delete_operator(qnnp_operator_t op)
-{
-  if (op != NULL) {
-    free(op->indirection_buffer);
-    free(op->packed_kernel);
-    free(op->a_sum);
-    free(op->bias);
-    free(op->zero_buffer);
-    free(op);
-    return qnnp_status_success;
-  }
-  return qnnp_status_invalid_parameter;
-}
