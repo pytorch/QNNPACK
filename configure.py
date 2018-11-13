@@ -64,6 +64,7 @@ def main(args):
         qnnpack_objects = [
             build.cc("init.c"),
             build.cc("operator-delete.c"),
+            build.cc("operator-run.c"),
             build.cc("convolution.c"),
             build.cc("deconvolution.c"),
             build.cc("fully-connected.c"),

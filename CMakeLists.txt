@@ -131,6 +131,7 @@ ENDIF()
 SET(QNNPACK_INIT_SRCS src/init.c)
 SET(QNNPACK_OPERATOR_SRCS
   src/operator-delete.c
+  src/operator-run.c
   src/convolution.c
   src/deconvolution.c
   src/fully-connected.c)

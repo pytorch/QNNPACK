@@ -9,7 +9,7 @@
 #include <stdlib.h>
 
 #include <qnnpack.h>
-#include <qnnpack/convolution.h>
+#include <qnnpack/operator.h>
 
 
 enum qnnp_status qnnp_delete_operator(qnnp_operator_t op)

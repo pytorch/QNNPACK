@@ -18,13 +18,12 @@
 #include <fxdiv.h>
 
 #include <qnnpack.h>
-#include <qnnpack/convolution.h>
+#include <qnnpack/operator.h>
 #include <qnnpack/requantization.h>
 #include <qnnpack/log.h>
 #include <qnnpack/math.h>
 #include <qnnpack/pack.h>
 #include <qnnpack/params.h>
-#include <qnnpack/q8gemm.h>
 
 
 enum qnnp_status qnnp_create_fully_connected_nc_q8(
