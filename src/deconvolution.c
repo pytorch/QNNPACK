@@ -191,7 +191,6 @@ enum qnnp_status qnnp_create_deconvolution2d_nhwc_q8(
   deconvolution->group_input_channels = group_input_channels;
   deconvolution->group_output_channels = group_output_channels;
 
-  deconvolution->input_zero_point = input_zero_point;
   deconvolution->kernel_zero_point = kernel_zero_point;
 
   deconvolution->conv_quantization_params =

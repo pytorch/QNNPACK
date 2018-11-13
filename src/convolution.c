@@ -351,7 +351,6 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
   convolution->group_input_channels = group_input_channels;
   convolution->group_output_channels = group_output_channels;
 
-  convolution->input_zero_point = input_zero_point;
   convolution->kernel_zero_point = kernel_zero_point;
 
   if (ukernel_type == qnnp_ukernel_type_xzp_gemm) {

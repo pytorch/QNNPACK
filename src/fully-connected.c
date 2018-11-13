@@ -113,7 +113,6 @@ enum qnnp_status qnnp_create_fully_connected_nc_q8(
   fully_connected->group_input_channels = input_channels;
   fully_connected->group_output_channels = output_channels;
 
-  fully_connected->input_zero_point = input_zero_point;
   fully_connected->kernel_zero_point = kernel_zero_point;
 
   fully_connected->conv_quantization_params =

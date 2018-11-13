@@ -52,7 +52,6 @@ struct qnnp_operator {
   size_t input_pixel_stride;
   const void* input;
   const void** indirection_buffer;
-  uint8_t input_zero_point;
   void* a_sum;
 
   size_t output_height;
@@ -63,7 +62,6 @@ struct qnnp_operator {
   void* packed_weights;
   uint8_t kernel_zero_point;
 
-  // void* bias;
   void* zero_buffer;
   void* zero_pointer;
 
