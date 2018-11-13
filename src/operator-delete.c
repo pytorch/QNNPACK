@@ -19,9 +19,8 @@ enum qnnp_status qnnp_delete_operator(qnnp_operator_t op)
   }
 
   free(op->indirection_buffer);
-  free(op->packed_kernel);
+  free(op->packed_weights);
   free(op->a_sum);
-  free(op->bias);
   free(op->zero_buffer);
   free(op);
   return qnnp_status_success;

@@ -49,11 +49,10 @@ DECLARE_Q8GEMM_UKERNEL_FUNCTION(q8gemm_ukernel_4x4c2__sse2)
       size_t k,                                      \
       const uint8_t* a,                              \
       size_t a_stride,                               \
-      const uint8_t* b,                              \
-      const int32_t* bias,                           \
+      const int32_t* a_sum,                          \
+      const void* w,                                 \
       uint8_t* c,                                    \
       size_t c_stride,                               \
-      const int32_t* a_sum,                          \
       const union qnnp_q31_requantization_params* requantization_params);
 DECLARE_Q8GEMM_XZP_UKERNEL_FUNCTION(q8gemm_xzp_ukernel_4x8c2__neon)
 DECLARE_Q8GEMM_XZP_UKERNEL_FUNCTION(q8gemm_xzp_ukernel_4x8c2__aarch32_neon)

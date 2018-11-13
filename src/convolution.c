@@ -37,18 +37,6 @@ static inline size_t compute_output_dimension(
   return (padded_input_dimension - effective_kernel_dimension) / subsampling_dimension + 1;
 }
 
-static void q8gemm_compute_row_sum(
-    const uint8_t* restrict a,
-    size_t batch_size,
-    size_t groups,
-    size_t m,
-    size_t k,
-    size_t a_stride,
-    const int32_t multiplier,
-    int32_t* restrict a_sum,
-    size_t a_sum_stride,
-    pthreadpool_t threadpool);
-
 enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
     uint32_t input_padding_top,
     uint32_t input_padding_right,
@@ -208,9 +196,9 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
       const uint32_t c_stride = (groups + (cr - 1)) & -cr;
       convolution->group_stride = c_stride;
       const size_t packed_weights_size = (sizeof(uint8_t) * kernel_size + sizeof(int32_t)) * c_stride;
-      convolution->packed_kernel = malloc(packed_weights_size);
-      if (convolution->packed_kernel == NULL) {
-        qnnp_log_error("failed to allocate %zu bytes for packed kernel data", packed_weights_size);
+      convolution->packed_weights = malloc(packed_weights_size);
+      if (convolution->packed_weights == NULL) {
+        qnnp_log_error("failed to allocate %zu bytes for packed weights", packed_weights_size);
         goto error;
       }
 
@@ -220,7 +208,7 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
             kernel_height, kernel_width,
             groups, cr,
             input_zero_point, kernel_zero_point,
-            kernel, bias, convolution->packed_kernel);
+            kernel, bias, convolution->packed_weights);
           break;
         case 25:
           /* change this later */
@@ -228,17 +216,17 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
             kernel_height, kernel_width,
             groups, cr,
             0, kernel_height, 0, 2,
-            kernel, bias, convolution->packed_kernel, true);
+            kernel, bias, convolution->packed_weights, true);
           pack_q8dw_w_dilation(
             kernel_height, kernel_width,
             groups, cr,
             0, kernel_height, 2, 4,
-            kernel, bias, convolution->packed_kernel + (10 + sizeof(int32_t) / sizeof(uint8_t)) * c_stride, false);
+            kernel, bias, convolution->packed_weights + (10 + sizeof(int32_t) / sizeof(uint8_t)) * c_stride, false);
           pack_q8dw_w_dilation(
             kernel_height, kernel_width,
             groups, cr,
             0, kernel_height, 4, 5,
-            kernel, bias, convolution->packed_kernel + (20 + sizeof(int32_t) / sizeof(uint8_t)) * c_stride, false);
+            kernel, bias, convolution->packed_weights + (20 + sizeof(int32_t) / sizeof(uint8_t)) * c_stride, false);
           break;
         default:
           QNNP_UNREACHABLE;
@@ -257,64 +245,29 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
     {
       const uint32_t nr = qnnp_params.q8conv_xzp.nr;
       const uint32_t kr = qnnp_params.q8conv_xzp.kr;
+      const uint32_t sr = qnnp_params.q8conv_xzp.kc;
       const uint32_t n_stride = (group_output_channels + (nr - 1)) & -nr;
       const uint32_t k_stride = (group_input_channels + (kr - 1)) & -kr;
 
       const size_t packed_group_weights_size =
         (sizeof(uint8_t) * kernel_size * k_stride + sizeof(int32_t)) * n_stride;
-      convolution->packed_kernel = malloc(packed_group_weights_size * groups);
-      if (convolution->packed_kernel == NULL) {
-        qnnp_log_error("failed to allocate %zu bytes for packed weights data", packed_group_weights_size * groups);
+      convolution->packed_weights = malloc(packed_group_weights_size * groups);
+      if (convolution->packed_weights == NULL) {
+        qnnp_log_error("failed to allocate %zu bytes for packed weights", packed_group_weights_size * groups);
         goto error;
       }
       /* The XZP ukernel needs the padding to be 0 */
-      memset(convolution->packed_kernel, 0, sizeof(uint8_t) * groups * kernel_size * k_stride * n_stride);
+      memset(convolution->packed_weights, 0, packed_group_weights_size * groups);
 
       for (uint32_t group = 0; group < groups; group++) {
-        const uint32_t kc = qnnp_params.q8conv_xzp.kc;
-        pack_q8gemm_b_diagonal(
-            group_output_channels, group_input_channels,
-            nr, kr, kc,
-            kernel + group * group_output_channels * group_input_channels,
-            convolution->packed_kernel + group * n_stride * k_stride);
-      }
-
-      convolution->bias = malloc(sizeof(int32_t) * groups * n_stride);
-      if (convolution->bias == NULL) {
-        qnnp_log_error("failed to allocate %zu bytes for packed bias data", sizeof(int32_t) * groups * n_stride);
-        goto error;
-      }
-      for (uint32_t group = 0; group < groups; group++) {
-        memcpy(
-          (int32_t*) convolution->bias + group * n_stride,
+        pack_swizzle_q8gemm_b(
+          group_output_channels, group_input_channels,
+          nr, kr, sr,
+          input_zero_point, kernel_zero_point,
+          kernel + group * group_output_channels * group_input_channels,
           bias + group * group_output_channels,
-          sizeof(int32_t) * group_output_channels);
+          (void*) ((uintptr_t) convolution->packed_weights + group * packed_group_weights_size));
       }
-
-      /* compute row sum for b and fold into bias */
-      int32_t* bias_buf = (int32_t*) malloc(sizeof(int32_t) * groups * n_stride);
-      const int32_t zero_point_product = group_input_channels * input_zero_point * kernel_zero_point;
-      int32_t* bias = (int32_t*) convolution->bias;
-      /* kernel: G x OC x kH x kW x IC */
-      /* row_sum:G x OC */
-      /* swap groups and batch_size */
-      q8gemm_compute_row_sum(
-        kernel,
-        groups,
-        1,
-        group_output_channels,
-        group_input_channels,
-        group_input_channels,
-        -input_zero_point,
-        bias_buf,
-        n_stride,
-        NULL);
-      for (uint32_t group = 0; group < groups; group++) {
-        for (uint32_t i = 0; i < group_output_channels; i++) {
-          bias[group * n_stride + i] += bias_buf[group * n_stride + i] + zero_point_product;
-        }
-      }
-      free(bias_buf);
       break;
     }
     case qnnp_ukernel_type_gemm:
@@ -327,12 +280,12 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
 
       const size_t packed_group_weights_size =
         (sizeof(uint8_t) * kernel_size * k_stride + sizeof(int32_t)) * n_stride;
-      convolution->packed_kernel = malloc(packed_group_weights_size * groups);
-      if (convolution->packed_kernel == NULL) {
-        qnnp_log_error("failed to allocate %zu bytes for packed weights data", packed_group_weights_size * groups);
+      convolution->packed_weights = malloc(packed_group_weights_size * groups);
+      if (convolution->packed_weights == NULL) {
+        qnnp_log_error("failed to allocate %zu bytes for packed weights", packed_group_weights_size * groups);
         goto error;
       }
-      memset(convolution->packed_kernel, kernel_zero_point, packed_group_weights_size * groups);
+      memset(convolution->packed_weights, kernel_zero_point, packed_group_weights_size * groups);
 
       switch (ukernel_type) {
         case qnnp_ukernel_type_gemm:
@@ -343,7 +296,7 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
                 input_zero_point, kernel_zero_point,
                 kernel + group * group_output_channels * group_input_channels,
                 bias + group * group_output_channels,
-                (void*) ((uintptr_t) convolution->packed_kernel + group * packed_group_weights_size));
+                (void*) ((uintptr_t) convolution->packed_weights + group * packed_group_weights_size));
           }
           break;
         case qnnp_ukernel_type_conv:
@@ -354,7 +307,7 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
                 input_zero_point, kernel_zero_point,
                 kernel + group * group_output_channels * kernel_size * group_input_channels,
                 bias + group * group_output_channels,
-                (void*) ((uintptr_t) convolution->packed_kernel + group * packed_group_weights_size));
+                (void*) ((uintptr_t) convolution->packed_weights + group * packed_group_weights_size));
           }
           break;
         default:
@@ -700,40 +653,6 @@ static void compute_sum_rows(
       a_sum + batch_index * groups * a_sum_stride + group_index * a_sum_stride + block_start);
 }
 
-/*   a: batch_size * m * groups * k   */
-/*   a_sum: batch_size * groups * m   */
-static void q8gemm_compute_row_sum(
-    const uint8_t* restrict a,
-    size_t batch_size,
-    size_t groups,
-    size_t m,
-    size_t k,
-    size_t a_stride,
-    const int32_t multiplier,
-    int32_t* restrict a_sum,
-    size_t a_sum_stride,
-    pthreadpool_t threadpool)
-{
-  struct q8sum_rows_context context = {
-      .a = a,
-      .groups = groups,
-      .m = m,
-      .k = k,
-      .a_stride = a_stride,
-      .multiplier = multiplier,
-      .a_sum = a_sum,
-      .a_sum_stride = a_sum_stride,
-      .ukernel = qnnp_params.q8sum_rows.sum_rows,
-  };
-
-  pthreadpool_compute_3d_tiled(
-    threadpool,
-    (pthreadpool_function_3d_tiled_t) compute_sum_rows,
-    &context,
-    groups, batch_size, m,
-    1, 1, qnnp_params.q8sum_rows.m);
-}
-
 struct q8gemm_xzp_context {
   size_t k;
   size_t k_stride;
@@ -741,8 +660,7 @@ struct q8gemm_xzp_context {
   size_t n_stride;
   const uint8_t* a;
   size_t a_stride;
-  const uint8_t* packed_b;
-  const int32_t* bias;
+  const void* packed_w;
   uint8_t* c;
   size_t c_stride;
   const int32_t* a_sum;
@@ -770,8 +688,7 @@ static void compute_q8gemm_xzp(
   const size_t n_stride = context->n_stride;
   const uint8_t* restrict a = context->a;
   const size_t a_stride = context->a_stride;
-  const uint8_t* restrict packed_b = context->packed_b;
-  const int32_t* restrict bias = context->bias;
+  const void* restrict packed_w = context->packed_w;
   uint8_t* restrict c = context->c;
   const size_t c_stride = context->c_stride;
   const int32_t* a_sum = context->a_sum;
@@ -784,11 +701,10 @@ static void compute_q8gemm_xzp(
       k,
       a + (pixel_index + mr_block_start) * a_stride + group_index * k,
       a_stride,
-      packed_b + nr_block_start * k_stride + group_index * k_stride * n_stride,
-      bias + nr_block_start + group_index * n_stride,
+      a_sum + pixel_index * groups + group_index * a_sum_stride + mr_block_start,
+      (const void*) ((uintptr_t) packed_w + (nr_block_start + group_index * n_stride) * (k_stride * sizeof(uint8_t) + sizeof(int32_t))),
       c + (pixel_index + mr_block_start) * c_stride + nr_block_start + group_index * n,
       c_stride,
-      a_sum + pixel_index * groups + group_index * a_sum_stride + mr_block_start,
       &context->requantization_params);
 }
 
@@ -851,8 +767,7 @@ struct q8dw_context {
   const uint8_t** indirection_buffer;
   size_t indirection_buffer_row_stride;
   size_t indirection_buffer_col_stride;
-  const uint8_t* packed_kernel;
-  const int32_t* bias;
+  const void* packed_weights;
   uint8_t* output;
   size_t output_height;
   size_t output_width;
@@ -876,7 +791,7 @@ static void compute_q8updw(
     context->groups,
     context->output_width,
     context->indirection_buffer + (image * output_height + output_y) * context->indirection_buffer_row_stride,
-    context->packed_kernel,
+    context->packed_weights,
     context->output + (image * output_height + output_y) * context->output_row_stride,
     context->indirection_buffer_col_stride,
     context->output_col_increment,
@@ -895,7 +810,7 @@ static void compute_q8mpdw(
     context->groups,
     context->output_width,
     context->indirection_buffer + (image * output_height + output_y) * context->indirection_buffer_row_stride,
-    context->packed_kernel,
+    context->packed_weights,
     multipass_acc,
     context->output + (image * output_height + output_y) * context->output_row_stride,
     context->indirection_buffer_col_stride,
@@ -925,8 +840,7 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
               .indirection_buffer = (const uint8_t**) op->indirection_buffer,
               .indirection_buffer_row_stride = kernel_size + (output_width * width_step - 1) * kernel_height,
               .indirection_buffer_col_stride = kernel_height * width_step * sizeof(void*),
-              .packed_kernel = op->packed_kernel,
-              .bias = op->bias,
+              .packed_weights = op->packed_weights,
               .output = op->output,
               .output_height = output_height,
               .output_width = output_width,
@@ -950,8 +864,7 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
               .indirection_buffer = (const uint8_t**) op->indirection_buffer,
               .indirection_buffer_row_stride = kernel_size + (output_width * width_step - 1) * kernel_height,
               .indirection_buffer_col_stride = kernel_height * width_step * sizeof(void*),
-              .packed_kernel = op->packed_kernel,
-              .bias = op->bias,
+              .packed_weights = op->packed_weights,
               .output = op->output,
               .output_height = output_height,
               .output_width = output_width,
@@ -987,17 +900,25 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
       /* compute input row sum */
       const size_t input_size = op->input_height * op->input_width;
       int32_t* a_sum = (int32_t*) op->a_sum;
-      q8gemm_compute_row_sum(
-          op->input,
-          batch_size,
-          groups,
-          /* m */ input_size,
-          /* k */ group_input_channels,
-          /* input stride */ op->input_pixel_stride,
-          /* multiplier */ -op->kernel_zero_point,
-          a_sum,
-          input_size,
-          threadpool);
+
+      struct q8sum_rows_context context = {
+          .a = op->input,
+          .groups = groups,
+          .m = input_size,
+          .k = group_input_channels,
+          .a_stride = op->input_pixel_stride,
+          .multiplier = (int32_t) -op->kernel_zero_point,
+          .a_sum = a_sum,
+          .a_sum_stride = input_size,
+          .ukernel = qnnp_params.q8sum_rows.sum_rows,
+      };
+      pthreadpool_compute_3d_tiled(
+        threadpool,
+        (pthreadpool_function_3d_tiled_t) compute_sum_rows,
+        &context,
+        groups, batch_size, input_size,
+        1, 1, qnnp_params.q8sum_rows.m);
+
       struct q8gemm_xzp_context q8gemm_xzp_context = {
           .k = group_input_channels,
           .k_stride = k_stride,
@@ -1005,8 +926,7 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
           .n_stride = n_stride,
           .a = op->input,
           .a_stride = op->input_pixel_stride,
-          .packed_b = op->packed_kernel,
-          .bias = op->bias,
+          .packed_w = op->packed_weights,
           .c = op->output,
           .c_stride = op->output_pixel_stride,
           .a_sum = a_sum,
@@ -1044,7 +964,7 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
           .n_stride = n_stride,
           .a = op->input,
           .a_stride = op->input_pixel_stride,
-          .packed_w = op->packed_kernel,
+          .packed_w = op->packed_weights,
           .c = op->output,
           .c_stride = op->output_pixel_stride,
           .quantization_params = op->conv_quantization_params,
@@ -1084,7 +1004,7 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
           .n = group_output_channels,
           .n_stride = n_stride,
           .indirect_a = (const uint8_t**) op->indirection_buffer,
-          .packed_w = op->packed_kernel,
+          .packed_w = op->packed_weights,
           .c = op->output,
           .c_stride = op->output_pixel_stride,
           .quantization_params = op->conv_quantization_params,

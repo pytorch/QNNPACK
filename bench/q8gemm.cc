@@ -79,21 +79,23 @@ class Q8GEMM : public benchmark::Fixture {
 
   virtual void SetUp(const benchmark::State&) override
   {
-    const uint_fast32_t seed = std::chrono::system_clock::now().time_since_epoch().count();
-    auto rng = std::bind(std::uniform_int_distribution<uint8_t>(), std::mt19937(seed));
+    std::random_device randomDevice;
+    auto rng = std::mt19937(randomDevice());
+    auto s32rng = std::bind(std::uniform_int_distribution<int32_t>(-10000, 10000), rng);
+    auto u8rng = std::bind(std::uniform_int_distribution<uint8_t>(), rng);
 
     a_.resize(mc() * kc());
-    std::generate(a_.begin(), a_.end(), std::ref(rng));
+    std::generate(a_.begin(), a_.end(), std::ref(u8rng));
     k_.resize(nc() * kc());
-    std::generate(k_.begin(), k_.end(), std::ref(rng));
+    std::generate(k_.begin(), k_.end(), std::ref(u8rng));
     b_.resize(mc());
-    std::generate(b_.begin(), b_.end(), std::ref(rng));
+    std::generate(b_.begin(), b_.end(), std::ref(s32rng));
     w_.resize(kcStride() * ncStride() + ncStride() * sizeof(int32_t) / sizeof(uint8_t));
     std::fill(w_.begin(), w_.end(), 127);
     pack_q8gemm_w(
       nc(), kc(),
       nr(), np(), kr(),
-      127, int32_t(kc()) * 127 * 127,
+      127, 127,
       k(), b(), w());
     c_.resize(mc() * nc());
     std::fill(c_.begin(), c_.end(), 0xA5);
@@ -242,19 +244,28 @@ class Q8GEMM_XZP : public Q8GEMM {
   inline Q8GEMM_XZP(uint32_t mr, uint32_t nr, uint32_t np, uint32_t kr) : Q8GEMM(mr, nr, np, kr) {}
   virtual void SetUp(const benchmark::State&) override
   {
-    const uint_fast32_t seed = std::chrono::system_clock::now().time_since_epoch().count();
-    auto rng = std::bind(std::uniform_int_distribution<uint8_t>(), std::mt19937(seed));
+    std::random_device randomDevice;
+    auto rng = std::mt19937(randomDevice());
+    auto s32rng = std::bind(std::uniform_int_distribution<int32_t>(-10000, 10000), rng);
+    auto u8rng = std::bind(std::uniform_int_distribution<uint8_t>(), rng);
 
     a_.resize(mc() * kc());
-    std::generate(a_.begin(), a_.end(), std::ref(rng));
+    std::generate(a_.begin(), a_.end(), std::ref(u8rng));
     k_.resize(ncStride() * kcStride());
-    std::generate(k_.begin(), k_.end(), std::ref(rng));
+    std::generate(k_.begin(), k_.end(), std::ref(u8rng));
     b_.resize(roundUp(nc(), nr()));
-    std::generate(b_.begin(), b_.end(), std::ref(rng));
+    std::generate(b_.begin(), b_.end(), std::ref(s32rng));
+    w_.resize(ncStride() * (kcStride() + sizeof(int32_t) / sizeof(uint8_t)));
+    std::fill(w_.begin(), w_.end(), 127);
+    pack_swizzle_q8gemm_b(
+      nc(), kc(),
+      np(), kr(), 8,
+      127, 127,
+      k(), b(), w());
     c_.resize(mc() * nc());
     std::fill(c_.begin(), c_.end(), 0xA5);
-    as_.resize(roundUp(mc(), mr()));
-    std::fill(as_.begin(), as_.end(), 0xFE01);
+    aRowSums_.resize(roundUp(mc(), mr()));
+    std::fill(aRowSums_.begin(), aRowSums_.end(), 0xFE01);
 
     requantizationParams_ = qnnp_compute_requantization_params(0.75f, 127, 1, 254);
   }
@@ -265,12 +276,17 @@ class Q8GEMM_XZP : public Q8GEMM {
     a_.clear();
     k_.clear();
     c_.clear();
-    as_.clear();
+    aRowSums_.clear();
   }
 
-  inline int32_t* as()
+  inline int32_t* aRowSums()
   {
-    return as_.data();
+    return aRowSums_.data();
+  }
+
+  inline const int32_t* aRowSums() const
+  {
+    return aRowSums_.data();
   }
 
   inline const qnnp_q31_requantization_params* requantizationParams() const
@@ -279,7 +295,7 @@ class Q8GEMM_XZP : public Q8GEMM {
   }
 
  protected:
-  std::vector<int32_t, AlignedAllocator<int32_t, 32>> as_;
+  std::vector<int32_t> aRowSums_;
   qnnp_q31_requantization_params requantizationParams_;
 };
 
@@ -334,8 +350,9 @@ class COMPUTE_ROW_SUM_Op : public Q8GEMM_XZP {
     state.SetItemsProcessed(uint64_t(state.iterations()) * (mc() * kc()));
     a_.clear();
     k_.clear();
+    b_.clear();
     c_.clear();
-    as_.clear();
+    aRowSums_.clear();
   }
 };
 
@@ -633,32 +650,30 @@ BENCHMARK_REGISTER_F(Q8GEMM_Op, 4x8__aarch32_neon)->Apply(GemmArguments);
 BENCHMARK_TEMPLATE_F(Q8GEMM_XZP_L1, 4x8c2__aarch32_neon, 4, 8, 8, 2)(benchmark::State& state)
 {
   for (auto _ : state) {
-    q8gemm_compute_row_sum(a(), mr(), kc(), kc(), -64, as());
+    q8gemm_compute_row_sum(a(), mr(), kc(), kc(), -64, aRowSums());
     q8gemm_xzp_ukernel_4x8c2__aarch32_neon(
-        mr(), nr(), kc(), a(), kc(), k(), b(), c(), mr(), as(), requantizationParams());
+        mr(), nr(), kc(),
+        a(), kc(), aRowSums(),
+        w(),
+        c(), mr(),
+        requantizationParams());
   }
 }
 
 BENCHMARK_TEMPLATE_DEFINE_F(Q8GEMM_XZP_Op, 4x8c2__aarch32_neon, 4, 8, 8, 2)(benchmark::State& state)
 {
   for (auto _ : state) {
-    q8gemm_compute_row_sum(a(), mc(), kc(), kc(), -64, as());
+    q8gemm_compute_row_sum(a(), mc(), kc(), kc(), -64, aRowSums());
     for (uint32_t m = 0; m < mc(); m += mr()) {
       const uint32_t mrr = min(mc() - m, mr());
       for (uint32_t n = 0; n < nc(); n += nr()) {
         const uint32_t nrr = min(nc() - n, nr());
         q8gemm_xzp_ukernel_4x8c2__aarch32_neon(
-            mrr,
-            nrr,
-            kc(),
-            a() + m * kc(),
-            kc(),
-            k() + n * kcStride(),
-            b() + n,
-            c() + m * nc() + n,
-            nc(),
-            as() + m,
-            requantizationParams());
+          mrr, nrr, kc(),
+          a() + m * kc(), kc(), aRowSums() + m,
+          w() + n * (kcStride() + sizeof(int32_t) / sizeof(uint8_t)),
+          c() + m * nc() + n, nc(),
+          requantizationParams());
       }
     }
   }
@@ -781,32 +796,30 @@ BENCHMARK_REGISTER_F(Q8GEMM_Op, 8x8__neon)->Apply(GemmArguments);
 BENCHMARK_TEMPLATE_F(Q8GEMM_XZP_L1, 4x8c2_neon, 4, 8, 8, 2)(benchmark::State& state)
 {
   for (auto _ : state) {
-    q8gemm_compute_row_sum(a(), mr(), kc(), kc(), -64, as());
+    q8gemm_compute_row_sum(a(), mr(), kc(), kc(), -64, aRowSums());
     q8gemm_xzp_ukernel_4x8c2__neon(
-        mr(), nr(), kc(), a(), kc(), k(), b(), c(), mr(), as(),requantizationParams());
+      mr(), nr(), kc(),
+      a(), kc(), aRowSums(),
+      w(),
+      c(), mr(),
+      requantizationParams());
   }
 }
 
 BENCHMARK_TEMPLATE_DEFINE_F(Q8GEMM_XZP_Op, 4x8c2_neon, 4, 8, 8, 2)(benchmark::State& state)
 {
   for (auto _ : state) {
-    q8gemm_compute_row_sum(a(), mc(), kc(), kc(), -64, as());
+    q8gemm_compute_row_sum(a(), mc(), kc(), kc(), -64, aRowSums());
     for (uint32_t m = 0; m < mc(); m += mr()) {
       const uint32_t mrr = min(mc() - m, mr());
       for (uint32_t n = 0; n < nc(); n += nr()) {
         const uint32_t nrr = min(nc() - n, nr());
         q8gemm_xzp_ukernel_4x8c2__neon(
-            mrr,
-            nrr,
-            kc(),
-            a() + m * kc(),
-            kc(),
-            k() + n * kcStride(),
-            b() + n,
-            c() + m * nc() + n,
-            nc(),
-            as() + m,
-            requantizationParams());
+          mrr, nrr, kc(),
+          a() + m * kc(), kc(), aRowSums() + m,
+          w() + n * (kcStride() + sizeof(int32_t) / sizeof(uint8_t)),
+          c() + m * nc() + n, nc(),
+          requantizationParams());
       }
     }
   }
@@ -823,7 +836,9 @@ BENCHMARK_TEMPLATE_DEFINE_F(COMPUTE_ROW_SUM_Op, compute_row_sum_neon, 4, 8, 8, 2
     const size_t block_size = 4;
     for (size_t block_start = 0; block_start < mc(); block_start += block_size) {
       q8sumrows_ukernel_4x__neon(
-          a() + block_start * kc(), min(block_size, mc() - block_start), kc(), kc(), 0x11, as() + block_start);
+        a() + block_start * kc(), min(block_size, mc() - block_start),
+        kc(), kc(), 0x11,
+        aRowSums() + block_start);
     }
   }
 }

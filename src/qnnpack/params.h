@@ -197,11 +197,10 @@ typedef void (*q8gemm_xzp_ukernel_function)(
     size_t k,
     const uint8_t* a,
     size_t a_stride,
-    const uint8_t* b,
-    const int32_t* bias,
+    const int32_t* a_sum,
+    const void* w,
     uint8_t* c,
     size_t c_stride,
-    const int32_t* a_sum,
     const union qnnp_q31_requantization_params* requantization_params);
 
 typedef void (*q8sum_rows_ukernel_function)(

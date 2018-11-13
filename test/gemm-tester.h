@@ -418,101 +418,70 @@ class GemmTester {
     }
   }
 
-  void testMicroKernel(q8gemm_xzp_ukernel_function qgemm, q8sum_rows_ukernel_function q8sum_rows) const
+  void testMicroKernel(q8gemm_xzp_ukernel_function qgemm) const
   {
     ASSERT_LE(m(), mr());
     ASSERT_LE(n(), nr());
     ASSERT_GE(k(), kr());
 
-    std::random_device rng_device;
-    auto rng = std::bind(std::uniform_int_distribution<uint8_t>(), std::mt19937(rng_device()));
+    std::random_device randomDevice;
+    auto rng = std::mt19937(randomDevice());
+    auto s32rng = std::bind(std::uniform_int_distribution<int32_t>(-10000, 10000), rng);
+    auto u8rng = std::bind(std::uniform_int_distribution<uint8_t>(), rng);
 
     std::vector<uint8_t> a((m() - 1) * aStride() + k() + 8);
-    std::vector<uint8_t, AlignedAllocator<uint8_t, 32>> b(n() * k());
-    std::vector<uint8_t, AlignedAllocator<uint8_t, 32>> packedB(packedN() * packedK());
-    std::vector<int32_t> bias(nr());
-    std::vector<int32_t> as(m());
-    std::vector<int32_t> asRef(m());
-    std::vector<int32_t> biasBuf(nr());
-    std::vector<int32_t> biasRef(nr());
+    std::vector<uint8_t> b(n() * k());
+    std::vector<int32_t> bias(n());
+    std::vector<uint8_t, AlignedAllocator<uint8_t, 32>> packedW(packedN() * packedK() + biasN() * sizeof(uint32_t) / sizeof(uint8_t));
+    std::vector<int32_t> aRowSums(m());
     std::vector<uint8_t> c((m() - 1) * cStride() + n());
-    std::vector<int32_t> cAcc(m() * n());
+    std::vector<int32_t> acc(m() * n());
     std::vector<uint8_t> cRef(m() * n());
 
     const uint8_t* aPtr = a.data() + 8;
 
     for (size_t iteration = 0; iteration < iterations(); iteration++) {
-      std::generate(a.begin(), a.end(), std::ref(rng));
-      std::generate(b.begin(), b.end(), std::ref(rng));
-      std::generate(bias.begin(), bias.end(), std::ref(rng));
+      std::generate(a.begin(), a.end(), std::ref(u8rng));
+      std::generate(b.begin(), b.end(), std::ref(u8rng));
+      std::generate(bias.begin(), bias.end(), std::ref(s32rng));
 
-      memcpy(biasBuf.data(), bias.data(), bias.size() * sizeof(int32_t));
-      memcpy(biasRef.data(), bias.data(), bias.size() * sizeof(int32_t));
-
-      std::fill(packedB.begin(), packedB.end(), 0);
-      pack_q8gemm_b_diagonal(n(), k(), np(), kr(), 8, b.data(), packedB.data());
-
-      std::fill(as.begin(), as.end(), 0);
-      std::fill(asRef.begin(), asRef.end(), 0);
-      std::fill(c.begin(), c.end(), 0xA5);
-      std::fill(cAcc.begin(), cAcc.end(), 0);
+      std::fill(packedW.begin(), packedW.end(), 0);
+      pack_swizzle_q8gemm_b(
+        n(), k(),
+        np(), kr(), 8,
+        aZeroPoint(), bZeroPoint(),
+        b.data(), bias.data(), packedW.data());
 
       ASSERT_NE(*std::max_element(a.cbegin(), a.cend()), *std::min_element(a.cbegin(), a.cend()));
       ASSERT_NE(*std::max_element(b.cbegin(), b.cend()), *std::min_element(b.cbegin(), b.cend()));
 
-      /* compute row sums of a and b */
-      q8gemm_compute_row_sum(aPtr, m(), k(), aStride(), -bZeroPoint(), as.data(), q8sum_rows);
-      q8gemm_compute_row_sum(b.data(), n(), k(), k(), -aZeroPoint(), biasBuf.data(), q8sum_rows);
-      const int32_t zeropoint_product = k() * aZeroPoint() * bZeroPoint();
-      for (size_t nIndex = 0; nIndex < n(); nIndex++) {
-        biasBuf[nIndex] += bias[nIndex] + zeropoint_product;
+      std::fill(aRowSums.begin(), aRowSums.end(), 0);
+      for (size_t mIndex = 0; mIndex < m(); mIndex++) {
+        int32_t sum = 0;
+        for (size_t kIndex = 0; kIndex < k(); kIndex++) {
+          sum += int32_t(aPtr[mIndex * aStride() + kIndex]);
+        }
+        aRowSums[mIndex] = -sum * int32_t(bZeroPoint());
       }
 
       /* Compute 32-bit results and output quantization arguments */
+      std::fill(acc.begin(), acc.end(), 0);
       for (size_t mIndex = 0; mIndex < m(); mIndex++) {
         for (size_t nIndex = 0; nIndex < n(); nIndex++) {
-          int32_t bAcc = 0;
-          for (size_t kBlockStart = 0; kBlockStart < k(); kBlockStart += kr()) {
-            for (size_t kBlockOffset = 0; kBlockOffset < std::min(k() - kBlockStart, kr()); kBlockOffset++) {
-              ASSERT_LE(n(), packedN());
-              ASSERT_LT(mIndex * n() + nIndex, cAcc.size());
-              ASSERT_LT(mIndex * k() + kBlockStart + kBlockOffset, a.size());
-              ASSERT_LT(kBlockStart * np() + nIndex * kr() + kBlockOffset, packedB.size());
-              if (nIndex == 0) {
-                asRef[mIndex] += (int32_t) aPtr[mIndex * aStride() + kBlockStart + kBlockOffset];
-              }
-              if (mIndex == 0) {
-                bAcc += (int32_t) b[nIndex * k() + kBlockStart + kBlockOffset];
-              }
-              cAcc[mIndex * n() + nIndex] +=
-                  (int32_t(aPtr[mIndex * aStride() + kBlockStart + kBlockOffset]) - int32_t(aZeroPoint())) *
-                  (int32_t(b[nIndex * k() + kBlockStart + kBlockOffset]) - int32_t(bZeroPoint()));
-            }
+          for (size_t kIndex = 0; kIndex < k(); kIndex++) {
+            ASSERT_LE(n(), packedN());
+            ASSERT_LT(mIndex * n() + nIndex, acc.size());
+            ASSERT_LT(mIndex * k() + kIndex, a.size());
+            acc[mIndex * n() + nIndex] +=
+                (int32_t(aPtr[mIndex * aStride() + kIndex]) - int32_t(aZeroPoint())) *
+                (int32_t(b[nIndex * k() + kIndex]) - int32_t(bZeroPoint()));
           }
-          if (mIndex == 0) {
-            biasRef[nIndex] += bAcc * (-aZeroPoint()) + k() * aZeroPoint() * bZeroPoint();
-          }
-          cAcc[mIndex * n() + nIndex] += bias[nIndex];
+          acc[mIndex * n() + nIndex] += bias[nIndex];
         }
-        asRef[mIndex] *= -bZeroPoint();
       }
 
-      for (size_t mIndex = 0; mIndex < m(); mIndex++) {
-        ASSERT_EQ(as[mIndex], asRef[mIndex])
-            << "at " << mIndex << ": reference = " << asRef[mIndex] << ", optimized = " << as[mIndex]
-            << ", Mr x Nr x Kr = " << mr() << " x " << nr() << " x " << kr() << ", M x N x K = " << m() << " x " << n()
-            << " x " << k();
-      }
-
-      for (size_t nIndex = 0; nIndex < n(); nIndex++) {
-        ASSERT_EQ(biasBuf[nIndex], biasRef[nIndex])
-            << "at " << nIndex << ": reference = " << biasRef[nIndex] << ", optimized = " << biasBuf[nIndex]
-            << ", Mr x Nr x Kr = " << mr() << " x " << nr() << " x " << kr() << ", M x N x K = " << m() << " x " << n()
-            << " x " << k();
-      }
-
-      const int32_t accMin = *std::min_element(cAcc.cbegin(), cAcc.cend());
-      const int32_t accMax = *std::max_element(cAcc.cbegin(), cAcc.cend());
+      const int32_t accMin = *std::min_element(acc.cbegin(), acc.cend());
+      const int32_t accMax = *std::max_element(acc.cbegin(), acc.cend());
       if (m() * n() >= 3) {
         ASSERT_NE(accMax, accMin) << "Mr x Nr x Kr = " << mr() << " x " << nr() << " x " << kr()
                                   << ", M x N x K = " << m() << " x " << n() << " x " << k();
@@ -529,22 +498,17 @@ class GemmTester {
       const union qnnp_q31_requantization_params scalarRequantizationParams =
           qnnp_compute_scalar_requantization_params(requantizationScale, cZeroPoint, qmin(), qmax());
 
+      std::fill(c.begin(), c.end(), 0xA5);
       qgemm(
-          m(),
-          n(),
-          k(),
-          aPtr,
-          aStride(),
-          packedB.data(),
-          biasBuf.data(),
-          c.data(),
-          cStride(),
-          as.data(),
+          m(), n(), k(),
+          aPtr, aStride(), aRowSums.data(),
+          packedW.data(),
+          c.data(), cStride(),
           &requantizationParams);
 
       for (size_t mIndex = 0; mIndex < m(); mIndex++) {
         for (size_t nIndex = 0; nIndex < n(); nIndex++) {
-          cRef[mIndex * n() + nIndex] = qnnp_q31_requantize(cAcc[mIndex * n() + nIndex], scalarRequantizationParams);
+          cRef[mIndex * n() + nIndex] = qnnp_q31_requantize(acc[mIndex * n() + nIndex], scalarRequantizationParams);
         }
       }
 

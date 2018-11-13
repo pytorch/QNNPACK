@@ -16,11 +16,10 @@
 #     size_t k,
 #     const uint8_t* restrict a,
 #     size_t a_stride,
-#     const uint8_t* restrict b,
-#     const int32_t* restrict bias,
+#     const int32_t* restrict a_sum,
+#     const void* restrict w,
 #     uint8_t* restrict c,
 #     size_t c_stride,
-#     const int32_t* restrict a_sum,
 #     const union qnnp_q31_requantization_params requantization_params[restrict static 1])
 BEGIN_FUNCTION q8gemm_xzp_ukernel_4x8c2__aarch32_neon
   .arm
@@ -29,14 +28,14 @@ BEGIN_FUNCTION q8gemm_xzp_ukernel_4x8c2__aarch32_neon
   .fpu neon
 #endif
 
-  # Load bias
-  # - ip = bias
+  # Load w
+  # - ip = w
   LDR ip, [sp, 8]
 
   # Load bias0123(q8), bias4567(q9)
   # q8 := vacc0x0123
   # q9 := vacc0x4567
-  VLD1.8 {d16-d19}, [ip]
+  VLD1.8 {d16-d19}, [ip]!
 
   # q10 := vacc1x0123
   VMOV.I32 q10, q8
@@ -65,17 +64,17 @@ BEGIN_FUNCTION q8gemm_xzp_ukernel_4x8c2__aarch32_neon
   # r10 := a_sum3
 
   # a_sum0 := a_sum
-  LDR r7, [sp, 116]
+  LDR r7, [sp, 100]
 
   # Load a_stride
   # - ip = a_stride
-  LDR ip, [sp, 96]
+  LDR r10, [sp, 96]
 
   # compare mr to 2
   CMP r0, 2
 
   # a1 += a_stride
-  ADD r4, r3, ip
+  ADD r4, r3, r10
 
   # mr < 2, a1 := a0
   MOVLO r4, r3
@@ -87,7 +86,7 @@ BEGIN_FUNCTION q8gemm_xzp_ukernel_4x8c2__aarch32_neon
   MOVLO r8, r7
 
   # r5 := a2
-  ADD r5, r4, ip
+  ADD r5, r4, r10
   # mr <= 2, a2 := a1
   MOVLS r5, r4
 
@@ -100,7 +99,7 @@ BEGIN_FUNCTION q8gemm_xzp_ukernel_4x8c2__aarch32_neon
   CMP r0, 4
 
   # r6 := a3
-  ADD r6, r5, ip
+  ADD r6, r5, r10
   # mr != 4, a3 := a2
   MOVNE r6, r5
 
@@ -137,10 +136,6 @@ BEGIN_FUNCTION q8gemm_xzp_ukernel_4x8c2__aarch32_neon
   VADD.I32 q14, q14, q3
   # vacc3x4567 = vaddq_s32(vacc3x4567, va_sum3)
   VADD.I32 q15, q15, q3
-
-  # Load b
-  # - ip = b
-  LDR ip, [sp, 100]
 
   # k -= 8
   SUBS r2, r2, 8
@@ -461,7 +456,7 @@ BEGIN_FUNCTION q8gemm_xzp_ukernel_4x8c2__aarch32_neon
 4:
   # Load params:
   # - ip = params
-  LDR ip, [sp, 120]
+  LDR ip, [sp, 116]
 
   # Load multiplier:
   # - d12 = vmultiplier
@@ -524,7 +519,7 @@ BEGIN_FUNCTION q8gemm_xzp_ukernel_4x8c2__aarch32_neon
 
   # Load c, c_stride:
   # - r2 = c
-  # - r2 = c_stride
+  # - r3 = c_stride
   LDRD r2, r3, [sp, 108]
 
   VQMOVN.S32 d16,  q8

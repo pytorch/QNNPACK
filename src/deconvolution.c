@@ -141,13 +141,12 @@ enum qnnp_status qnnp_create_deconvolution2d_nhwc_q8(
   const uint32_t k_stride = (group_input_channels + (kr - 1)) & -kr;
   const uint32_t kernel_size = kernel_height * kernel_width;
   const size_t packed_group_weights_size = (sizeof(uint8_t) * kernel_size * k_stride + sizeof(int32_t)) * n_stride;
-  deconvolution->packed_kernel = malloc(packed_group_weights_size * groups);
-  if (deconvolution->packed_kernel == NULL) {
-    qnnp_log_error("failed to allocate %zu bytes for packed kernel data",
-      sizeof(uint8_t) * kernel_height * kernel_width * groups * k_stride * n_stride);
+  deconvolution->packed_weights = malloc(packed_group_weights_size * groups);
+  if (deconvolution->packed_weights == NULL) {
+    qnnp_log_error("failed to allocate %zu bytes for packed weights", packed_group_weights_size * groups);
     goto error;
   }
-  memset(deconvolution->packed_kernel, kernel_zero_point, packed_group_weights_size * groups);
+  memset(deconvolution->packed_weights, kernel_zero_point, packed_group_weights_size * groups);
 
   for (uint32_t group = 0; group < groups; group++) {
     pack_q8deconv_w(
@@ -156,7 +155,7 @@ enum qnnp_status qnnp_create_deconvolution2d_nhwc_q8(
       input_zero_point, kernel_zero_point,
       kernel + group * group_output_channels * kernel_size * group_input_channels,
       bias + group * group_output_channels,
-      (void*) ((uintptr_t) deconvolution->packed_kernel + group * packed_group_weights_size));
+      (void*) ((uintptr_t) deconvolution->packed_weights + group * packed_group_weights_size));
   }
 
   size_t zero_size = sizeof(uint8_t) * k_stride;

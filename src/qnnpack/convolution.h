@@ -60,10 +60,10 @@ struct qnnp_operator {
   size_t output_pixel_stride;
   void* output;
 
-  void* packed_kernel;
+  void* packed_weights;
   uint8_t kernel_zero_point;
 
-  void* bias;
+  // void* bias;
   void* zero_buffer;
   void* zero_pointer;
 
