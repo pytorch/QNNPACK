@@ -1,0 +1,8 @@
+language: cpp
+os:
+ - linux
+ - osx
+script:
+ - scripts/build-local.sh
+ - ctest --verbose
+
