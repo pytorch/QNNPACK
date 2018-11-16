@@ -63,7 +63,7 @@ class UVAddMicrokernelTester {
 
   inline UVAddMicrokernelTester& aScale(float aScale) {
     assert(aScale > 0.0f);
-    assert(isnormal(aScale));
+    assert(std::isnormal(aScale));
     this->aScale_ = aScale;
     return *this;
   }
@@ -83,7 +83,7 @@ class UVAddMicrokernelTester {
 
   inline UVAddMicrokernelTester& bScale(float bScale) {
     assert(bScale > 0.0f);
-    assert(isnormal(bScale));
+    assert(std::isnormal(bScale));
     this->bScale_ = bScale;
     return *this;
   }
@@ -103,7 +103,7 @@ class UVAddMicrokernelTester {
 
   inline UVAddMicrokernelTester& yScale(float yScale) {
     assert(yScale > 0.0f);
-    assert(isnormal(yScale));
+    assert(std::isnormal(yScale));
     this->yScale_ = yScale;
     return *this;
   }
