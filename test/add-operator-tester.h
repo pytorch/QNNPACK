@@ -88,7 +88,7 @@ class AddOperatorTester {
 
   inline AddOperatorTester& aScale(float aScale) {
     assert(aScale > 0.0f);
-    assert(isnormal(aScale));
+    assert(std::isnormal(aScale));
     this->aScale_ = aScale;
     return *this;
   }
@@ -108,7 +108,7 @@ class AddOperatorTester {
 
   inline AddOperatorTester& bScale(float bScale) {
     assert(bScale > 0.0f);
-    assert(isnormal(bScale));
+    assert(std::isnormal(bScale));
     this->bScale_ = bScale;
     return *this;
   }
@@ -128,7 +128,7 @@ class AddOperatorTester {
 
   inline AddOperatorTester& yScale(float yScale) {
     assert(yScale > 0.0f);
-    assert(isnormal(yScale));
+    assert(std::isnormal(yScale));
     this->yScale_ = yScale;
     return *this;
   }
