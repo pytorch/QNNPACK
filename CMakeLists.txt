@@ -26,7 +26,7 @@ ENDIF()
 # ---[ Build flags
 IF(NOT CMAKE_SYSTEM_PROCESSOR)
   IF(IOS)
-    LIST(LENGTH ${IOS_ARCH} IOS_ARCH_COUNT)
+    LIST(LENGTH IOS_ARCH IOS_ARCH_COUNT)
     IF(IOS_ARCH_COUNT GREATER 1)
       MESSAGE(FATAL_ERROR "Unsupported QNNPACK build with multiple iOS architectures (${IOS_ARCH}). "
         "Specify a single architecture in IOS_ARCH and re-configure. ")
