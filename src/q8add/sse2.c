@@ -79,11 +79,11 @@ void q8uvadd_ukernel__sse2(
       n -= 8;
     } while (n >= 8);
     if (n != 0) {
-      const size_t n_increment = n - 8;
-      const __m128i vload_shift = _mm_cvtsi32_si128(-8 * (int32_t) n_increment);
+      const size_t n_decrement = 8 - n;
+      const __m128i vload_shift = _mm_cvtsi32_si128(8 * (int32_t) n_decrement);
 
-      const __m128i va = _mm_srl_epi64(_mm_loadl_epi64((const __m128i*) (a + n_increment)), vload_shift);
-      const __m128i vb = _mm_srl_epi64(_mm_loadl_epi64((const __m128i*) (b + n_increment)), vload_shift);
+      const __m128i va = _mm_srl_epi64(_mm_loadl_epi64((const __m128i*) (a - n_decrement)), vload_shift);
+      const __m128i vb = _mm_srl_epi64(_mm_loadl_epi64((const __m128i*) (b - n_decrement)), vload_shift);
 
       const __m128i vxa = _mm_unpacklo_epi8(va, vzero);
       const __m128i vxb = _mm_unpacklo_epi8(vb, vzero);
