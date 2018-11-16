@@ -136,9 +136,9 @@ static void CharacteristicArguments(benchmark::internal::Benchmark* b)
 {
   b->ArgNames({"N", "C"});
 
-  uint32_t c = 16;
-  for (uint32_t n = 224; n >= 7; n /= 2) {
-    b->Args({int32_t(n * n), c});
+  int32_t c = 16;
+  for (int32_t n = 224; n >= 7; n /= 2) {
+    b->Args({n * n, c});
     c *= 2;
   }
 }
