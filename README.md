@@ -78,8 +78,9 @@ cd pytorch
 # Optional: update QNNPACK submodule to latest revision
 git submodule update --remote third_party/QNNPACK
 
-# Build Caffe2 (including binaries) for Android
+# Build Caffe2 (including binaries) for Android, and push to device
 scripts/build_android.sh -DANDROID_TOOLCHAIN=clang -DBUILD_BINARY=ON
+adb push build_android/bin/speed_benchmark /data/local/tmp/speed_benchmark
 
 # Download model weights and copy them to Android device
 wget https://s3.amazonaws.com/download.caffe2.ai/models/mobilenet_v2_1.0_224_quant/init_net.pb
@@ -107,8 +108,9 @@ cd pytorch
 # Optional: update QNNPACK submodule to latest revision
 git submodule update --remote third_party/QNNPACK
 
-# Build Caffe2 (including binaries) for Android
+# Build Caffe2 (including binaries) for Android, and push to device
 scripts/build_android.sh -DANDROID_ABI=arm64-v8a -DANDROID_TOOLCHAIN=clang -DBUILD_BINARY=ON
+adb push build_android/bin/speed_benchmark /data/local/tmp/speed_benchmark
 
 # Download model weights and copy them to Android device
 wget https://s3.amazonaws.com/download.caffe2.ai/models/mobilenet_v2_1.0_224_quant/init_net.pb
