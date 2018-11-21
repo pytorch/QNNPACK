@@ -204,14 +204,14 @@ static inline union qnnp_add_quantization_params qnnp_compute_add_quantization_p
   uint8_t output_min,
   uint8_t output_max)
 {
-  assert(a_output_scale >= 0x1.0p-10f);
-  assert(b_output_scale >= 0x1.0p-10f);
+  assert(a_output_scale >= 0x1.0p-14f);
+  assert(b_output_scale >= 0x1.0p-14f);
   assert(a_output_scale < 0x1.0p+8f);
   assert(b_output_scale < 0x1.0p+8f);
 
   /* Compute requantization parameters */
   const float max_output_scale = a_output_scale > b_output_scale ? a_output_scale : b_output_scale;
-  assert(max_output_scale >= 0x1.0p-10f);
+  assert(max_output_scale >= 0x1.0p-14f);
   assert(max_output_scale < 0x1.0p+8f);
   const uint32_t max_scale_bits = fp32_to_bits(max_output_scale);
   const int32_t max_scale_exponent = (int32_t) (max_scale_bits >> 23) - 127;
