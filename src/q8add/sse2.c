@@ -22,7 +22,6 @@ void q8uvadd_ukernel__sse2(
 {
   if QNNP_LIKELY(n >= 8) {
     const __m128i vzero_point_product = _mm_load_si128((const __m128i*) &quantization_params->sse2.zero_point_product);
-    const __m128i vy_zero_point = _mm_load_si128((const __m128i*) &quantization_params->sse2.y_zero_point);
     const __m128i va_multiplier_lo = _mm_load_si128((const __m128i*) &quantization_params->sse2.a_multiplier_lo);
     const __m128i va_multiplier_hi = _mm_load_si128((const __m128i*) &quantization_params->sse2.a_multiplier_hi);
     const __m128i vb_multiplier_lo = _mm_load_si128((const __m128i*) &quantization_params->sse2.b_multiplier_lo);

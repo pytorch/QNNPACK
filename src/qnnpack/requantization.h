@@ -309,8 +309,6 @@ static inline union qnnp_add_quantization_params qnnp_compute_scalar_add_quantiz
   assert(shift < 32);
   assert(shift >= 13);
 
-  const float scale_multiplier = fp32_from_bits((uint32_t) (21 - max_scale_exponent + 127) << 23);
-
   /* Multipliers are in [0, 2**22) range, largest multiplier is in [2**21, 2**22) range */
   const uint32_t a_multiplier = (uint32_t) (int32_t) lrintf(fp32_from_bits(fp32_to_bits(a_output_scale) + (shift << 23)));
   const uint32_t b_multiplier = (uint32_t) (int32_t) lrintf(fp32_from_bits(fp32_to_bits(b_output_scale) + (shift << 23)));
