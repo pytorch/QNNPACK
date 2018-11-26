@@ -161,6 +161,7 @@ def main(args):
             extra_include_dirs="src"):
 
         build.benchmark("add-bench", build.cxx("add.cc"))
+        build.benchmark("channel-shuffle-bench", build.cxx("channel-shuffle.cc"))
         build.benchmark("convolution-bench", build.cxx("convolution.cc"))
         build.benchmark("q8gemm-bench", build.cxx("q8gemm.cc"))
         build.benchmark("hgemm-bench", build.cxx("hgemm.cc"))
