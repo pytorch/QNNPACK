@@ -159,6 +159,19 @@ enum qnnp_status qnnp_setup_add_nc_q8(
     uint8_t* sum,
     size_t sum_stride);
 
+enum qnnp_status qnnp_create_channel_shuffle_nc_x8(
+    size_t groups,
+    size_t group_channels,
+    qnnp_operator_t* channel_shuffle);
+
+enum qnnp_status qnnp_setup_channel_shuffle_nc_x8(
+    qnnp_operator_t channel_shuffle,
+    size_t batch_size,
+    const uint8_t* input,
+    size_t input_stride,
+    uint8_t* output,
+    size_t output_stride);
+
 enum qnnp_status qnnp_run_operator(
     qnnp_operator_t op,
     pthreadpool_t threadpool);

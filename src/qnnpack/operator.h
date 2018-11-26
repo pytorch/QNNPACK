@@ -27,6 +27,7 @@ enum qnnp_ukernel_type {
   qnnp_ukernel_type_xzp_gemm,
   qnnp_ukernel_type_dwconv,
   qnnp_ukernel_type_add,
+  qnnp_ukernel_type_channel_shuffle,
 };
 
 struct qnnp_operator {
@@ -45,6 +46,7 @@ struct qnnp_operator {
   uint32_t dilation_width;
   uint32_t groups;
   size_t group_stride;
+  size_t group_channels;
   size_t group_input_channels;
   size_t group_output_channels;
   size_t channels;

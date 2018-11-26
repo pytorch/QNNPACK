@@ -16,7 +16,11 @@ LOCAL_SRC_FILES += \
 	src/q8gemm/4x8c2-xzp-aarch32-neon.S \
 	src/q8gemm/4x-sumrows-neon.c \
 	src/q8updw/9c8-aarch32-neon.S \
-	src/q8mpdw/25c8-neon.c
+	src/q8mpdw/25c8-neon.c \
+	src/x8zip/x2-neon.c \
+	src/x8zip/x3-neon.c \
+	src/x8zip/x4-neon.c \
+	src/x8zip/xm-neon.c
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/src
 LOCAL_CFLAGS := -std=c99 -Wall -O2 -march=armv7-a -mfloat-abi=softfp -mfpu=neon
 LOCAL_STATIC_LIBRARIES := cpuinfo
@@ -31,7 +35,11 @@ LOCAL_SRC_FILES += \
 	src/q8conv/8x8-aarch64-neon.S \
 	src/q8gemm/8x8-aarch64-neon.S \
 	src/q8updw/9c8-neon.c \
-	src/q8mpdw/25c8-neon.c
+	src/q8mpdw/25c8-neon.c \
+	src/x8zip/x2-neon.c \
+	src/x8zip/x3-neon.c \
+	src/x8zip/x4-neon.c \
+	src/x8zip/xm-neon.c
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/src
 LOCAL_CFLAGS := -std=c99 -Wall -O2
 LOCAL_STATIC_LIBRARIES := cpuinfo
@@ -46,7 +54,11 @@ LOCAL_SRC_FILES += \
 	src/q8conv/4x4c2-sse2.c \
 	src/q8gemm/4x4c2-sse2.c \
 	src/q8mpdw/25c8-sse2.c \
-	src/q8updw/9c8-sse2.c
+	src/q8updw/9c8-sse2.c \
+	src/x8zip/x2-sse2.c \
+	src/x8zip/x3-sse2.c \
+	src/x8zip/x4-sse2.c \
+	src/x8zip/xm-sse2.c
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/src
 LOCAL_CFLAGS := -std=c99 -Wall -O2
 LOCAL_STATIC_LIBRARIES := cpuinfo FP16
@@ -57,6 +69,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE = qnnpack_operators
 LOCAL_SRC_FILES := \
 	src/add.c \
+	src/channel-shuffle.c \
 	src/convolution.c \
 	src/deconvolution.c \
 	src/fully-connected.c \

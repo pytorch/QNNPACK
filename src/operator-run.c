@@ -319,6 +319,39 @@ static void compute_q8add_contiguous(
   context->ukernel(size, a, b, y, &context->quantization_params);
 }
 
+struct channel_shuffle_context {
+  const void* x;
+  size_t x_stride;
+  void* y;
+  size_t y_stride;
+  size_t n;
+  size_t m;
+  union {
+    xzipc_ukernel_function fixed_ukernel;
+    xzipv_ukernel_function variable_ukernel;
+  };
+};
+
+static void compute_channel_shuffle_fixed(
+    const struct channel_shuffle_context context[restrict static 1],
+    size_t index)
+{
+  const void* x = (const void*) ((uintptr_t) context->x + index * context->x_stride);
+  void* y = (void*) ((uintptr_t) context->y + index * context->y_stride);
+
+  context->fixed_ukernel(context->n, x, y);
+}
+
+static void compute_channel_shuffle_variable(
+    const struct channel_shuffle_context context[restrict static 1],
+    size_t index)
+{
+  const void* x = (const void*) ((uintptr_t) context->x + index * context->x_stride);
+  void* y = (void*) ((uintptr_t) context->y + index * context->y_stride);
+
+  context->variable_ukernel(context->n, context->m, x, y);
+}
+
 enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
 {
   switch (op->ukernel_type) {
@@ -559,6 +592,46 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
           &add_context,
           batch_size, 1);
       }
+      break;
+    }
+    case qnnp_ukernel_type_channel_shuffle:
+    {
+      const size_t groups = op->groups;
+      struct channel_shuffle_context channel_shuffle_context = {
+        .x = op->input,
+        .x_stride = op->input_pixel_stride * sizeof(uint8_t),
+        .y = op->output,
+        .y_stride = op->output_pixel_stride * sizeof(uint8_t),
+        .n = op->group_channels * sizeof(uint8_t),
+        .m = groups,
+      };
+      pthreadpool_function_1d_t compute_function = NULL;
+      switch (groups) {
+        case 2:
+          compute_function = (pthreadpool_function_1d_t) compute_channel_shuffle_fixed;
+          channel_shuffle_context.fixed_ukernel = qnnp_params.x8zip.x2;
+          break;
+        case 3:
+          compute_function = (pthreadpool_function_1d_t) compute_channel_shuffle_fixed;
+          channel_shuffle_context.fixed_ukernel = qnnp_params.x8zip.x3;
+          break;
+        case 4:
+          compute_function = (pthreadpool_function_1d_t) compute_channel_shuffle_fixed;
+          channel_shuffle_context.fixed_ukernel = qnnp_params.x8zip.x4;
+          break;
+        default:
+          compute_function = (pthreadpool_function_1d_t) compute_channel_shuffle_variable;
+          channel_shuffle_context.variable_ukernel = qnnp_params.x8zip.xm;
+          break;
+        case 0:
+        case 1:
+          QNNP_UNREACHABLE;
+      }
+      pthreadpool_compute_1d(
+        threadpool,
+        compute_function,
+        &channel_shuffle_context,
+        op->batch_size);
       break;
     }
     default:

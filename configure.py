@@ -69,6 +69,7 @@ def main(args):
             build.cc("deconvolution.c"),
             build.cc("fully-connected.c"),
             build.cc("add.c"),
+            build.cc("channel-shuffle.c"),
         ]
 
         with build.options(isa=arm.neon if build.target.is_arm else None):
@@ -141,6 +142,7 @@ def main(args):
         build.unittest("sgemm-test", build.cxx("sgemm.cc"))
         build.unittest("x8zip-test", build.cxx("x8zip.cc"))
         build.unittest("add-test", build.cxx("add.cc"))
+        build.unittest("channel-shuffle-test", build.cxx("channel-shuffle.cc"))
         build.unittest("convolution-test", build.cxx("convolution.cc"))
         build.unittest("deconvolution-test", build.cxx("deconvolution.cc"))
         build.unittest("fully-connected-test", build.cxx("fully-connected.cc"))

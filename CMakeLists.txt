@@ -135,7 +135,8 @@ SET(QNNPACK_OPERATOR_SRCS
   src/convolution.c
   src/deconvolution.c
   src/fully-connected.c
-  src/add.c)
+  src/add.c
+  src/channel-shuffle.c)
 
 SET(QNNPACK_PSIMD_UKERNELS
   src/sgemm/6x8-psimd.c)
@@ -339,6 +340,15 @@ IF(QNNPACK_BUILD_TESTS)
   TARGET_INCLUDE_DIRECTORIES(fully-connected-test PRIVATE src test)
   TARGET_LINK_LIBRARIES(fully-connected-test PRIVATE qnnpack cpuinfo gtest gtest_main)
   ADD_TEST(fully-connected-test fully-connected-test)
+
+  ADD_EXECUTABLE(channel-shuffle-test test/channel-shuffle.cc)
+  SET_TARGET_PROPERTIES(channel-shuffle-test PROPERTIES
+    CXX_STANDARD 11
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO)
+  TARGET_INCLUDE_DIRECTORIES(channel-shuffle-test PRIVATE src test)
+  TARGET_LINK_LIBRARIES(channel-shuffle-test PRIVATE qnnpack cpuinfo gtest gtest_main)
+  ADD_TEST(channel-shuffle-test channel-shuffle-test)
 
   ADD_EXECUTABLE(add-test test/add.cc)
   SET_TARGET_PROPERTIES(add-test PROPERTIES

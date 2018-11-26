@@ -20,6 +20,7 @@
 #include <qnnpack/q8gemm.h>
 #include <qnnpack/q8conv.h>
 #include <qnnpack/q8dw.h>
+#include <qnnpack/x8zip.h>
 
 static pthread_once_t init_guard = PTHREAD_ONCE_INIT;
 
@@ -77,6 +78,12 @@ static void init(void) {
   qnnp_params.q8add = (struct q8add_parameters) {
       .uvadd = q8uvadd_ukernel__neon,
   };
+  qnnp_params.x8zip = (struct x8zip_parameters) {
+      .x2 = qnnp_x8zip_x2__neon,
+      .x3 = qnnp_x8zip_x3__neon,
+      .x4 = qnnp_x8zip_x4__neon,
+      .xm = qnnp_x8zip_xm__neon,
+  };
 #elif CPUINFO_ARCH_ARM64
   qnnp_params.q8conv = (struct q8conv_parameters) {
       .gemm = q8gemm_ukernel_8x8__aarch64_neon,
@@ -98,6 +105,12 @@ static void init(void) {
   };
   qnnp_params.q8add = (struct q8add_parameters) {
       .uvadd = q8uvadd_ukernel__neon,
+  };
+  qnnp_params.x8zip = (struct x8zip_parameters) {
+      .x2 = qnnp_x8zip_x2__neon,
+      .x3 = qnnp_x8zip_x3__neon,
+      .x4 = qnnp_x8zip_x4__neon,
+      .xm = qnnp_x8zip_xm__neon,
   };
 #elif CPUINFO_ARCH_X86 || CPUINFO_ARCH_X86_64
   if (!cpuinfo_has_x86_sse2()) {
@@ -124,6 +137,12 @@ static void init(void) {
   };
   qnnp_params.q8add = (struct q8add_parameters) {
       .uvadd = q8uvadd_ukernel__sse2,
+  };
+  qnnp_params.x8zip = (struct x8zip_parameters) {
+      .x2 = qnnp_x8zip_x2__sse2,
+      .x3 = qnnp_x8zip_x3__sse2,
+      .x4 = qnnp_x8zip_x4__sse2,
+      .xm = qnnp_x8zip_xm__sse2,
   };
 #else
   #error "Unsupported architecture"

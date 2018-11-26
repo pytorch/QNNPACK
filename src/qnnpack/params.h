@@ -352,6 +352,13 @@ struct q8add_parameters {
   q8uvadd_ukernel_function uvadd;
 };
 
+struct x8zip_parameters {
+  xzipc_ukernel_function x2;
+  xzipc_ukernel_function x3;
+  xzipc_ukernel_function x4;
+  xzipv_ukernel_function xm;
+};
+
 struct qnnp_parameters {
   struct q8conv_parameters q8conv;
   struct q8conv_xzp_parameters q8conv_xzp;
@@ -359,6 +366,7 @@ struct qnnp_parameters {
   struct q8mpdw_parameters q8dw25;
   struct q8sum_rows_parameters q8sum_rows;
   struct q8add_parameters q8add;
+  struct x8zip_parameters x8zip;
   bool initialized;
 };
 
