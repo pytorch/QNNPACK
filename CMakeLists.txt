@@ -151,6 +151,10 @@ SET(QNNPACK_ARM_NEON_UKERNELS
   src/q8updw/9c8-neon.c
   src/q8mpdw/25c8-neon.c
   src/q8add/neon.c
+  src/x8zip/x2-neon.c
+  src/x8zip/x3-neon.c
+  src/x8zip/x4-neon.c
+  src/x8zip/xm-neon.c
   src/sgemm/5x8-neon.c
   src/sgemm/6x8-neon.c)
 
@@ -171,7 +175,11 @@ SET(QNNPACK_X86_SSE2_UKERNELS
   src/q8conv/4x4c2-sse2.c
   src/q8mpdw/25c8-sse2.c
   src/q8updw/9c8-sse2.c
-  src/q8add/sse2.c)
+  src/q8add/sse2.c
+  src/x8zip/x2-sse2.c
+  src/x8zip/x3-sse2.c
+  src/x8zip/x4-sse2.c
+  src/x8zip/xm-sse2.c)
 
 SET(QNNPACK_UKERNELS ${QNNPACK_PSIMD_UKERNELS})
 IF(CMAKE_SYSTEM_PROCESSOR MATCHES "^armv[5-8]" OR IOS_ARCH MATCHES "^armv7")
@@ -386,6 +394,15 @@ IF(QNNPACK_BUILD_TESTS)
   TARGET_INCLUDE_DIRECTORIES(q8uvadd-test PRIVATE src test)
   TARGET_LINK_LIBRARIES(q8uvadd-test PRIVATE qnnpack cpuinfo fp16 gtest gtest_main)
   ADD_TEST(q8uvadd-test q8uvadd-test)
+
+  ADD_EXECUTABLE(x8zip-test test/x8zip.cc)
+  SET_TARGET_PROPERTIES(x8zip-test PROPERTIES
+    CXX_STANDARD 11
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO)
+  TARGET_INCLUDE_DIRECTORIES(x8zip-test PRIVATE src test)
+  TARGET_LINK_LIBRARIES(x8zip-test PRIVATE qnnpack cpuinfo fp16 gtest gtest_main)
+  ADD_TEST(x8zip-test x8zip-test)
 
   ADD_EXECUTABLE(hgemm-test test/hgemm.cc)
   SET_TARGET_PROPERTIES(hgemm-test PROPERTIES

@@ -254,6 +254,17 @@ typedef void (*q8sum_rows_ukernel_function)(
     int32_t multiplier,
     int32_t* sums);
 
+typedef void (*xzipc_ukernel_function)(
+    size_t n,
+    const void* x,
+    void* y);
+
+typedef void (*xzipv_ukernel_function)(
+    size_t n,
+    size_t m,
+    const void* x,
+    void* y);
+
 typedef void (*sgemm_ukernel_function)(
     size_t mr,
     size_t nr,

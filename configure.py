@@ -89,6 +89,10 @@ def main(args):
                     build.cc("q8conv/8x8-neon.c"),
                     build.cc("q8updw/9c8-neon.c"),
                     build.cc("q8mpdw/25c8-neon.c"),
+                    build.cc("x8zip/x2-neon.c"),
+                    build.cc("x8zip/x3-neon.c"),
+                    build.cc("x8zip/x4-neon.c"),
+                    build.cc("x8zip/xm-neon.c"),
                     build.cc("sgemm/5x8-neon.c"),
                     build.cc("sgemm/6x8-neon.c"),
                 ]
@@ -114,6 +118,10 @@ def main(args):
                         build.cc("q8conv/4x4c2-sse2.c"),
                         build.cc("q8mpdw/25c8-sse2.c"),
                         build.cc("q8updw/9c8-sse2.c"),
+                        build.cc("x8zip/x2-sse2.c"),
+                        build.cc("x8zip/x3-sse2.c"),
+                        build.cc("x8zip/x4-sse2.c"),
+                        build.cc("x8zip/xm-sse2.c"),
                     ]
             build.static_library("qnnpack", qnnpack_objects)
 
@@ -131,6 +139,7 @@ def main(args):
         build.unittest("q8uvadd-test", build.cxx("q8uvadd.cc"))
         build.unittest("hgemm-test", build.cxx("hgemm.cc"))
         build.unittest("sgemm-test", build.cxx("sgemm.cc"))
+        build.unittest("x8zip-test", build.cxx("x8zip.cc"))
         build.unittest("add-test", build.cxx("add.cc"))
         build.unittest("convolution-test", build.cxx("convolution.cc"))
         build.unittest("deconvolution-test", build.cxx("deconvolution.cc"))
