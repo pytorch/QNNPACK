@@ -115,7 +115,7 @@ void qnnp_x8zip_xm__neon(
 
           vst1_lane_u32(__builtin_assume_aligned(output, 1), vxyzw0, 1);
           output = (void*) ((uintptr_t) output + m);
-          
+
           vxyzw0 = vxyzw1;
         }
         if (k & 1) {
