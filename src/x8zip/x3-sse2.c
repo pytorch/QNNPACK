@@ -57,7 +57,7 @@ void qnnp_x8zip_x3__sse2(
       _mm_shuffle_ps(_mm_castsi128_ps(vxeyezexo), _mm_castsi128_ps(vyozoxeye), _MM_SHUFFLE(2, 0, 2, 0)));
       /* vtemp2    = ( z15, y15, x15, z14,  z7,  y7,  x7,  z6, y14, x14, z13, y13,  y6,  x6,  z5,  y5 ) */
       const __m128i vtemp2 = _mm_castps_si128(
-      _mm_shuffle_ps(_mm_castps_si128(vyozoxeye), _mm_castps_si128(vzexoyozo), _MM_SHUFFLE(3, 1, 3, 1)));
+      _mm_shuffle_ps(_mm_castsi128_ps(vyozoxeye), _mm_castsi128_ps(vzexoyozo), _MM_SHUFFLE(3, 1, 3, 1)));
 
       /* vxyz0     = (  x5,  z4,  y4,  x4,  z3,  y3,  x3,  z2,  y2,  x2,  z1,  y1,  x1,  z0,  y0,  x0 ) */
       const __m128i vxyz0 = _mm_castps_si128(
@@ -66,7 +66,7 @@ void qnnp_x8zip_x3__sse2(
       const __m128i vxyz1 = _mm_castps_si128(
       _mm_shuffle_ps(_mm_castsi128_ps(vtemp2), _mm_castsi128_ps(vtemp1), _MM_SHUFFLE(3, 1, 2, 0)));
       /* vxyz2     = ( z15, y15, x15, z14, y14, x14, z13, y13, x13, z12, y12, x12, z11, y11, x11, z10 ) */
-      const __m128i vxyz2 = _mm_castsi128_ps(
+      const __m128i vxyz2 = _mm_castps_si128(
       _mm_shuffle_ps(_mm_castsi128_ps(vtemp0), _mm_castsi128_ps(vtemp2), _MM_SHUFFLE(3, 1, 3, 1)));
 
       _mm_storeu_si128((__m128i*) o, vxyz0);
@@ -106,7 +106,7 @@ void qnnp_x8zip_x3__sse2(
       _mm_shuffle_ps(_mm_castsi128_ps(vxeyezexo), _mm_castsi128_ps(vyozoxeye), _MM_SHUFFLE(2, 0, 2, 0)));
       /* vtemp2    = ( z15, y15, x15, z14,  z7,  y7,  x7,  z6, y14, x14, z13, y13,  y6,  x6,  z5,  y5 ) */
       const __m128i vtemp2 = _mm_castps_si128(
-      _mm_shuffle_ps(_mm_castps_si128(vyozoxeye), _mm_castps_si128(vzexoyozo), _MM_SHUFFLE(3, 1, 3, 1)));
+      _mm_shuffle_ps(_mm_castsi128_ps(vyozoxeye), _mm_castsi128_ps(vzexoyozo), _MM_SHUFFLE(3, 1, 3, 1)));
 
       /* vxyz0     = (  x5,  z4,  y4,  x4,  z3,  y3,  x3,  z2,  y2,  x2,  z1,  y1,  x1,  z0,  y0,  x0 ) */
       const __m128i vxyz0 = _mm_castps_si128(
@@ -115,7 +115,7 @@ void qnnp_x8zip_x3__sse2(
       const __m128i vxyz1 = _mm_castps_si128(
       _mm_shuffle_ps(_mm_castsi128_ps(vtemp2), _mm_castsi128_ps(vtemp1), _MM_SHUFFLE(3, 1, 2, 0)));
       /* vxyz2     = ( z15, y15, x15, z14, y14, x14, z13, y13, x13, z12, y12, x12, z11, y11, x11, z10 ) */
-      const __m128i vxyz2 = _mm_castsi128_ps(
+      const __m128i vxyz2 = _mm_castps_si128(
       _mm_shuffle_ps(_mm_castsi128_ps(vtemp0), _mm_castsi128_ps(vtemp2), _MM_SHUFFLE(3, 1, 3, 1)));
 
       o = (uint8_t*) ((uintptr_t) o + address_increment * 3);
