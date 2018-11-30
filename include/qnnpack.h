@@ -137,6 +137,25 @@ enum qnnp_status qnnp_setup_fully_connected_nc_q8(
     size_t output_stride,
     pthreadpool_t threadpool);
 
+enum qnnp_status qnnp_create_global_average_pooling_nwc_q8(
+    size_t channels,
+    uint8_t input_zero_point,
+    float input_scale,
+    uint8_t output_zero_point,
+    float output_scale,
+    uint8_t output_min,
+    uint8_t output_max,
+    qnnp_operator_t* global_average_pooling);
+
+enum qnnp_status qnnp_setup_global_average_pooling_nwc_q8(
+    qnnp_operator_t global_average_pooling,
+    size_t batch_size,
+    size_t width,
+    const uint8_t* input,
+    size_t input_stride,
+    uint8_t* output,
+    size_t output_stride);
+
 enum qnnp_status qnnp_create_add_nc_q8(
     size_t channels,
     uint8_t a_zero_point,

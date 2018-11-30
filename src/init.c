@@ -17,9 +17,10 @@
 #include <qnnpack/log.h>
 #include <qnnpack/params.h>
 #include <qnnpack/q8add.h>
-#include <qnnpack/q8gemm.h>
 #include <qnnpack/q8conv.h>
 #include <qnnpack/q8dw.h>
+#include <qnnpack/q8gavgpool.h>
+#include <qnnpack/q8gemm.h>
 #include <qnnpack/x8zip.h>
 
 static pthread_once_t init_guard = PTHREAD_ONCE_INIT;
@@ -78,6 +79,13 @@ static void init(void) {
   qnnp_params.q8add = (struct q8add_parameters) {
       .uvadd = q8uvadd_ukernel__neon,
   };
+  qnnp_params.q8gavgpool = (struct q8gavgpool_parameters) {
+      .ltnr = q8gavgpool_ukernel_up8xm__neon,
+      .genr_lemr = q8gavgpool_ukernel_up8x7__neon,
+      .genr_gtmr = q8gavgpool_ukernel_mp8x7__neon,
+      .mr = 7,
+      .nr = 8,
+  };
   qnnp_params.x8zip = (struct x8zip_parameters) {
       .x2 = qnnp_x8zip_x2__neon,
       .x3 = qnnp_x8zip_x3__neon,
@@ -105,6 +113,13 @@ static void init(void) {
   };
   qnnp_params.q8add = (struct q8add_parameters) {
       .uvadd = q8uvadd_ukernel__neon,
+  };
+  qnnp_params.q8gavgpool = (struct q8gavgpool_parameters) {
+      .ltnr = q8gavgpool_ukernel_up8xm__neon,
+      .genr_lemr = q8gavgpool_ukernel_up8x7__neon,
+      .genr_gtmr = q8gavgpool_ukernel_mp8x7__neon,
+      .mr = 7,
+      .nr = 8,
   };
   qnnp_params.x8zip = (struct x8zip_parameters) {
       .x2 = qnnp_x8zip_x2__neon,
@@ -137,6 +152,13 @@ static void init(void) {
   };
   qnnp_params.q8add = (struct q8add_parameters) {
       .uvadd = q8uvadd_ukernel__sse2,
+  };
+  qnnp_params.q8gavgpool = (struct q8gavgpool_parameters) {
+      .ltnr = q8gavgpool_ukernel_up8xm__sse2,
+      .genr_lemr = q8gavgpool_ukernel_up8x7__sse2,
+      .genr_gtmr = q8gavgpool_ukernel_mp8x7__sse2,
+      .mr = 7,
+      .nr = 8,
   };
   qnnp_params.x8zip = (struct x8zip_parameters) {
       .x2 = qnnp_x8zip_x2__sse2,

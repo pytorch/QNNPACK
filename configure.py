@@ -70,6 +70,7 @@ def main(args):
             build.cc("fully-connected.c"),
             build.cc("add.c"),
             build.cc("channel-shuffle.c"),
+            build.cc("global-average-pooling.c"),
         ]
 
         with build.options(isa=arm.neon if build.target.is_arm else None):
@@ -90,6 +91,9 @@ def main(args):
                     build.cc("q8conv/8x8-neon.c"),
                     build.cc("q8updw/9c8-neon.c"),
                     build.cc("q8mpdw/25c8-neon.c"),
+                    build.cc("q8gavgpool/mp8x7-neon.c"),
+                    build.cc("q8gavgpool/up8x7-neon.c"),
+                    build.cc("q8gavgpool/up8xm-neon.c"),
                     build.cc("x8zip/x2-neon.c"),
                     build.cc("x8zip/x3-neon.c"),
                     build.cc("x8zip/x4-neon.c"),
@@ -119,6 +123,9 @@ def main(args):
                         build.cc("q8conv/4x4c2-sse2.c"),
                         build.cc("q8mpdw/25c8-sse2.c"),
                         build.cc("q8updw/9c8-sse2.c"),
+                        build.cc("q8gavgpool/mp8x7-sse2.c"),
+                        build.cc("q8gavgpool/up8x7-sse2.c"),
+                        build.cc("q8gavgpool/up8xm-sse2.c"),
                         build.cc("x8zip/x2-sse2.c"),
                         build.cc("x8zip/x3-sse2.c"),
                         build.cc("x8zip/x4-sse2.c"),
@@ -137,6 +144,7 @@ def main(args):
         build.unittest("q8conv-test", build.cxx("q8conv.cc"))
         build.unittest("q8updw-test", build.cxx("q8updw.cc"))
         build.unittest("q8mpdw-test", build.cxx("q8mpdw.cc"))
+        build.unittest("q8gavgpool-test", build.cxx("q8gavgpool.cc"))
         build.unittest("q8uvadd-test", build.cxx("q8uvadd.cc"))
         build.unittest("hgemm-test", build.cxx("hgemm.cc"))
         build.unittest("sgemm-test", build.cxx("sgemm.cc"))
@@ -145,6 +153,7 @@ def main(args):
         build.unittest("channel-shuffle-test", build.cxx("channel-shuffle.cc"))
         build.unittest("convolution-test", build.cxx("convolution.cc"))
         build.unittest("deconvolution-test", build.cxx("deconvolution.cc"))
+        build.unittest("global-average-pooling-test", build.cxx("global-average-pooling.cc"))
         build.unittest("fully-connected-test", build.cxx("fully-connected.cc"))
         build.unittest("requantization-test", [build.cxx("requantization.cc")] + requantization_objects)
 

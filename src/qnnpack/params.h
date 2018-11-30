@@ -212,6 +212,39 @@ union qnnp_add_quantization_params {
 #endif
 };
 
+union qnnp_avgpool_quantization_params {
+  struct {
+    int32_t bias;
+    int32_t multiplier;
+    int64_t rounding;
+    uint32_t right_shift;
+    int32_t output_min_less_zero_point;
+    int32_t output_max_less_zero_point;
+    int32_t output_zero_point;
+  } scalar;
+#if CPUINFO_ARCH_ARM || CPUINFO_ARCH_ARM64
+  struct {
+    int32_t bias;
+    int32_t multiplier;
+    int64_t left_shift;
+    int16_t output_zero_point;
+    uint8_t output_max;
+    uint8_t output_min;
+  } neon;
+#endif /* CPUINFO_ARCH_ARM || CPUINFO_ARCH_ARM64 */
+#if CPUINFO_ARCH_X86 || CPUINFO_ARCH_X86_64
+  struct {
+    QNNP_ALIGN(16) int32_t bias[4];
+    QNNP_ALIGN(16) uint32_t multiplier[4];
+    QNNP_ALIGN(16) uint64_t rounding[2];
+    QNNP_ALIGN(16) uint64_t right_shift[2];
+    QNNP_ALIGN(16) int16_t output_zero_point[8];
+    QNNP_ALIGN(16) uint8_t output_max[16];
+    QNNP_ALIGN(16) uint8_t output_min[16];
+  } sse2;
+#endif
+};
+
 typedef void (*q8gemm_ukernel_function)(
     size_t mr,
     size_t nr,
@@ -308,6 +341,25 @@ typedef void (*q8mpdw_ukernel_function)(
     size_t output_increment,
     const union qnnp_conv_quantization_params* quantization_params);
 
+typedef void (*q8gavgpool_up_ukernel_function)(
+    size_t m,
+    size_t n,
+    const uint8_t* x,
+    size_t x_stride,
+    const uint8_t* zero,
+    uint8_t* y,
+    const union qnnp_avgpool_quantization_params* quantization_params);
+
+typedef void (*q8gavgpool_mp_ukernel_function)(
+    size_t m,
+    size_t n,
+    const uint8_t* x,
+    size_t x_stride,
+    const uint8_t* zero,
+    int32_t* buffer,
+    uint8_t* y,
+    const union qnnp_avgpool_quantization_params* quantization_params);
+
 typedef void (*q8uvadd_ukernel_function)(
     size_t n,
     const uint8_t* a,
@@ -352,6 +404,14 @@ struct q8add_parameters {
   q8uvadd_ukernel_function uvadd;
 };
 
+struct q8gavgpool_parameters {
+  q8gavgpool_up_ukernel_function ltnr;
+  q8gavgpool_up_ukernel_function genr_lemr;
+  q8gavgpool_mp_ukernel_function genr_gtmr;
+  uint8_t mr;
+  uint8_t nr;
+};
+
 struct x8zip_parameters {
   xzipc_ukernel_function x2;
   xzipc_ukernel_function x3;
@@ -366,6 +426,7 @@ struct qnnp_parameters {
   struct q8mpdw_parameters q8dw25;
   struct q8sum_rows_parameters q8sum_rows;
   struct q8add_parameters q8add;
+  struct q8gavgpool_parameters q8gavgpool;
   struct x8zip_parameters x8zip;
   bool initialized;
 };

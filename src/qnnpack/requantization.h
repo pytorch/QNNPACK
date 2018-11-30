@@ -26,6 +26,8 @@ static inline union qnnp_q31_requantization_params qnnp_compute_scalar_requantiz
   uint8_t max)
 {
   /* Compute requantization parameters */
+  assert(scale < 1.0f);
+  assert(scale >= 0x1.0p-32f);
   const uint32_t scale_bits = fp32_to_bits(scale);
 
   /* Multiplier is in [0x40000000, 0x7FFFFF80] range */
@@ -195,6 +197,111 @@ static inline union qnnp_conv_quantization_params qnnp_compute_conv_quantization
   return params;
 }
 
+static inline union qnnp_avgpool_quantization_params qnnp_compute_avgpool_quantization_params(
+  int32_t bias,
+  float scale,
+  uint8_t output_zero_point,
+  uint8_t output_min,
+  uint8_t output_max)
+{
+  /* Compute requantization parameters */
+  assert(scale >= 0x1.0p-32f);
+  assert(scale < 256.0f);
+  const uint32_t scale_bits = fp32_to_bits(scale);
+
+  /* Multiplier is in [0x00800000, 0x00FFFFFF] range */
+  const int32_t multiplier = ((int32_t) scale_bits & INT32_C(0x007FFFFF)) | INT32_C(0x00800000);
+  assert(multiplier >= INT32_C(0x00800000));
+  assert(multiplier <= INT32_C(0x00FFFFFF));
+
+  /* Shift is in [16, 55] range */
+  const int32_t shift = 127 + 23 - (scale_bits >> 23);
+  assert(shift >= 16);
+  assert(shift < 64);
+
+  union qnnp_avgpool_quantization_params params;
+  #if CPUINFO_ARCH_X86 || CPUINFO_ARCH_X86_64
+    const uint32_t right_shift = (uint32_t) shift;
+    const uint64_t rounding = UINT64_C(1) << (right_shift - 1);
+    params.sse2.bias[0] = bias;
+    params.sse2.bias[1] = bias;
+    params.sse2.bias[2] = bias;
+    params.sse2.bias[3] = bias;
+    params.sse2.multiplier[0] = (uint32_t) multiplier;
+    params.sse2.multiplier[1] = (uint32_t) multiplier;
+    params.sse2.multiplier[2] = (uint32_t) multiplier;
+    params.sse2.multiplier[3] = (uint32_t) multiplier;
+    params.sse2.rounding[0] = rounding;
+    params.sse2.rounding[1] = rounding;
+    params.sse2.right_shift[0] = (uint64_t) right_shift;
+    params.sse2.right_shift[1] = (uint64_t) right_shift;
+    for (uint32_t i = 0; i < 8; i++) {
+      params.sse2.output_zero_point[i] = (int16_t) (uint16_t) output_zero_point;
+    }
+    for (uint32_t i = 0; i < 16; i++) {
+      params.sse2.output_max[i] = output_max;
+      params.sse2.output_min[i] = output_min;
+    }
+  #elif CPUINFO_ARCH_ARM || CPUINFO_ARCH_ARM64
+    params.neon.bias = bias;
+    params.neon.multiplier = multiplier;
+    params.neon.left_shift = (int64_t) -shift;
+    params.neon.output_zero_point = (int16_t) (uint16_t) output_zero_point;
+    params.neon.output_max = output_max;
+    params.neon.output_min = output_min;
+  #else
+    const uint32_t right_shift = (uint32_t) shift;
+    const int64_t rounding = INT64_C(1) << (right_shift - 1);
+    params.scalar.bias = bias;
+    params.scalar.multiplier = multiplier;
+    params.scalar.rounding = rounding;
+    params.scalar.right_shift = right_shift;
+    params.scalar.output_min_less_zero_point =
+      (int32_t) (uint32_t) output_min - (int32_t) (uint32_t) output_zero_point;
+    params.scalar.output_max_less_zero_point =
+      (int32_t) (uint32_t) output_max - (int32_t) (uint32_t) output_zero_point;
+    params.scalar.output_zero_point = (int32_t) (uint32_t) output_zero_point;
+  #endif
+  return params;
+}
+
+static inline union qnnp_avgpool_quantization_params qnnp_compute_scalar_avgpool_quantization_params(
+  int32_t bias,
+  float scale,
+  uint8_t output_zero_point,
+  uint8_t output_min,
+  uint8_t output_max)
+{
+  /* Compute requantization parameters */
+  assert(scale >= 0x1.0p-32f);
+  assert(scale < 256.0f);
+  const uint32_t scale_bits = fp32_to_bits(scale);
+
+  /* Multiplier is in [0x00800000, 0x00FFFFFF] range */
+  const int32_t multiplier = ((int32_t) scale_bits & INT32_C(0x007FFFFF)) | INT32_C(0x00800000);
+  assert(multiplier >= INT32_C(0x00800000));
+  assert(multiplier <= INT32_C(0x00FFFFFF));
+
+  /* Shift is in [16, 55] range */
+  const int32_t shift = 127 + 23 - (scale_bits >> 23);
+  assert(shift >= 16);
+  assert(shift < 64);
+
+  union qnnp_avgpool_quantization_params params;
+  const uint32_t right_shift = (uint32_t) shift;
+  const int64_t rounding = INT64_C(1) << (right_shift - 1);
+  params.scalar.bias = bias;
+  params.scalar.rounding = rounding;
+  params.scalar.multiplier = multiplier;
+  params.scalar.right_shift = right_shift;
+  params.scalar.output_min_less_zero_point =
+    (int32_t) (uint32_t) output_min - (int32_t) (uint32_t) output_zero_point;
+  params.scalar.output_max_less_zero_point =
+    (int32_t) (uint32_t) output_max - (int32_t) (uint32_t) output_zero_point;
+  params.scalar.output_zero_point = (int32_t) (uint32_t) output_zero_point;
+  return params;
+}
+
 static inline union qnnp_add_quantization_params qnnp_compute_add_quantization_params(
   uint8_t a_zero_point,
   uint8_t b_zero_point,
@@ -348,6 +455,24 @@ static inline uint8_t qnnp_q31_requantize(
   }
 
   return (uint8_t) (n + params.scalar.zero_point);
+}
+
+static inline uint8_t qnnp_avgpool_quantize(
+  int32_t n,
+  union qnnp_avgpool_quantization_params params)
+{
+  const int64_t product = (int64_t) n * (int64_t) params.scalar.multiplier;
+  const int64_t adjusted_product = product - (int64_t) (n < 0);
+
+  n = (int32_t) asr_s64(adjusted_product + params.scalar.rounding, params.scalar.right_shift);
+  if (n < params.scalar.output_min_less_zero_point) {
+    n = params.scalar.output_min_less_zero_point;
+  }
+  if (n > params.scalar.output_max_less_zero_point) {
+    n = params.scalar.output_max_less_zero_point;
+  }
+
+  return (uint8_t) (n + params.scalar.output_zero_point);
 }
 
 static inline uint8_t qnnp_add_quantize(

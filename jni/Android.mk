@@ -11,6 +11,9 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := qnnpack_aarch32_neon_ukernels
 LOCAL_SRC_FILES += \
 	src/q8add/neon.c \
+	src/q8gavgpool/mp8x7-neon.c \
+	src/q8gavgpool/up8x7-neon.c \
+	src/q8gavgpool/up8xm-neon.c \
 	src/q8conv/4x8-aarch32-neon.S \
 	src/q8gemm/4x8-aarch32-neon.S \
 	src/q8gemm/4x8c2-xzp-aarch32-neon.S \
@@ -32,6 +35,9 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := qnnpack_aarch64_neon_ukernels
 LOCAL_SRC_FILES += \
 	src/q8add/neon.c \
+	src/q8gavgpool/mp8x7-neon.c \
+	src/q8gavgpool/up8x7-neon.c \
+	src/q8gavgpool/up8xm-neon.c \
 	src/q8conv/8x8-aarch64-neon.S \
 	src/q8gemm/8x8-aarch64-neon.S \
 	src/q8updw/9c8-neon.c \
@@ -51,6 +57,9 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := qnnpack_sse2_ukernels
 LOCAL_SRC_FILES += \
 	src/q8add/sse2.c \
+	src/q8gavgpool/mp8x7-sse2.c \
+	src/q8gavgpool/up8x7-sse2.c \
+	src/q8gavgpool/up8xm-sse2.c \
 	src/q8conv/4x4c2-sse2.c \
 	src/q8gemm/4x4c2-sse2.c \
 	src/q8mpdw/25c8-sse2.c \
@@ -73,6 +82,7 @@ LOCAL_SRC_FILES := \
 	src/convolution.c \
 	src/deconvolution.c \
 	src/fully-connected.c \
+	src/global-average-pooling.c \
 	src/operator-run.c
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/include $(LOCAL_PATH)/src
 LOCAL_CFLAGS := -std=c99 -Wall -O2

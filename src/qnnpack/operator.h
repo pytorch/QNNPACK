@@ -28,6 +28,7 @@ enum qnnp_ukernel_type {
   qnnp_ukernel_type_dwconv,
   qnnp_ukernel_type_add,
   qnnp_ukernel_type_channel_shuffle,
+  qnnp_ukernel_type_global_average_pooling,
 };
 
 struct qnnp_operator {
@@ -67,7 +68,13 @@ struct qnnp_operator {
   void* output;
 
   void* packed_weights;
+  float input_scale;
+  float output_scale;
+  uint8_t input_zero_point;
   uint8_t kernel_zero_point;
+  uint8_t output_zero_point;
+  uint8_t output_min;
+  uint8_t output_max;
 
   void* zero_buffer;
   void* zero_pointer;
@@ -76,6 +83,7 @@ struct qnnp_operator {
     union qnnp_q31_requantization_params requantization_params;
     union qnnp_conv_quantization_params conv_quantization_params;
     union qnnp_add_quantization_params add_quantization_params;
+    union qnnp_avgpool_quantization_params avgpool_quantization_params;
   };
   enum qnnp_ukernel_type ukernel_type;
   enum qnnp_format format;
