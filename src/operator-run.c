@@ -270,6 +270,64 @@ static void compute_q8mpdw(
     &context->quantization_params);
 }
 
+struct average_pooling_context {
+  const void** indirect_input;
+  size_t indirect_input_batch_stride;
+  size_t indirect_input_height_stride;
+  void* output;
+  size_t output_batch_stride;
+  size_t output_height_stride;
+  size_t output_width;
+  size_t pooling_size;
+  size_t channels;
+  size_t packed_channels;
+  const void* zero;
+  size_t input_increment;
+  size_t output_increment;
+  union qnnp_avgpool_quantization_params quantization_params;
+  union {
+    q8avgpool_up_ukernel_function unipass_ukernel;
+    q8avgpool_mp_ukernel_function multipass_ukernel;
+  };
+};
+
+static void compute_average_pooling_unipass(
+    const struct average_pooling_context context[restrict static 1],
+    size_t batch_index,
+    size_t output_y)
+{
+  const void** indirect_input =
+    (const void**) ((uintptr_t) context->indirect_input +
+      batch_index * context->indirect_input_batch_stride + output_y * context->indirect_input_height_stride);
+  void* output =
+    (void*) ((uintptr_t) context->output + batch_index * context->output_batch_stride + output_y * context->output_height_stride);
+
+  context->unipass_ukernel(
+    context->output_width, context->pooling_size, context->channels,
+    (const uint8_t**) indirect_input, context->zero, output,
+    context->input_increment, context->output_increment,
+    &context->quantization_params);
+}
+
+static void compute_average_pooling_multipass(
+    const struct average_pooling_context context[restrict static 1],
+    size_t batch_index,
+    size_t output_y)
+{
+  const void** indirect_input =
+    (const void**) ((uintptr_t) context->indirect_input +
+      batch_index * context->indirect_input_batch_stride + output_y * context->indirect_input_height_stride);
+  void* output =
+    (void*) ((uintptr_t) context->output + batch_index * context->output_batch_stride + output_y * context->output_height_stride);
+  QNNP_ALIGN(16) int32_t multipass_buffer[context->packed_channels];
+
+  context->multipass_ukernel(
+    context->output_width, context->pooling_size, context->channels,
+    (const uint8_t**) indirect_input, context->zero, multipass_buffer, output,
+    context->input_increment, context->output_increment,
+    &context->quantization_params);
+}
+
 struct global_average_pooling_context {
   const void* input;
   const void* zero;
@@ -608,6 +666,60 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
           &q8conv_context,
           groups, batch_size, output_size, group_output_channels,
           1, 1, mr, nr);
+      break;
+    }
+    case qnnp_ukernel_type_average_pooling:
+    {
+      const uint32_t kr = qnnp_params.q8avgpool.kr;
+      const uint32_t mr = qnnp_params.q8avgpool.mr;
+      const uint32_t qr = qnnp_params.q8avgpool.qr;
+      const size_t channels = op->channels;
+      const size_t output_width = op->output_width;
+      const size_t output_height = op->output_height;
+      const size_t pooling_height = op->kernel_height;
+      const size_t pooling_width = op->kernel_width;
+      const size_t pooling_size = pooling_height * pooling_width;
+
+      const size_t width_step = min(op->stride_width, pooling_width);
+      const size_t indirect_input_height_stride = (pooling_size + (output_width * width_step - 1) * pooling_height) * sizeof(void*);
+      const size_t output_height_stride = output_width * op->output_pixel_stride;
+
+      size_t multipass_adjustment = 0;
+      if (channels >= kr && pooling_size > mr) {
+        multipass_adjustment = round_up(pooling_size - mr, qr) + mr - qr;
+      }
+      struct average_pooling_context context = {
+          .indirect_input = op->indirection_buffer,
+          .indirect_input_batch_stride = output_height * indirect_input_height_stride,
+          .indirect_input_height_stride = indirect_input_height_stride,
+          .output = op->output,
+          .output_batch_stride = output_height * output_height_stride,
+          .output_height_stride = output_height_stride,
+          .output_width = output_width,
+          .pooling_size = pooling_size,
+          .channels = channels,
+          .packed_channels = (channels + (kr - 1)) & -kr,
+          .zero = op->zero_pointer,
+          .input_increment = (pooling_height * width_step - multipass_adjustment) * sizeof(void*),
+          .output_increment = (op->output_pixel_stride - channels) * sizeof(uint8_t),
+          .quantization_params = op->avgpool_quantization_params,
+      };
+
+      pthreadpool_function_2d_t compute_function = NULL;
+      if (channels < kr) {
+        compute_function = (pthreadpool_function_2d_t) compute_average_pooling_unipass;
+        context.unipass_ukernel = qnnp_params.q8avgpool.ltkr;
+      } else {
+        if (pooling_size <= mr) {
+          compute_function = (pthreadpool_function_2d_t) compute_average_pooling_unipass;
+          context.unipass_ukernel = qnnp_params.q8avgpool.gekr_lemr;
+        } else {
+          compute_function = (pthreadpool_function_2d_t) compute_average_pooling_multipass;
+          context.multipass_ukernel = qnnp_params.q8avgpool.gekr_gtmr;
+        }
+      }
+
+      pthreadpool_compute_2d(threadpool, compute_function, &context, op->batch_size, output_height);
       break;
     }
     case qnnp_ukernel_type_add:

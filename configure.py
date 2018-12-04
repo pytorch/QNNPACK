@@ -71,6 +71,7 @@ def main(args):
             build.cc("add.c"),
             build.cc("channel-shuffle.c"),
             build.cc("global-average-pooling.c"),
+            build.cc("average-pooling.c"),
         ]
 
         with build.options(isa=arm.neon if build.target.is_arm else None):
@@ -161,6 +162,7 @@ def main(args):
         build.unittest("convolution-test", build.cxx("convolution.cc"))
         build.unittest("deconvolution-test", build.cxx("deconvolution.cc"))
         build.unittest("global-average-pooling-test", build.cxx("global-average-pooling.cc"))
+        build.unittest("average-pooling-test", build.cxx("average-pooling.cc"))
         build.unittest("fully-connected-test", build.cxx("fully-connected.cc"))
         build.unittest("requantization-test", [build.cxx("requantization.cc")] + requantization_objects)
 

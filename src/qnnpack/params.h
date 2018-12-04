@@ -435,6 +435,15 @@ struct q8gavgpool_parameters {
   uint8_t nr;
 };
 
+struct q8avgpool_parameters {
+  q8avgpool_up_ukernel_function ltkr;
+  q8avgpool_up_ukernel_function gekr_lemr;
+  q8avgpool_mp_ukernel_function gekr_gtmr;
+  uint8_t mr;
+  uint8_t qr;
+  uint8_t kr;
+};
+
 struct x8zip_parameters {
   xzipc_ukernel_function x2;
   xzipc_ukernel_function x3;
@@ -450,6 +459,7 @@ struct qnnp_parameters {
   struct q8sum_rows_parameters q8sum_rows;
   struct q8add_parameters q8add;
   struct q8gavgpool_parameters q8gavgpool;
+  struct q8avgpool_parameters q8avgpool;
   struct x8zip_parameters x8zip;
   bool initialized;
 };
