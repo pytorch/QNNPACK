@@ -43,7 +43,7 @@ void q8gavgpool_ukernel_up8xm__sse2(
     __m128i vinput = _mm_setzero_si128();
     if (n & 1) {
       input -= 1;
-      vinput = _mm_cvtsi32_si128((int) (uint32_t) input[0]);
+      vinput = _mm_cvtsi32_si128((int) (uint32_t) *input);
     }
     if (n & 2) {
       vinput = _mm_slli_epi32(vinput, 16);

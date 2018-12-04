@@ -360,6 +360,29 @@ typedef void (*q8gavgpool_mp_ukernel_function)(
     uint8_t* y,
     const union qnnp_avgpool_quantization_params* quantization_params);
 
+typedef void (*q8avgpool_up_ukernel_function)(
+    size_t n,
+    size_t ks,
+    size_t kc,
+    const uint8_t** x,
+    const uint8_t* zero,
+    uint8_t* y,
+    size_t x_increment,
+    size_t y_increment,
+    const union qnnp_avgpool_quantization_params* quantization_params);
+
+typedef void (*q8avgpool_mp_ukernel_function)(
+    size_t n,
+    size_t ks,
+    size_t kc,
+    const uint8_t** x,
+    const uint8_t* zero,
+    int32_t* buffer,
+    uint8_t* y,
+    size_t x_increment,
+    size_t y_increment,
+    const union qnnp_avgpool_quantization_params* quantization_params);
+
 typedef void (*q8uvadd_ukernel_function)(
     size_t n,
     const uint8_t* a,
