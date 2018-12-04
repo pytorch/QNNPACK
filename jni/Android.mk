@@ -14,6 +14,9 @@ LOCAL_SRC_FILES += \
 	src/q8gavgpool/mp8x7-neon.c \
 	src/q8gavgpool/up8x7-neon.c \
 	src/q8gavgpool/up8xm-neon.c \
+	src/q8avgpool/mp8x9p8q-neon.c \
+	src/q8avgpool/up8x9-neon.c \
+	src/q8avgpool/up8xm-neon.c \
 	src/q8conv/4x8-aarch32-neon.S \
 	src/q8gemm/4x8-aarch32-neon.S \
 	src/q8gemm/4x8c2-xzp-aarch32-neon.S \
@@ -38,6 +41,9 @@ LOCAL_SRC_FILES += \
 	src/q8gavgpool/mp8x7-neon.c \
 	src/q8gavgpool/up8x7-neon.c \
 	src/q8gavgpool/up8xm-neon.c \
+	src/q8avgpool/mp8x9p8q-neon.c \
+	src/q8avgpool/up8x9-neon.c \
+	src/q8avgpool/up8xm-neon.c \
 	src/q8conv/8x8-aarch64-neon.S \
 	src/q8gemm/8x8-aarch64-neon.S \
 	src/q8updw/9c8-neon.c \
@@ -60,6 +66,9 @@ LOCAL_SRC_FILES += \
 	src/q8gavgpool/mp8x7-sse2.c \
 	src/q8gavgpool/up8x7-sse2.c \
 	src/q8gavgpool/up8xm-sse2.c \
+	src/q8avgpool/mp8x9p8q-sse2.c \
+	src/q8avgpool/up8x9-sse2.c \
+	src/q8avgpool/up8xm-sse2.c \
 	src/q8conv/4x4c2-sse2.c \
 	src/q8gemm/4x4c2-sse2.c \
 	src/q8mpdw/25c8-sse2.c \
@@ -82,6 +91,7 @@ LOCAL_SRC_FILES := \
 	src/convolution.c \
 	src/deconvolution.c \
 	src/fully-connected.c \
+	src/average-pooling.c \
 	src/global-average-pooling.c \
 	src/operator-run.c
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/include $(LOCAL_PATH)/src

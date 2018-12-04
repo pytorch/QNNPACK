@@ -136,6 +136,7 @@ SET(QNNPACK_OPERATOR_SRCS
   src/deconvolution.c
   src/fully-connected.c
   src/add.c
+  src/average-pooling.c
   src/global-average-pooling.c
   src/channel-shuffle.c)
 
@@ -156,6 +157,9 @@ SET(QNNPACK_ARM_NEON_UKERNELS
   src/q8gavgpool/mp8x7-neon.c
   src/q8gavgpool/up8x7-neon.c
   src/q8gavgpool/up8xm-neon.c
+  src/q8avgpool/mp8x9p8q-neon.c
+  src/q8avgpool/up8x9-neon.c
+  src/q8avgpool/up8xm-neon.c
   src/x8zip/x2-neon.c
   src/x8zip/x3-neon.c
   src/x8zip/x4-neon.c
@@ -184,6 +188,9 @@ SET(QNNPACK_X86_SSE2_UKERNELS
   src/q8gavgpool/mp8x7-sse2.c
   src/q8gavgpool/up8x7-sse2.c
   src/q8gavgpool/up8xm-sse2.c
+  src/q8avgpool/mp8x9p8q-sse2.c
+  src/q8avgpool/up8x9-sse2.c
+  src/q8avgpool/up8xm-sse2.c
   src/x8zip/x2-sse2.c
   src/x8zip/x3-sse2.c
   src/x8zip/x4-sse2.c
@@ -366,6 +373,15 @@ IF(QNNPACK_BUILD_TESTS)
   TARGET_LINK_LIBRARIES(add-test PRIVATE qnnpack cpuinfo gtest gtest_main)
   ADD_TEST(add-test add-test)
 
+  ADD_EXECUTABLE(average-pooling-test test/average-pooling.cc)
+  SET_TARGET_PROPERTIES(average-pooling-test PROPERTIES
+    CXX_STANDARD 11
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO)
+  TARGET_INCLUDE_DIRECTORIES(average-pooling-test PRIVATE src test)
+  TARGET_LINK_LIBRARIES(average-pooling-test PRIVATE qnnpack cpuinfo gtest gtest_main)
+  ADD_TEST(average-pooling-test average-pooling-test)
+
   ADD_EXECUTABLE(global-average-pooling-test test/global-average-pooling.cc)
   SET_TARGET_PROPERTIES(global-average-pooling-test PROPERTIES
     CXX_STANDARD 11
@@ -420,6 +436,15 @@ IF(QNNPACK_BUILD_TESTS)
   TARGET_INCLUDE_DIRECTORIES(q8uvadd-test PRIVATE src test)
   TARGET_LINK_LIBRARIES(q8uvadd-test PRIVATE qnnpack cpuinfo fp16 gtest gtest_main)
   ADD_TEST(q8uvadd-test q8uvadd-test)
+
+  ADD_EXECUTABLE(q8avgpool-test test/q8avgpool.cc)
+  SET_TARGET_PROPERTIES(q8avgpool-test PROPERTIES
+    CXX_STANDARD 11
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO)
+  TARGET_INCLUDE_DIRECTORIES(q8avgpool-test PRIVATE src test)
+  TARGET_LINK_LIBRARIES(q8avgpool-test PRIVATE qnnpack cpuinfo fp16 gtest gtest_main)
+  ADD_TEST(q8avgpool-test q8avgpool-test)
 
   ADD_EXECUTABLE(q8gavgpool-test test/q8gavgpool.cc)
   SET_TARGET_PROPERTIES(q8gavgpool-test PROPERTIES
