@@ -48,9 +48,9 @@ void q8avgpool_ukernel_up8xm__neon(
     while (m >= 8) {
       const uint8_t* i = *input++;
       const uint8x8_t vi = vld1_u8(i);
-      const int16x8_t vxi = vreinterpretq_s16_u16(vmovl_u8(vi));
-      vacc_lo = vaddw_s16(vacc_lo, vget_low_s16(vxi));
-      vacc_hi = vaddw_s16(vacc_hi, vget_high_s16(vxi));
+      const uint16x8_t vxi = vmovl_u8(vi);
+      vacc_lo = vaddw_s16(vacc_lo, vreinterpret_s16_u16(vget_low_u16(vxi)));
+      vacc_hi = vaddw_s16(vacc_hi, vreinterpret_s16_u16(vget_high_u16(vxi)));
 
       m--;
     }
@@ -74,9 +74,9 @@ void q8avgpool_ukernel_up8xm__neon(
         vi = vreinterpret_u8_u32(vld1_lane_u32(__builtin_assume_aligned(i, 1), vreinterpret_u32_u8(vi), 0));
       }
 
-      const int16x8_t vxi = vreinterpretq_s16_u16(vmovl_u8(vi));
-      vacc_lo = vaddw_s16(vacc_lo, vget_low_s16(vxi));
-      vacc_hi = vaddw_s16(vacc_hi, vget_high_s16(vxi));
+      const uint16x8_t vxi = vmovl_u8(vi);
+      vacc_lo = vaddw_s16(vacc_lo, vreinterpret_s16_u16(vget_low_u16(vxi)));
+      vacc_hi = vaddw_s16(vacc_hi, vreinterpret_s16_u16(vget_high_u16(vxi)));
     }
     input = next_input;
 

@@ -65,17 +65,17 @@ void q8avgpool_ukernel_mp8x9p8q__neon(
         const uint8x8_t vi7 = vld1_u8(i7); i7 += 8;
         const uint8x8_t vi8 = vld1_u8(i8); i8 += 8;
 
-        const int16x8_t vsum018 = vaddw_u8(vaddl_u8(vi0, vi1), vi8);
-        const int16x8_t vsum23 = vaddl_u8(vi2, vi3);
-        const int16x8_t vsum45 = vaddl_u8(vi4, vi5);
-        const int16x8_t vsum67 = vaddl_u8(vi6, vi7);
+        const uint16x8_t vsum018 = vaddw_u8(vaddl_u8(vi0, vi1), vi8);
+        const uint16x8_t vsum23 = vaddl_u8(vi2, vi3);
+        const uint16x8_t vsum45 = vaddl_u8(vi4, vi5);
+        const uint16x8_t vsum67 = vaddl_u8(vi6, vi7);
 
-        const int16x8_t vsum2345 = vaddq_s16(vsum23, vsum45);
-        const int16x8_t vsum01678 = vaddq_s16(vsum018, vsum67);
-        const int16x8_t vsum = vaddq_s16(vsum2345, vsum01678);
+        const uint16x8_t vsum2345 = vaddq_u16(vsum23, vsum45);
+        const uint16x8_t vsum01678 = vaddq_u16(vsum018, vsum67);
+        const uint16x8_t vsum = vaddq_u16(vsum2345, vsum01678);
 
-        const int32x4_t vacc_lo = vaddw_s16(vbias, vget_low_s16(vsum));
-        const int32x4_t vacc_hi = vaddw_s16(vbias, vget_high_s16(vsum));
+        const int32x4_t vacc_lo = vaddw_s16(vbias, vreinterpret_s16_u16(vget_low_u16(vsum)));
+        const int32x4_t vacc_hi = vaddw_s16(vbias, vreinterpret_s16_u16(vget_high_u16(vsum)));
 
         vst1q_s32(acc, vacc_lo); acc += 4;
         vst1q_s32(acc, vacc_hi); acc += 4;
@@ -105,17 +105,17 @@ void q8avgpool_ukernel_mp8x9p8q__neon(
         const uint8x8_t vi7 = vreinterpret_u8_u64(vshl_u64(vreinterpret_u64_u8(vld1_u8(i7)), vshift));
         const uint8x8_t vi8 = vreinterpret_u8_u64(vshl_u64(vreinterpret_u64_u8(vld1_u8(i8)), vshift));
 
-        const int16x8_t vsum018 = vaddw_u8(vaddl_u8(vi0, vi1), vi8);
-        const int16x8_t vsum23 = vaddl_u8(vi2, vi3);
-        const int16x8_t vsum45 = vaddl_u8(vi4, vi5);
-        const int16x8_t vsum67 = vaddl_u8(vi6, vi7);
+        const uint16x8_t vsum018 = vaddw_u8(vaddl_u8(vi0, vi1), vi8);
+        const uint16x8_t vsum23 = vaddl_u8(vi2, vi3);
+        const uint16x8_t vsum45 = vaddl_u8(vi4, vi5);
+        const uint16x8_t vsum67 = vaddl_u8(vi6, vi7);
 
-        const int16x8_t vsum2345 = vaddq_s16(vsum23, vsum45);
-        const int16x8_t vsum01678 = vaddq_s16(vsum018, vsum67);
-        const int16x8_t vsum = vaddq_s16(vsum2345, vsum01678);
+        const uint16x8_t vsum2345 = vaddq_u16(vsum23, vsum45);
+        const uint16x8_t vsum01678 = vaddq_u16(vsum018, vsum67);
+        const uint16x8_t vsum = vaddq_u16(vsum2345, vsum01678);
 
-        const int32x4_t vacc_lo = vaddw_s16(vbias, vget_low_s16(vsum));
-        const int32x4_t vacc_hi = vaddw_s16(vbias, vget_high_s16(vsum));
+        const int32x4_t vacc_lo = vaddw_s16(vbias, vreinterpret_s16_u16(vget_low_u16(vsum)));
+        const int32x4_t vacc_hi = vaddw_s16(vbias, vreinterpret_s16_u16(vget_high_u16(vsum)));
 
         vst1q_s32(acc, vacc_lo); acc += 4;
         vst1q_s32(acc, vacc_hi);
@@ -147,17 +147,17 @@ void q8avgpool_ukernel_mp8x9p8q__neon(
         int32x4_t vacc_lo = vld1q_s32(acc);
         int32x4_t vacc_hi = vld1q_s32(acc + 4);
 
-        const int16x8_t vsum01 = vaddl_u8(vi0, vi1);
-        const int16x8_t vsum23 = vaddl_u8(vi2, vi3);
-        const int16x8_t vsum45 = vaddl_u8(vi4, vi5);
-        const int16x8_t vsum67 = vaddl_u8(vi6, vi7);
+        const uint16x8_t vsum01 = vaddl_u8(vi0, vi1);
+        const uint16x8_t vsum23 = vaddl_u8(vi2, vi3);
+        const uint16x8_t vsum45 = vaddl_u8(vi4, vi5);
+        const uint16x8_t vsum67 = vaddl_u8(vi6, vi7);
 
-        const int16x8_t vsum0123 = vaddq_s16(vsum01, vsum23);
-        const int16x8_t vsum4567 = vaddq_s16(vsum45, vsum67);
-        const int16x8_t vsum = vaddq_s16(vsum0123, vsum4567);
+        const uint16x8_t vsum0123 = vaddq_u16(vsum01, vsum23);
+        const uint16x8_t vsum4567 = vaddq_u16(vsum45, vsum67);
+        const uint16x8_t vsum = vaddq_u16(vsum0123, vsum4567);
 
-        vacc_lo = vaddw_s16(vacc_lo, vget_low_s16(vsum));
-        vacc_hi = vaddw_s16(vacc_hi, vget_high_s16(vsum));
+        vacc_lo = vaddw_s16(vacc_lo, vreinterpret_s16_u16(vget_low_u16(vsum)));
+        vacc_hi = vaddw_s16(vacc_hi, vreinterpret_s16_u16(vget_high_u16(vsum)));
 
         vst1q_s32(acc, vacc_lo); acc += 4;
         vst1q_s32(acc, vacc_hi); acc += 4;
@@ -187,17 +187,17 @@ void q8avgpool_ukernel_mp8x9p8q__neon(
         int32x4_t vacc_lo = vld1q_s32(acc);
         int32x4_t vacc_hi = vld1q_s32(acc + 4);
 
-        const int16x8_t vsum01 = vaddl_u8(vi0, vi1);
-        const int16x8_t vsum23 = vaddl_u8(vi2, vi3);
-        const int16x8_t vsum45 = vaddl_u8(vi4, vi5);
-        const int16x8_t vsum67 = vaddl_u8(vi6, vi7);
+        const uint16x8_t vsum01 = vaddl_u8(vi0, vi1);
+        const uint16x8_t vsum23 = vaddl_u8(vi2, vi3);
+        const uint16x8_t vsum45 = vaddl_u8(vi4, vi5);
+        const uint16x8_t vsum67 = vaddl_u8(vi6, vi7);
 
-        const int16x8_t vsum0123 = vaddq_s16(vsum01, vsum23);
-        const int16x8_t vsum4567 = vaddq_s16(vsum45, vsum67);
-        const int16x8_t vsum = vaddq_s16(vsum0123, vsum4567);
+        const uint16x8_t vsum0123 = vaddq_u16(vsum01, vsum23);
+        const uint16x8_t vsum4567 = vaddq_u16(vsum45, vsum67);
+        const uint16x8_t vsum = vaddq_u16(vsum0123, vsum4567);
 
-        vacc_lo = vaddw_s16(vacc_lo, vget_low_s16(vsum));
-        vacc_hi = vaddw_s16(vacc_hi, vget_high_s16(vsum));
+        vacc_lo = vaddw_s16(vacc_lo, vreinterpret_s16_u16(vget_low_u16(vsum)));
+        vacc_hi = vaddw_s16(vacc_hi, vreinterpret_s16_u16(vget_high_u16(vsum)));
 
         vst1q_s32(acc, vacc_lo); acc += 4;
         vst1q_s32(acc, vacc_hi);

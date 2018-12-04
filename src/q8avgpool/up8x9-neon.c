@@ -87,17 +87,17 @@ void q8avgpool_ukernel_up8x9__neon(
       const uint8x8_t vi7 = vld1_u8(i7); i7 += 8;
       const uint8x8_t vi8 = vld1_u8(i8); i8 += 8;
 
-      const int16x8_t vsum018 = vreinterpretq_s16_u16(vaddw_u8(vaddl_u8(vi0, vi1), vi8));
-      const int16x8_t vsum23 = vreinterpretq_s16_u16(vaddl_u8(vi2, vi3));
-      const int16x8_t vsum45 = vreinterpretq_s16_u16(vaddl_u8(vi4, vi5));
-      const int16x8_t vsum67 = vreinterpretq_s16_u16(vaddl_u8(vi6, vi7));
+      const uint16x8_t vsum018 = vaddw_u8(vaddl_u8(vi0, vi1), vi8);
+      const uint16x8_t vsum23 = vaddl_u8(vi2, vi3);
+      const uint16x8_t vsum45 = vaddl_u8(vi4, vi5);
+      const uint16x8_t vsum67 = vaddl_u8(vi6, vi7);
 
-      const int16x8_t vsum2345 = vaddq_s16(vsum23, vsum45);
-      const int16x8_t vsum01678 = vaddq_s16(vsum018, vsum67);
-      const int16x8_t vsum = vaddq_s16(vsum2345, vsum01678);
+      const uint16x8_t vsum2345 = vaddq_u16(vsum23, vsum45);
+      const uint16x8_t vsum01678 = vaddq_u16(vsum018, vsum67);
+      const uint16x8_t vsum = vaddq_u16(vsum2345, vsum01678);
 
-      int32x4_t vacc_lo = vaddw_s16(vbias, vget_low_s16(vsum));
-      int32x4_t vacc_hi = vaddw_s16(vbias, vget_high_s16(vsum));
+      int32x4_t vacc_lo = vaddw_s16(vbias, vreinterpret_s16_u16(vget_low_u16(vsum)));
+      int32x4_t vacc_hi = vaddw_s16(vbias, vreinterpret_s16_u16(vget_high_u16(vsum)));
 
       const int32x4_t vneg_mask_lo = vreinterpretq_s32_u32(vcltq_s32(vacc_lo, vmovq_n_s32(0)));
       const int32x4_t vneg_mask_hi = vreinterpretq_s32_u32(vcltq_s32(vacc_hi, vmovq_n_s32(0)));
@@ -172,17 +172,17 @@ void q8avgpool_ukernel_up8x9__neon(
       const uint8x8_t vi7 = vreinterpret_u8_u64(vshl_u64(vreinterpret_u64_u8(vld1_u8(i7)), vshift));
       const uint8x8_t vi8 = vreinterpret_u8_u64(vshl_u64(vreinterpret_u64_u8(vld1_u8(i8)), vshift));
 
-      const int16x8_t vsum018 = vreinterpretq_s16_u16(vaddw_u8(vaddl_u8(vi0, vi1), vi8));
-      const int16x8_t vsum23 = vreinterpretq_s16_u16(vaddl_u8(vi2, vi3));
-      const int16x8_t vsum45 = vreinterpretq_s16_u16(vaddl_u8(vi4, vi5));
-      const int16x8_t vsum67 = vreinterpretq_s16_u16(vaddl_u8(vi6, vi7));
+      const uint16x8_t vsum018 = vaddw_u8(vaddl_u8(vi0, vi1), vi8);
+      const uint16x8_t vsum23 = vaddl_u8(vi2, vi3);
+      const uint16x8_t vsum45 = vaddl_u8(vi4, vi5);
+      const uint16x8_t vsum67 = vaddl_u8(vi6, vi7);
 
-      const int16x8_t vsum2345 = vaddq_s16(vsum23, vsum45);
-      const int16x8_t vsum01678 = vaddq_s16(vsum018, vsum67);
-      const int16x8_t vsum = vaddq_s16(vsum2345, vsum01678);
+      const uint16x8_t vsum2345 = vaddq_u16(vsum23, vsum45);
+      const uint16x8_t vsum01678 = vaddq_u16(vsum018, vsum67);
+      const uint16x8_t vsum = vaddq_u16(vsum2345, vsum01678);
 
-      int32x4_t vacc_lo = vaddw_s16(vbias, vget_low_s16(vsum));
-      int32x4_t vacc_hi = vaddw_s16(vbias, vget_high_s16(vsum));
+      int32x4_t vacc_lo = vaddw_s16(vbias, vreinterpret_s16_u16(vget_low_u16(vsum)));
+      int32x4_t vacc_hi = vaddw_s16(vbias, vreinterpret_s16_u16(vget_high_u16(vsum)));
 
       const int32x4_t vneg_mask_lo = vreinterpretq_s32_u32(vcltq_s32(vacc_lo, vmovq_n_s32(0)));
       const int32x4_t vneg_mask_hi = vreinterpretq_s32_u32(vcltq_s32(vacc_hi, vmovq_n_s32(0)));
