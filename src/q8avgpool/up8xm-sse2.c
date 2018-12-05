@@ -40,17 +40,7 @@ void q8avgpool_ukernel_up8xm__sse2(
     __m128i vacc_hi = vbias;
 
     size_t m = ks;
-    while (m >= 8) {
-      const uint8_t* i = *input++;
-      const __m128i vi = _mm_loadl_epi64((const __m128i*) i);
-      const __m128i vxi = _mm_unpacklo_epi8(vi, vzero);
-      vacc_lo = _mm_add_epi32(vacc_lo, _mm_unpacklo_epi16(vxi, vzero));
-      vacc_hi = _mm_add_epi32(vacc_hi, _mm_unpackhi_epi16(vxi, vzero));
-
-      m--;
-    }
-
-    while (m-- != 0) {
+    do {
       const uint8_t* i = *input++;
       i += kc;
       __m128i vi = _mm_setzero_si128();
@@ -71,7 +61,7 @@ void q8avgpool_ukernel_up8xm__sse2(
       const __m128i vxi = _mm_unpacklo_epi8(vi, vzero);
       vacc_lo = _mm_add_epi32(vacc_lo, _mm_unpacklo_epi16(vxi, vzero));
       vacc_hi = _mm_add_epi32(vacc_hi, _mm_unpackhi_epi16(vxi, vzero));
-    }
+    } while (--m != 0);
     input = next_input;
 
     const __m128i vneg_mask_lo = _mm_cmpgt_epi32(_mm_setzero_si128(), vacc_lo);

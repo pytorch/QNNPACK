@@ -42,20 +42,10 @@ void q8avgpool_ukernel_up8xm__neon(
   do {
     int32x4_t vacc_lo = vbias;
     int32x4_t vacc_hi = vbias;
-    size_t m = ks;
     const uint8_t** next_input = (const uint8_t**) ((uintptr_t) input + input_increment);
 
-    while (m >= 8) {
-      const uint8_t* i = *input++;
-      const uint8x8_t vi = vld1_u8(i);
-      const uint16x8_t vxi = vmovl_u8(vi);
-      vacc_lo = vaddw_s16(vacc_lo, vreinterpret_s16_u16(vget_low_u16(vxi)));
-      vacc_hi = vaddw_s16(vacc_hi, vreinterpret_s16_u16(vget_high_u16(vxi)));
-
-      m--;
-    }
-
-    while (m-- != 0) {
+    size_t m = ks;
+    do {
       const uint8_t* i = *input++;
       i += kc;
       uint8x8_t vi = vmov_n_u8(0);
@@ -77,7 +67,7 @@ void q8avgpool_ukernel_up8xm__neon(
       const uint16x8_t vxi = vmovl_u8(vi);
       vacc_lo = vaddw_s16(vacc_lo, vreinterpret_s16_u16(vget_low_u16(vxi)));
       vacc_hi = vaddw_s16(vacc_hi, vreinterpret_s16_u16(vget_high_u16(vxi)));
-    }
+    } while (--m != 0);
     input = next_input;
 
     const int32x4_t vneg_mask_lo = vreinterpretq_s32_u32(vcltq_s32(vacc_lo, vmovq_n_s32(0)));
