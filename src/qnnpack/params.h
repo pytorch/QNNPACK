@@ -245,6 +245,25 @@ union qnnp_avgpool_quantization_params {
 #endif
 };
 
+union qnnp_maxpool_quantization_params {
+  struct {
+    int32_t output_max;
+    int32_t output_min;
+  } scalar;
+#if CPUINFO_ARCH_ARM || CPUINFO_ARCH_ARM64
+  struct {
+    uint8_t output_max;
+    uint8_t output_min;
+  } neon;
+#endif /* CPUINFO_ARCH_ARM || CPUINFO_ARCH_ARM64 */
+#if CPUINFO_ARCH_X86 || CPUINFO_ARCH_X86_64
+  struct {
+    QNNP_ALIGN(16) uint8_t output_max[16];
+    QNNP_ALIGN(16) uint8_t output_min[16];
+  } sse2;
+#endif /* CPUINFO_ARCH_X86 || CPUINFO_ARCH_X86_64 */
+};
+
 typedef void (*q8gemm_ukernel_function)(
     size_t mr,
     size_t nr,
@@ -382,6 +401,16 @@ typedef void (*q8avgpool_mp_ukernel_function)(
     size_t x_increment,
     size_t y_increment,
     const union qnnp_avgpool_quantization_params* quantization_params);
+
+typedef void (*u8maxpool_ukernel_function)(
+    size_t n,
+    size_t ks,
+    size_t kc,
+    const uint8_t** x,
+    uint8_t* y,
+    size_t x_increment,
+    size_t y_increment,
+    const union qnnp_maxpool_quantization_params* quantization_params);
 
 typedef void (*q8uvadd_ukernel_function)(
     size_t n,

@@ -98,6 +98,8 @@ def main(args):
                     build.cc("q8avgpool/mp8x9p8q-neon.c"),
                     build.cc("q8avgpool/up8x9-neon.c"),
                     build.cc("q8avgpool/up8xm-neon.c"),
+                    build.cc("u8maxpool/16x9p8q-neon.c"),
+                    build.cc("u8maxpool/sub16-neon.c"),
                     build.cc("x8zip/x2-neon.c"),
                     build.cc("x8zip/x3-neon.c"),
                     build.cc("x8zip/x4-neon.c"),
@@ -133,6 +135,8 @@ def main(args):
                         build.cc("q8avgpool/mp8x9p8q-sse2.c"),
                         build.cc("q8avgpool/up8x9-sse2.c"),
                         build.cc("q8avgpool/up8xm-sse2.c"),
+                        build.cc("u8maxpool/16x9p8q-sse2.c"),
+                        build.cc("u8maxpool/sub16-sse2.c"),
                         build.cc("x8zip/x2-sse2.c"),
                         build.cc("x8zip/x3-sse2.c"),
                         build.cc("x8zip/x4-sse2.c"),
@@ -154,6 +158,7 @@ def main(args):
         build.unittest("q8avgpool-test", build.cxx("q8avgpool.cc"))
         build.unittest("q8gavgpool-test", build.cxx("q8gavgpool.cc"))
         build.unittest("q8uvadd-test", build.cxx("q8uvadd.cc"))
+        build.unittest("u8maxpool-test", build.cxx("u8maxpool.cc"))
         build.unittest("hgemm-test", build.cxx("hgemm.cc"))
         build.unittest("sgemm-test", build.cxx("sgemm.cc"))
         build.unittest("x8zip-test", build.cxx("x8zip.cc"))

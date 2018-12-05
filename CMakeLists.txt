@@ -160,6 +160,8 @@ SET(QNNPACK_ARM_NEON_UKERNELS
   src/q8avgpool/mp8x9p8q-neon.c
   src/q8avgpool/up8x9-neon.c
   src/q8avgpool/up8xm-neon.c
+  src/u8maxpool/16x9p8q-neon.c
+  src/u8maxpool/sub16-neon.c
   src/x8zip/x2-neon.c
   src/x8zip/x3-neon.c
   src/x8zip/x4-neon.c
@@ -191,6 +193,8 @@ SET(QNNPACK_X86_SSE2_UKERNELS
   src/q8avgpool/mp8x9p8q-sse2.c
   src/q8avgpool/up8x9-sse2.c
   src/q8avgpool/up8xm-sse2.c
+  src/u8maxpool/16x9p8q-sse2.c
+  src/u8maxpool/sub16-sse2.c
   src/x8zip/x2-sse2.c
   src/x8zip/x3-sse2.c
   src/x8zip/x4-sse2.c
@@ -454,6 +458,15 @@ IF(QNNPACK_BUILD_TESTS)
   TARGET_INCLUDE_DIRECTORIES(q8gavgpool-test PRIVATE src test)
   TARGET_LINK_LIBRARIES(q8gavgpool-test PRIVATE qnnpack cpuinfo fp16 gtest gtest_main)
   ADD_TEST(q8gavgpool-test q8gavgpool-test)
+
+  ADD_EXECUTABLE(u8maxpool-test test/u8maxpool.cc)
+  SET_TARGET_PROPERTIES(u8maxpool-test PROPERTIES
+    CXX_STANDARD 11
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO)
+  TARGET_INCLUDE_DIRECTORIES(u8maxpool-test PRIVATE src test)
+  TARGET_LINK_LIBRARIES(u8maxpool-test PRIVATE qnnpack cpuinfo fp16 gtest gtest_main)
+  ADD_TEST(u8maxpool-test u8maxpool-test)
 
   ADD_EXECUTABLE(x8zip-test test/x8zip.cc)
   SET_TARGET_PROPERTIES(x8zip-test PROPERTIES

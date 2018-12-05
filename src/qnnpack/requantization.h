@@ -302,6 +302,28 @@ static inline union qnnp_avgpool_quantization_params qnnp_compute_scalar_avgpool
   return params;
 }
 
+static inline union qnnp_maxpool_quantization_params qnnp_compute_maxpool_quantization_params(
+  uint8_t output_min,
+  uint8_t output_max)
+{
+  assert(output_min < output_max);
+
+  union qnnp_maxpool_quantization_params params;
+  #if CPUINFO_ARCH_X86 || CPUINFO_ARCH_X86_64
+    for (uint32_t i = 0; i < 16; i++) {
+      params.sse2.output_max[i] = output_max;
+      params.sse2.output_min[i] = output_min;
+    }
+  #elif CPUINFO_ARCH_ARM || CPUINFO_ARCH_ARM64
+    params.neon.output_max = output_max;
+    params.neon.output_min = output_min;
+  #else
+    params.scalar.output_min = (int32_t) (uint32_t) output_min;
+    params.scalar.output_max = (int32_t) (uint32_t) output_max;
+  #endif
+  return params;
+}
+
 static inline union qnnp_add_quantization_params qnnp_compute_add_quantization_params(
   uint8_t a_zero_point,
   uint8_t b_zero_point,
