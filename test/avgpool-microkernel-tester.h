@@ -69,7 +69,13 @@ class AvgPoolMicrokernelTester {
   }
 
   inline size_t packedKs() const {
-    return (ks() - mr()) % qr() == 0 ? ks() : ((ks() - mr()) / qr() + 1) * qr() + mr();
+    if (kc() < kr()) {
+      return ks();
+    } else if (ks() <= mr()) {
+      return mr();
+    } else {
+      return (ks() - mr()) % qr() == 0 ? ks() : ((ks() - mr()) / qr() + 1) * qr() + mr();
+    }
   }
 
   inline AvgPoolMicrokernelTester& mr(size_t mr) {
