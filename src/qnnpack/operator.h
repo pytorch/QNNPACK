@@ -78,6 +78,11 @@ struct qnnp_operator {
   uint8_t output_min;
   uint8_t output_max;
 
+  size_t valid_batch_size;
+  size_t last_input_height;
+  size_t last_input_width;
+  const void* last_input;
+
   void* zero_buffer;
   void* zero_pointer;
 

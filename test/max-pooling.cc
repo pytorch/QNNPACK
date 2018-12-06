@@ -984,3 +984,87 @@ TEST(MAX_POOLING_OP, small_batch_few_channels_with_output_stride) {
     }
   }
 }
+
+TEST(MAX_POOLING_OP, setup_increasing_batch) {
+  ASSERT_EQ(qnnp_status_success, qnnp_initialize());
+  MaxPoolingOperatorTester()
+    .batchSize(3)
+    .nextBatchSize(5)
+    .inputHeight(8)
+    .inputWidth(8)
+    .poolingHeight(5)
+    .poolingWidth(3)
+    .channels(24)
+    .testSetupU8();
+}
+
+TEST(MAX_POOLING_OP, setup_decreasing_batch) {
+  ASSERT_EQ(qnnp_status_success, qnnp_initialize());
+  MaxPoolingOperatorTester()
+    .batchSize(5)
+    .nextBatchSize(3)
+    .inputHeight(8)
+    .inputWidth(8)
+    .poolingHeight(5)
+    .poolingWidth(3)
+    .channels(24)
+    .testSetupU8();
+}
+
+TEST(MAX_POOLING_OP, setup_changing_height) {
+  ASSERT_EQ(qnnp_status_success, qnnp_initialize());
+  MaxPoolingOperatorTester()
+    .batchSize(3)
+    .inputHeight(8)
+    .inputWidth(8)
+    .nextInputHeight(9)
+    .poolingHeight(5)
+    .poolingWidth(3)
+    .channels(24)
+    .testSetupU8();
+  MaxPoolingOperatorTester()
+    .batchSize(3)
+    .inputHeight(8)
+    .inputWidth(8)
+    .nextInputHeight(7)
+    .poolingHeight(5)
+    .poolingWidth(3)
+    .channels(24)
+    .testSetupU8();
+}
+
+TEST(MAX_POOLING_OP, setup_changing_width) {
+  ASSERT_EQ(qnnp_status_success, qnnp_initialize());
+  MaxPoolingOperatorTester()
+    .batchSize(3)
+    .inputHeight(8)
+    .inputWidth(8)
+    .nextInputWidth(9)
+    .poolingHeight(5)
+    .poolingWidth(3)
+    .channels(24)
+    .testSetupU8();
+  MaxPoolingOperatorTester()
+    .batchSize(3)
+    .inputHeight(8)
+    .inputWidth(8)
+    .nextInputWidth(7)
+    .poolingHeight(5)
+    .poolingWidth(3)
+    .channels(24)
+    .testSetupU8();
+}
+
+TEST(MAX_POOLING_OP, setup_swap_height_and_width) {
+  ASSERT_EQ(qnnp_status_success, qnnp_initialize());
+  MaxPoolingOperatorTester()
+    .batchSize(3)
+    .inputHeight(9)
+    .inputWidth(8)
+    .nextInputHeight(8)
+    .nextInputWidth(9)
+    .poolingHeight(5)
+    .poolingWidth(3)
+    .channels(24)
+    .testSetupU8();
+}

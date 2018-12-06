@@ -180,6 +180,17 @@ enum qnnp_status qnnp_setup_max_pooling2d_nhwc_u8(
   max_pooling->output = output;
   max_pooling->output_pixel_stride = output_pixel_stride;
 
+  size_t valid_batch_size = 0;
+  if (input == max_pooling->last_input &&
+      input_height == max_pooling->last_input_height &&
+      input_width == max_pooling->last_input_width)
+  {
+    valid_batch_size = max_pooling->valid_batch_size;
+    if (batch_size <= valid_batch_size) {
+      return qnnp_status_success;
+    }
+  }
+
   const size_t pooling_height = max_pooling->kernel_height;
   const size_t pooling_width = max_pooling->kernel_width;
   const size_t pooling_size = pooling_height * pooling_width;
@@ -218,5 +229,10 @@ enum qnnp_status qnnp_setup_max_pooling2d_nhwc_u8(
       }
     }
   }
+  max_pooling->last_input = input;
+  max_pooling->last_input_height = input_height;
+  max_pooling->last_input_width = input_width;
+  max_pooling->valid_batch_size = max(valid_batch_size, batch_size);
+
   return qnnp_status_success;
 }

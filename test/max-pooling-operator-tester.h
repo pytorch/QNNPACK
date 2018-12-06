@@ -85,7 +85,7 @@ class MaxPoolingOperatorTester {
     return this->paddingLeft_;
   }
 
-  inline MaxPoolingOperatorTester& inputSize(uint32_t inputHeight, uint32_t inputWidth) {
+  inline MaxPoolingOperatorTester& inputSize(size_t inputHeight, size_t inputWidth) {
     assert(inputHeight >= 1);
     assert(inputWidth >= 1);
     this->inputHeight_ = inputHeight;
@@ -93,23 +93,23 @@ class MaxPoolingOperatorTester {
     return *this;
   }
 
-  inline MaxPoolingOperatorTester& inputHeight(uint32_t inputHeight) {
+  inline MaxPoolingOperatorTester& inputHeight(size_t inputHeight) {
     assert(inputHeight >= 1);
     this->inputHeight_ = inputHeight;
     return *this;
   }
 
-  inline uint32_t inputHeight() const {
+  inline size_t inputHeight() const {
     return this->inputHeight_;
   }
 
-  inline MaxPoolingOperatorTester& inputWidth(uint32_t inputWidth) {
+  inline MaxPoolingOperatorTester& inputWidth(size_t inputWidth) {
     assert(inputWidth >= 1);
     this->inputWidth_ = inputWidth;
     return *this;
   }
 
-  inline uint32_t inputWidth() const {
+  inline size_t inputWidth() const {
     return this->inputWidth_;
   }
 
@@ -294,6 +294,74 @@ class MaxPoolingOperatorTester {
     }
   }
 
+  inline MaxPoolingOperatorTester& nextInputSize(uint32_t nextInputHeight, uint32_t nextInputWidth) {
+    assert(nextInputHeight >= 1);
+    assert(nextInputWidth >= 1);
+    this->nextInputHeight_ = nextInputHeight;
+    this->nextInputWidth_ = nextInputWidth;
+    return *this;
+  }
+
+  inline MaxPoolingOperatorTester& nextInputHeight(uint32_t nextInputHeight) {
+    assert(nextInputHeight >= 1);
+    this->nextInputHeight_ = nextInputHeight;
+    return *this;
+  }
+
+  inline uint32_t nextInputHeight() const {
+    if (this->nextInputHeight_ == 0) {
+      return inputHeight();
+    } else {
+      return this->nextInputHeight_;
+    }
+  }
+
+  inline MaxPoolingOperatorTester& nextInputWidth(uint32_t nextInputWidth) {
+    assert(nextInputWidth >= 1);
+    this->nextInputWidth_ = nextInputWidth;
+    return *this;
+  }
+
+  inline uint32_t nextInputWidth() const {
+    if (this->nextInputWidth_ == 0) {
+      return inputWidth();
+    } else {
+      return this->nextInputWidth_;
+    }
+  }
+
+  inline size_t nextOutputHeight() const {
+    const size_t paddedNextInputHeight = paddingTop() + nextInputHeight() + paddingBottom();
+    if (paddedNextInputHeight <= dilatedPoolingHeight()) {
+      return 1;
+    } else {
+      return (paddedNextInputHeight - dilatedPoolingHeight()) / strideHeight() + 1;
+    }
+  }
+
+  inline size_t nextOutputWidth() const {
+    const size_t paddedNextInputWidth = paddingLeft() + nextInputWidth() + paddingRight();
+    if (paddedNextInputWidth <= dilatedPoolingWidth()) {
+      return 1;
+    } else {
+      return (paddedNextInputWidth - dilatedPoolingWidth()) / strideWidth() + 1;
+    }
+  }
+
+  inline MaxPoolingOperatorTester& nextBatchSize(size_t nextBatchSize) {
+    assert(nextBatchSize >= 1);
+    this->nextBatchSize_ = nextBatchSize;
+    return *this;
+  }
+
+  inline size_t nextBatchSize() const {
+    if (this->nextBatchSize_ == 0) {
+      return batchSize();
+    } else {
+      return this->nextBatchSize_;
+    }
+  }
+
   inline MaxPoolingOperatorTester& qmin(uint8_t qmin) {
     this->qmin_ = qmin;
     return *this;
@@ -404,6 +472,152 @@ class MaxPoolingOperatorTester {
     }
   }
 
+  void testSetupU8() const {
+    std::random_device randomDevice;
+    auto rng = std::mt19937(randomDevice());
+    auto u8rng = std::bind(std::uniform_int_distribution<uint8_t>(), rng);
+
+    const size_t maxBatchSize = std::max(batchSize(), nextBatchSize());
+    const size_t maxInputHeight = std::max(batchSize(), nextBatchSize());
+
+    std::vector<uint8_t> input(std::max(
+      (batchSize() * inputHeight() * inputWidth() - 1) * inputPixelStride() + channels(),
+      (nextBatchSize() * nextInputHeight() * nextInputWidth() - 1) * inputPixelStride() + channels()));
+    std::vector<uint8_t> output(std::max(
+      (batchSize() * outputHeight() * outputWidth() - 1) * outputPixelStride() + channels(),
+      (nextBatchSize() * nextOutputHeight() * nextOutputWidth() - 1) * outputPixelStride() + channels()));
+    std::vector<float> outputRef(batchSize() * outputHeight() * outputWidth() * channels());
+    std::vector<float> nextOutputRef(nextBatchSize() * nextOutputHeight() * nextOutputWidth() * channels());
+    for (size_t iteration = 0; iteration < iterations(); iteration++) {
+      std::generate(input.begin(), input.end(), std::ref(u8rng));
+      std::fill(output.begin(), output.end(), 0xA5);
+
+      /* Compute reference results */
+      for (size_t i = 0; i < batchSize(); i++) {
+        for (size_t oy = 0; oy < outputHeight(); oy++) {
+          for (size_t ox = 0; ox < outputWidth(); ox++) {
+            for (size_t c = 0; c < channels(); c++) {
+              uint8_t maxValue = 0;
+              for (size_t py = 0; py < poolingHeight(); py++) {
+                const size_t iy = oy * strideHeight() + py * dilationHeight() - paddingTop();
+                for (size_t px = 0; px < poolingWidth(); px++) {
+                  const size_t ix = ox * strideWidth() + px * dilationWidth() - paddingLeft();
+                  if (ix < inputWidth() && iy < inputHeight()) {                  
+                    maxValue = std::max(maxValue,
+                      input[((i * inputHeight() + iy) * inputWidth() + ix) * inputPixelStride() + c]);
+                  }
+                }
+              }
+              maxValue = std::min(maxValue, qmax());
+              maxValue = std::max(maxValue, qmin());
+              outputRef[((i * outputHeight() + oy) * outputWidth() + ox) * channels() + c] = maxValue;
+            }
+          }
+        }
+      }
+
+      /* Create, setup, and run Max Pooling operator once */
+      ASSERT_EQ(qnnp_status_success, qnnp_initialize());
+      qnnp_operator_t maxPoolingOp = nullptr;
+
+      ASSERT_EQ(qnnp_status_success,
+        qnnp_create_max_pooling2d_nhwc_u8(
+          paddingTop(), paddingRight(), paddingBottom(), paddingLeft(),
+          poolingHeight(), poolingWidth(),
+          strideHeight(), strideWidth(),
+          dilationHeight(), dilationWidth(),
+          channels(),
+          qmin(), qmax(),
+          &maxPoolingOp));
+      ASSERT_NE(nullptr, maxPoolingOp);
+
+      ASSERT_EQ(qnnp_status_success,
+        qnnp_setup_max_pooling2d_nhwc_u8(
+          maxPoolingOp,
+          batchSize(), inputHeight(), inputWidth(),
+          input.data(), inputPixelStride(),
+          output.data(), outputPixelStride(),
+          nullptr /* thread pool */));
+
+      ASSERT_EQ(qnnp_status_success,
+        qnnp_run_operator(maxPoolingOp, nullptr /* thread pool */));
+
+      /* Verify results of the first run */
+      for (size_t i = 0; i < batchSize(); i++) {
+        for (size_t y = 0; y < outputHeight(); y++) {
+          for (size_t x = 0; x < outputWidth(); x++) {
+            for (size_t c = 0; c < channels(); c++) {
+              ASSERT_LE(uint32_t(output[((i * outputHeight() + y) * outputWidth() + x) * outputPixelStride() + c]), uint32_t(qmax()));
+              ASSERT_GE(uint32_t(output[((i * outputHeight() + y) * outputWidth() + x) * outputPixelStride() + c]), uint32_t(qmin()));
+              ASSERT_EQ(uint32_t(outputRef[((i * outputHeight() + y) * outputWidth() + x) * channels() + c]),
+                uint32_t(output[((i * outputHeight() + y) * outputWidth() + x) * outputPixelStride() + c])) <<
+                "in batch index " << i << ", pixel (" << y << ", " << x << "), channel " << c;
+            }
+          }
+        }
+      }
+
+      /* Re-generate data for the second run */
+      std::generate(input.begin(), input.end(), std::ref(u8rng));
+      std::fill(output.begin(), output.end(), 0xA5);
+
+      /* Compute reference results for the second run */
+      for (size_t i = 0; i < nextBatchSize(); i++) {
+        for (size_t oy = 0; oy < nextOutputHeight(); oy++) {
+          for (size_t ox = 0; ox < nextOutputWidth(); ox++) {
+            for (size_t c = 0; c < channels(); c++) {
+              uint8_t maxValue = 0;
+              for (size_t py = 0; py < poolingHeight(); py++) {
+                const size_t iy = oy * strideHeight() + py * dilationHeight() - paddingTop();
+                for (size_t px = 0; px < poolingWidth(); px++) {
+                  const size_t ix = ox * strideWidth() + px * dilationWidth() - paddingLeft();
+                  if (ix < nextInputWidth() && iy < nextInputHeight()) {                  
+                    maxValue = std::max(maxValue,
+                      input[((i * nextInputHeight() + iy) * nextInputWidth() + ix) * inputPixelStride() + c]);
+                  }
+                }
+              }
+              maxValue = std::min(maxValue, qmax());
+              maxValue = std::max(maxValue, qmin());
+              nextOutputRef[((i * nextOutputHeight() + oy) * nextOutputWidth() + ox) * channels() + c] = maxValue;
+            }
+          }
+        }
+      }
+
+      /* Setup and run Max Pooling operator the second time, and destroy the operator */
+      ASSERT_EQ(qnnp_status_success,
+        qnnp_setup_max_pooling2d_nhwc_u8(
+          maxPoolingOp,
+          nextBatchSize(), nextInputHeight(), nextInputWidth(),
+          input.data(), inputPixelStride(),
+          output.data(), outputPixelStride(),
+          nullptr /* thread pool */));
+
+      ASSERT_EQ(qnnp_status_success,
+        qnnp_run_operator(maxPoolingOp, nullptr /* thread pool */));
+
+      ASSERT_EQ(qnnp_status_success,
+        qnnp_delete_operator(maxPoolingOp));
+      maxPoolingOp = nullptr;
+
+      /* Verify results of the second run */
+      for (size_t i = 0; i < nextBatchSize(); i++) {
+        for (size_t y = 0; y < nextOutputHeight(); y++) {
+          for (size_t x = 0; x < nextOutputWidth(); x++) {
+            for (size_t c = 0; c < channels(); c++) {
+              ASSERT_LE(uint32_t(output[((i * nextOutputHeight() + y) * nextOutputWidth() + x) * outputPixelStride() + c]), uint32_t(qmax()));
+              ASSERT_GE(uint32_t(output[((i * nextOutputHeight() + y) * nextOutputWidth() + x) * outputPixelStride() + c]), uint32_t(qmin()));
+              ASSERT_EQ(uint32_t(nextOutputRef[((i * nextOutputHeight() + y) * nextOutputWidth() + x) * channels() + c]),
+                uint32_t(output[((i * nextOutputHeight() + y) * nextOutputWidth() + x) * outputPixelStride() + c])) <<
+                "in batch index " << i << ", pixel (" << y << ", " << x << "), channel " << c;
+            }
+          }
+        }
+      }
+    }
+  }
+
  private:
   uint32_t paddingTop_{0};
   uint32_t paddingRight_{0};
@@ -421,6 +635,9 @@ class MaxPoolingOperatorTester {
   uint32_t strideWidth_{1};
   uint32_t dilationHeight_{1};
   uint32_t dilationWidth_{1};
+  size_t nextInputHeight_{0};
+  size_t nextInputWidth_{0};
+  size_t nextBatchSize_{0};
   uint8_t qmin_{0};
   uint8_t qmax_{255};
   size_t iterations_{1};

@@ -232,6 +232,17 @@ enum qnnp_status qnnp_setup_average_pooling2d_nhwc_q8(
   average_pooling->output = output;
   average_pooling->output_pixel_stride = output_pixel_stride;
 
+  size_t valid_batch_size = 0;
+  if (input == average_pooling->last_input &&
+      input_height == average_pooling->last_input_height &&
+      input_width == average_pooling->last_input_width)
+  {
+    valid_batch_size = average_pooling->valid_batch_size;
+    if (batch_size <= valid_batch_size) {
+      return qnnp_status_success;
+    }
+  }
+
   const size_t pooling_height = average_pooling->kernel_height;
   const size_t pooling_width = average_pooling->kernel_width;
   const size_t pooling_size = pooling_height * pooling_width;
@@ -244,7 +255,6 @@ enum qnnp_status qnnp_setup_average_pooling2d_nhwc_q8(
   const size_t indirection_buffer_size = sizeof(void*) * ((mr - 1) + batch_size * output_height *
     (pooling_size + (output_width * width_step - 1) * pooling_height));
 
-
   const void** indirection_buffer = (const void**) realloc(average_pooling->indirection_buffer, indirection_buffer_size);
   if (indirection_buffer == NULL) {
     qnnp_log_error("failed to allocate %zu bytes for indirection buffer", indirection_buffer_size);
@@ -253,7 +263,7 @@ enum qnnp_status qnnp_setup_average_pooling2d_nhwc_q8(
   average_pooling->indirection_buffer = indirection_buffer;
 
   const void* zero = average_pooling->zero_pointer;
-  for (size_t image = 0; image < batch_size; image++) {
+  for (size_t image = valid_batch_size; image < batch_size; image++) {
     for (size_t output_y = 0; output_y < output_height; output_y++) {
       for (size_t pooling_y = 0; pooling_y < pooling_height; pooling_y++) {
         const size_t input_y = output_y * average_pooling->stride_height + pooling_y - average_pooling->input_padding_top;
@@ -284,5 +294,10 @@ enum qnnp_status qnnp_setup_average_pooling2d_nhwc_q8(
       }
     }
   }
+  average_pooling->last_input = input;
+  average_pooling->last_input_height = input_height;
+  average_pooling->last_input_width = input_width;
+  average_pooling->valid_batch_size = max(valid_batch_size, batch_size);
+
   return qnnp_status_success;
 }

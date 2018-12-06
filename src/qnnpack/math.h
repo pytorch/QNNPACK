@@ -14,6 +14,10 @@ inline static size_t min(size_t a, size_t b) {
   return a < b ? a : b;
 }
 
+inline static size_t max(size_t a, size_t b) {
+  return a > b ? a : b;
+}
+
 inline static size_t doz(size_t a, size_t b) {
   return a < b ? 0 : a - b;
 }
