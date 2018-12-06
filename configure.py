@@ -65,13 +65,14 @@ def main(args):
             build.cc("init.c"),
             build.cc("operator-delete.c"),
             build.cc("operator-run.c"),
+            build.cc("add.c"),
+            build.cc("average-pooling.c"),
+            build.cc("channel-shuffle.c"),
             build.cc("convolution.c"),
             build.cc("deconvolution.c"),
             build.cc("fully-connected.c"),
-            build.cc("add.c"),
-            build.cc("channel-shuffle.c"),
             build.cc("global-average-pooling.c"),
-            build.cc("average-pooling.c"),
+            build.cc("max-pooling.c"),
         ]
 
         with build.options(isa=arm.neon if build.target.is_arm else None):
@@ -168,6 +169,7 @@ def main(args):
         build.unittest("deconvolution-test", build.cxx("deconvolution.cc"))
         build.unittest("global-average-pooling-test", build.cxx("global-average-pooling.cc"))
         build.unittest("average-pooling-test", build.cxx("average-pooling.cc"))
+        build.unittest("max-pooling-test", build.cxx("max-pooling.cc"))
         build.unittest("fully-connected-test", build.cxx("fully-connected.cc"))
         build.unittest("requantization-test", [build.cxx("requantization.cc")] + requantization_objects)
 

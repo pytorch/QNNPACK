@@ -270,6 +270,40 @@ static void compute_q8mpdw(
     &context->quantization_params);
 }
 
+struct max_pooling_context {
+  const void** indirect_input;
+  size_t indirect_input_batch_stride;
+  size_t indirect_input_height_stride;
+  void* output;
+  size_t output_batch_stride;
+  size_t output_height_stride;
+  size_t output_width;
+  size_t pooling_size;
+  size_t channels;
+  size_t input_increment;
+  size_t output_increment;
+  union qnnp_maxpool_quantization_params quantization_params;
+  u8maxpool_ukernel_function ukernel;
+};
+
+static void compute_max_pooling(
+    const struct max_pooling_context context[restrict static 1],
+    size_t batch_index,
+    size_t output_y)
+{
+  const void** indirect_input =
+    (const void**) ((uintptr_t) context->indirect_input +
+      batch_index * context->indirect_input_batch_stride + output_y * context->indirect_input_height_stride);
+  void* output =
+    (void*) ((uintptr_t) context->output + batch_index * context->output_batch_stride + output_y * context->output_height_stride);
+
+  context->ukernel(
+    context->output_width, context->pooling_size, context->channels,
+    (const uint8_t**) indirect_input, output,
+    context->input_increment, context->output_increment,
+    &context->quantization_params);
+}
+
 struct average_pooling_context {
   const void** indirect_input;
   size_t indirect_input_batch_stride;
@@ -722,6 +756,47 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
       pthreadpool_compute_2d(threadpool, compute_function, &context, op->batch_size, output_height);
       break;
     }
+    case qnnp_ukernel_type_max_pooling:
+    {
+      const uint32_t kr = qnnp_params.u8maxpool.kr;
+      const uint32_t mr = qnnp_params.u8maxpool.mr;
+      const uint32_t qr = qnnp_params.u8maxpool.qr;
+      const size_t channels = op->channels;
+      const size_t output_width = op->output_width;
+      const size_t output_height = op->output_height;
+      const size_t pooling_height = op->kernel_height;
+      const size_t pooling_width = op->kernel_width;
+      const size_t pooling_size = pooling_height * pooling_width;
+
+      const size_t width_step = op->dilation_width > 1 ? pooling_width : min(op->stride_width, pooling_width);
+      const size_t indirect_input_height_stride = (pooling_size + (output_width * width_step - 1) * pooling_height) * sizeof(void*);
+      const size_t output_height_stride = output_width * op->output_pixel_stride;
+
+      size_t multipass_adjustment = pooling_size;
+      if (channels >= kr) {
+        multipass_adjustment = round_up(doz(pooling_size, mr), qr) + mr;
+      }
+      struct max_pooling_context context = {
+          .indirect_input = op->indirection_buffer,
+          .indirect_input_batch_stride = output_height * indirect_input_height_stride,
+          .indirect_input_height_stride = indirect_input_height_stride,
+          .output = op->output,
+          .output_batch_stride = output_height * output_height_stride,
+          .output_height_stride = output_height_stride,
+          .output_width = output_width,
+          .pooling_size = pooling_size,
+          .channels = channels,
+          .input_increment = (pooling_height * width_step - multipass_adjustment) * sizeof(void*),
+          .output_increment = (op->output_pixel_stride - channels) * sizeof(uint8_t),
+          .quantization_params = op->maxpool_quantization_params,
+          .ukernel = channels < kr ? qnnp_params.u8maxpool.ltkr : qnnp_params.u8maxpool.gekr,
+      };
+
+      pthreadpool_compute_2d(threadpool,
+        (pthreadpool_function_2d_t) compute_max_pooling, &context,
+        op->batch_size, output_height);
+      break;
+    };
     case qnnp_ukernel_type_add:
     {
       const size_t batch_size = op->batch_size;

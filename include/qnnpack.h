@@ -185,6 +185,33 @@ enum qnnp_status qnnp_setup_average_pooling2d_nhwc_q8(
     size_t output_stride,
     pthreadpool_t threadpool);
 
+enum qnnp_status qnnp_create_max_pooling2d_nhwc_u8(
+    uint32_t input_padding_top,
+    uint32_t input_padding_right,
+    uint32_t input_padding_bottom,
+    uint32_t input_padding_left,
+    uint32_t pooling_height,
+    uint32_t pooling_width,
+    uint32_t stride_height,
+    uint32_t stride_width,
+    uint32_t dilation_height,
+    uint32_t dilation_width,
+    size_t channels,
+    uint8_t output_min,
+    uint8_t output_max,
+    qnnp_operator_t* max_pooling);
+
+enum qnnp_status qnnp_setup_max_pooling2d_nhwc_u8(
+    qnnp_operator_t max_pooling,
+    size_t batch_size,
+    size_t input_height,
+    size_t input_width,
+    const uint8_t* input,
+    size_t input_stride,
+    uint8_t* output,
+    size_t output_stride,
+    pthreadpool_t threadpool);
+
 enum qnnp_status qnnp_create_add_nc_q8(
     size_t channels,
     uint8_t a_zero_point,

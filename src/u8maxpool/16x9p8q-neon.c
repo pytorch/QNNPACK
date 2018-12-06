@@ -25,8 +25,7 @@ void u8maxpool_ukernel_16x9p8q__neon(
 {
   assert(n != 0);
   assert(ks != 0);
-  assert(kc != 0);
-  assert(kc < 16);
+  assert(kc >= 16);
 
   const uint8x16_t voutput_max = vld1q_dup_u8(&quantization_params->neon.output_max);
   const uint8x16_t voutput_min = vld1q_dup_u8(&quantization_params->neon.output_min);

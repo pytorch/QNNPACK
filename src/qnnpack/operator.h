@@ -30,6 +30,7 @@ enum qnnp_ukernel_type {
   qnnp_ukernel_type_channel_shuffle,
   qnnp_ukernel_type_global_average_pooling,
   qnnp_ukernel_type_average_pooling,
+  qnnp_ukernel_type_max_pooling,
 };
 
 struct qnnp_operator {
@@ -85,6 +86,7 @@ struct qnnp_operator {
     union qnnp_conv_quantization_params conv_quantization_params;
     union qnnp_add_quantization_params add_quantization_params;
     union qnnp_avgpool_quantization_params avgpool_quantization_params;
+    union qnnp_maxpool_quantization_params maxpool_quantization_params;
   };
   enum qnnp_ukernel_type ukernel_type;
   enum qnnp_format format;

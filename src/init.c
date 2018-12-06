@@ -22,6 +22,7 @@
 #include <qnnpack/q8avgpool.h>
 #include <qnnpack/q8gavgpool.h>
 #include <qnnpack/q8gemm.h>
+#include <qnnpack/u8maxpool.h>
 #include <qnnpack/x8zip.h>
 
 static pthread_once_t init_guard = PTHREAD_ONCE_INIT;
@@ -95,6 +96,13 @@ static void init(void) {
       .qr = 8,
       .kr = 8,
   };
+  qnnp_params.u8maxpool = (struct u8maxpool_parameters) {
+      .ltkr = u8maxpool_ukernel_sub16__neon,
+      .gekr = u8maxpool_ukernel_16x9p8q__neon,
+      .mr = 9,
+      .qr = 8,
+      .kr = 16,
+  };
   qnnp_params.x8zip = (struct x8zip_parameters) {
       .x2 = qnnp_x8zip_x2__neon,
       .x3 = qnnp_x8zip_x3__neon,
@@ -137,6 +145,13 @@ static void init(void) {
       .mr = 9,
       .qr = 8,
       .kr = 8,
+  };
+  qnnp_params.u8maxpool = (struct u8maxpool_parameters) {
+      .ltkr = u8maxpool_ukernel_sub16__neon,
+      .gekr = u8maxpool_ukernel_16x9p8q__neon,
+      .mr = 9,
+      .qr = 8,
+      .kr = 16,
   };
   qnnp_params.x8zip = (struct x8zip_parameters) {
       .x2 = qnnp_x8zip_x2__neon,
@@ -184,6 +199,13 @@ static void init(void) {
       .mr = 9,
       .qr = 8,
       .kr = 8,
+  };
+  qnnp_params.u8maxpool = (struct u8maxpool_parameters) {
+      .ltkr = u8maxpool_ukernel_sub16__sse2,
+      .gekr = u8maxpool_ukernel_16x9p8q__sse2,
+      .mr = 9,
+      .qr = 8,
+      .kr = 16,
   };
   qnnp_params.x8zip = (struct x8zip_parameters) {
       .x2 = qnnp_x8zip_x2__sse2,

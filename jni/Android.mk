@@ -23,6 +23,8 @@ LOCAL_SRC_FILES += \
 	src/q8gemm/4x-sumrows-neon.c \
 	src/q8updw/9c8-aarch32-neon.S \
 	src/q8mpdw/25c8-neon.c \
+	src/u8maxpool/sub16-neon.c \
+	src/u8maxpool/16x9p8q-neon.c \
 	src/x8zip/x2-neon.c \
 	src/x8zip/x3-neon.c \
 	src/x8zip/x4-neon.c \
@@ -48,6 +50,8 @@ LOCAL_SRC_FILES += \
 	src/q8gemm/8x8-aarch64-neon.S \
 	src/q8updw/9c8-neon.c \
 	src/q8mpdw/25c8-neon.c \
+	src/u8maxpool/sub16-neon.c \
+	src/u8maxpool/16x9p8q-neon.c \
 	src/x8zip/x2-neon.c \
 	src/x8zip/x3-neon.c \
 	src/x8zip/x4-neon.c \
@@ -73,6 +77,8 @@ LOCAL_SRC_FILES += \
 	src/q8gemm/4x4c2-sse2.c \
 	src/q8mpdw/25c8-sse2.c \
 	src/q8updw/9c8-sse2.c \
+	src/u8maxpool/sub16-sse2.c \
+	src/u8maxpool/16x9p8q-sse2.c \
 	src/x8zip/x2-sse2.c \
 	src/x8zip/x3-sse2.c \
 	src/x8zip/x4-sse2.c \
@@ -91,6 +97,7 @@ LOCAL_SRC_FILES := \
 	src/convolution.c \
 	src/deconvolution.c \
 	src/fully-connected.c \
+	src/max-pooling.c \
 	src/average-pooling.c \
 	src/global-average-pooling.c \
 	src/operator-run.c
