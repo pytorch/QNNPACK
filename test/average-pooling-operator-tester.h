@@ -291,22 +291,22 @@ class AveragePoolingOperatorTester {
     return this->outputZeroPoint_;
   }
 
-  inline AveragePoolingOperatorTester& outputMin(uint8_t outputMin) {
-    this->outputMin_ = outputMin;
+  inline AveragePoolingOperatorTester& qmin(uint8_t qmin) {
+    this->qmin_ = qmin;
     return *this;
   }
 
-  inline uint8_t outputMin() const {
-    return this->outputMin_;
+  inline uint8_t qmin() const {
+    return this->qmin_;
   }
 
-  inline AveragePoolingOperatorTester& outputMax(uint8_t outputMax) {
-    this->outputMax_ = outputMax;
+  inline AveragePoolingOperatorTester& qmax(uint8_t qmax) {
+    this->qmax_ = qmax;
     return *this;
   }
 
-  inline uint8_t outputMax() const {
-    return this->outputMax_;
+  inline uint8_t qmax() const {
+    return this->qmax_;
   }
 
   inline AveragePoolingOperatorTester& iterations(size_t iterations) {
@@ -348,9 +348,9 @@ class AveragePoolingOperatorTester {
               }
               outputRef[((i * outputHeight() + oy) * outputWidth() + ox) * channels() + c] = float(acc * scale + double(outputZeroPoint()));
               outputRef[((i * outputHeight() + oy) * outputWidth() + ox) * channels() + c] =
-                std::min<float>(outputRef[((i * outputHeight() + oy) * outputWidth() + ox) * channels() + c], float(outputMax()));
+                std::min<float>(outputRef[((i * outputHeight() + oy) * outputWidth() + ox) * channels() + c], float(qmax()));
               outputRef[((i * outputHeight() + oy) * outputWidth() + ox) * channels() + c] =
-                std::max<float>(outputRef[((i * outputHeight() + oy) * outputWidth() + ox) * channels() + c], float(outputMin()));
+                std::max<float>(outputRef[((i * outputHeight() + oy) * outputWidth() + ox) * channels() + c], float(qmin()));
             }
           }
         }
@@ -368,7 +368,7 @@ class AveragePoolingOperatorTester {
           channels(),
           inputZeroPoint(), inputScale(),
           outputZeroPoint(), outputScale(),
-          outputMin(), outputMax(),
+          qmin(), qmax(),
           &averagePoolingOp));
       ASSERT_NE(nullptr, averagePoolingOp);
 
@@ -392,8 +392,8 @@ class AveragePoolingOperatorTester {
         for (size_t y = 0; y < outputHeight(); y++) {
           for (size_t x = 0; x < outputWidth(); x++) {
             for (size_t c = 0; c < channels(); c++) {
-              ASSERT_LE(uint32_t(output[((i * outputHeight() + y) * outputWidth() + x) * outputPixelStride() + c]), uint32_t(outputMax()));
-              ASSERT_GE(uint32_t(output[((i * outputHeight() + y) * outputWidth() + x) * outputPixelStride() + c]), uint32_t(outputMin()));
+              ASSERT_LE(uint32_t(output[((i * outputHeight() + y) * outputWidth() + x) * outputPixelStride() + c]), uint32_t(qmax()));
+              ASSERT_GE(uint32_t(output[((i * outputHeight() + y) * outputWidth() + x) * outputPixelStride() + c]), uint32_t(qmin()));
               ASSERT_NEAR(float(int32_t(output[((i * outputHeight() + y) * outputWidth() + x) * outputPixelStride() + c])),
                 outputRef[((i * outputHeight() + y) * outputWidth() + x) * channels() + c], 0.80f) <<
                 "in batch index " << i << ", pixel (" << y << ", " << x << "), channel " << c;
@@ -423,7 +423,7 @@ class AveragePoolingOperatorTester {
   float outputScale_{1.0f};
   uint8_t inputZeroPoint_{121};
   uint8_t outputZeroPoint_{133};
-  uint8_t outputMin_{0};
-  uint8_t outputMax_{255};
+  uint8_t qmin_{0};
+  uint8_t qmax_{255};
   size_t iterations_{1};
 };

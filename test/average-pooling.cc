@@ -53,7 +53,7 @@ TEST(AVERAGE_POOLING_OP, unit_batch_many_channels_small_1xM_pool_with_padding) {
 
 TEST(AVERAGE_POOLING_OP, unit_batch_many_channels_small_1xM_pool_with_stride) {
   ASSERT_EQ(qnnp_status_success, qnnp_initialize());
-  for (size_t channels = qnnp_params.q8avgpool.kr; channels <= 3 * qnnp_params.q8avgpool.kr; channels++) {
+  for (size_t channels = qnnp_params.q8avgpool.kr; channels <= 3 * qnnp_params.q8avgpool.kr; channels += 3) {
     for (size_t poolSize = 2; poolSize <= qnnp_params.q8avgpool.mr; poolSize++) {
       AveragePoolingOperatorTester()
         .batchSize(1)
@@ -110,27 +110,22 @@ TEST(AVERAGE_POOLING_OP, unit_batch_many_channels_small_Mx1_pool_with_stride) {
   ASSERT_EQ(qnnp_status_success, qnnp_initialize());
   for (size_t channels = qnnp_params.q8avgpool.kr; channels <= 3 * qnnp_params.q8avgpool.kr; channels += 3) {
     for (size_t poolSize = 2; poolSize <= qnnp_params.q8avgpool.mr; poolSize++) {
-      for (size_t paddingTop = 0; paddingTop <= 1; paddingTop++) {
-        for (size_t paddingBottom = 0; paddingBottom <= 1; paddingBottom++) {
-          AveragePoolingOperatorTester()
-            .batchSize(1)
-            .inputHeight(poolSize + 1)
-            .inputWidth(3)
-            .paddingTop(paddingTop)
-            .paddingBottom(paddingBottom)
-            .poolingHeight(poolSize)
-            .poolingWidth(1)
-            .channels(channels)
-            .testQ8();
-        }
-      }
+      AveragePoolingOperatorTester()
+        .batchSize(1)
+        .inputHeight(poolSize + 3)
+        .inputWidth(3)
+        .poolingHeight(poolSize)
+        .poolingWidth(1)
+        .strideHeight(2)
+        .channels(channels)
+        .testQ8();
     }
   }
 }
 
 TEST(AVERAGE_POOLING_OP, unit_batch_many_channels_small_pool_with_input_stride) {
   ASSERT_EQ(qnnp_status_success, qnnp_initialize());
-  for (size_t channels = qnnp_params.q8avgpool.kr; channels <= 3 * qnnp_params.q8avgpool.kr; channels++) {
+  for (size_t channels = qnnp_params.q8avgpool.kr; channels <= 3 * qnnp_params.q8avgpool.kr; channels += 3) {
     for (size_t poolSize = 2; poolSize <= qnnp_params.q8avgpool.mr; poolSize++) {
       AveragePoolingOperatorTester()
         .batchSize(1)
@@ -144,11 +139,37 @@ TEST(AVERAGE_POOLING_OP, unit_batch_many_channels_small_pool_with_input_stride) 
       AveragePoolingOperatorTester()
         .batchSize(1)
         .inputHeight(2)
-        .inputWidth(poolSize + 1)
+        .inputWidth(poolSize + 2)
         .poolingHeight(1)
         .poolingWidth(poolSize)
         .channels(channels)
         .inputPixelStride(5 * qnnp_params.q8avgpool.kr)
+        .testQ8();
+    }
+  }
+}
+
+TEST(AVERAGE_POOLING_OP, unit_batch_many_channels_small_pool_with_output_stride) {
+  ASSERT_EQ(qnnp_status_success, qnnp_initialize());
+  for (size_t channels = qnnp_params.q8avgpool.kr; channels <= 3 * qnnp_params.q8avgpool.kr; channels += 3) {
+    for (size_t poolSize = 2; poolSize <= qnnp_params.q8avgpool.mr; poolSize++) {
+      AveragePoolingOperatorTester()
+        .batchSize(1)
+        .inputHeight(poolSize + 1)
+        .inputWidth(3)
+        .poolingHeight(poolSize)
+        .poolingWidth(1)
+        .channels(channels)
+        .outputPixelStride(5 * qnnp_params.q8avgpool.kr)
+        .testQ8();
+      AveragePoolingOperatorTester()
+        .batchSize(1)
+        .inputHeight(2)
+        .inputWidth(poolSize + 2)
+        .poolingHeight(1)
+        .poolingWidth(poolSize)
+        .channels(channels)
+        .outputPixelStride(5 * qnnp_params.q8avgpool.kr)
         .testQ8();
     }
   }
@@ -171,7 +192,7 @@ TEST(AVERAGE_POOLING_OP, unit_batch_many_channels_small_pool_with_input_scale) {
         AveragePoolingOperatorTester()
           .batchSize(1)
           .inputHeight(2)
-          .inputWidth(poolSize + 1)
+          .inputWidth(poolSize + 2)
           .poolingHeight(1)
           .poolingWidth(poolSize)
           .channels(channels)
@@ -199,39 +220,13 @@ TEST(AVERAGE_POOLING_OP, unit_batch_many_channels_small_pool_with_input_zero_poi
         AveragePoolingOperatorTester()
           .batchSize(1)
           .inputHeight(2)
-          .inputWidth(poolSize + 1)
+          .inputWidth(poolSize + 2)
           .poolingHeight(1)
           .poolingWidth(poolSize)
           .channels(channels)
           .inputZeroPoint(uint8_t(inputZeroPoint))
           .testQ8();
       }
-    }
-  }
-}
-
-TEST(AVERAGE_POOLING_OP, unit_batch_many_channels_small_pool_with_output_stride) {
-  ASSERT_EQ(qnnp_status_success, qnnp_initialize());
-  for (size_t channels = qnnp_params.q8avgpool.kr; channels <= 3 * qnnp_params.q8avgpool.kr; channels++) {
-    for (size_t poolSize = 2; poolSize <= qnnp_params.q8avgpool.mr; poolSize++) {
-      AveragePoolingOperatorTester()
-        .batchSize(1)
-        .inputHeight(poolSize + 1)
-        .inputWidth(3)
-        .poolingHeight(poolSize)
-        .poolingWidth(1)
-        .channels(channels)
-        .outputPixelStride(5 * qnnp_params.q8avgpool.kr)
-        .testQ8();
-      AveragePoolingOperatorTester()
-        .batchSize(1)
-        .inputHeight(2)
-        .inputWidth(poolSize + 1)
-        .poolingHeight(1)
-        .poolingWidth(poolSize)
-        .channels(channels)
-        .outputPixelStride(5 * qnnp_params.q8avgpool.kr)
-        .testQ8();
     }
   }
 }
@@ -253,7 +248,7 @@ TEST(AVERAGE_POOLING_OP, unit_batch_many_channels_small_pool_with_output_scale) 
         AveragePoolingOperatorTester()
           .batchSize(1)
           .inputHeight(2)
-          .inputWidth(poolSize + 1)
+          .inputWidth(poolSize + 2)
           .poolingHeight(1)
           .poolingWidth(poolSize)
           .channels(channels)
@@ -281,7 +276,7 @@ TEST(AVERAGE_POOLING_OP, unit_batch_many_channels_small_pool_with_output_zero_po
         AveragePoolingOperatorTester()
           .batchSize(1)
           .inputHeight(2)
-          .inputWidth(poolSize + 1)
+          .inputWidth(poolSize + 2)
           .poolingHeight(1)
           .poolingWidth(poolSize)
           .channels(channels)
@@ -292,7 +287,7 @@ TEST(AVERAGE_POOLING_OP, unit_batch_many_channels_small_pool_with_output_zero_po
   }
 }
 
-TEST(AVERAGE_POOLING_OP, unit_batch_many_channels_small_pool_with_output_min) {
+TEST(AVERAGE_POOLING_OP, unit_batch_many_channels_small_pool_with_qmin) {
   ASSERT_EQ(qnnp_status_success, qnnp_initialize());
   for (size_t channels = qnnp_params.q8avgpool.kr; channels <= 3 * qnnp_params.q8avgpool.kr; channels += 3) {
     for (size_t poolSize = 2; poolSize <= qnnp_params.q8avgpool.mr; poolSize++) {
@@ -303,22 +298,22 @@ TEST(AVERAGE_POOLING_OP, unit_batch_many_channels_small_pool_with_output_min) {
         .poolingHeight(poolSize)
         .poolingWidth(1)
         .channels(channels)
-        .outputMin(128)
+        .qmin(128)
         .testQ8();
       AveragePoolingOperatorTester()
         .batchSize(1)
         .inputHeight(2)
-        .inputWidth(poolSize + 1)
+        .inputWidth(poolSize + 2)
         .poolingHeight(1)
         .poolingWidth(poolSize)
         .channels(channels)
-        .outputMin(128)
+        .qmin(128)
         .testQ8();
     }
   }
 }
 
-TEST(AVERAGE_POOLING_OP, unit_batch_many_channels_small_pool_with_output_max) {
+TEST(AVERAGE_POOLING_OP, unit_batch_many_channels_small_pool_with_qmax) {
   ASSERT_EQ(qnnp_status_success, qnnp_initialize());
   for (size_t channels = qnnp_params.q8avgpool.kr; channels <= 3 * qnnp_params.q8avgpool.kr; channels += 3) {
     for (size_t poolSize = 2; poolSize <= qnnp_params.q8avgpool.mr; poolSize++) {
@@ -329,16 +324,16 @@ TEST(AVERAGE_POOLING_OP, unit_batch_many_channels_small_pool_with_output_max) {
         .poolingHeight(poolSize)
         .poolingWidth(1)
         .channels(channels)
-        .outputMax(128)
+        .qmax(128)
         .testQ8();
       AveragePoolingOperatorTester()
         .batchSize(1)
         .inputHeight(2)
-        .inputWidth(poolSize + 1)
+        .inputWidth(poolSize + 2)
         .poolingHeight(1)
         .poolingWidth(poolSize)
         .channels(channels)
-        .outputMax(128)
+        .qmax(128)
         .testQ8();
     }
   }
@@ -475,7 +470,7 @@ TEST(AVERAGE_POOLING_OP, unit_batch_many_channels_large_pool_with_input_stride) 
       AveragePoolingOperatorTester()
         .batchSize(1)
         .inputHeight(2)
-        .inputWidth(poolSize + 1)
+        .inputWidth(poolSize + 2)
         .poolingHeight(1)
         .poolingWidth(poolSize)
         .channels(channels)
@@ -502,7 +497,7 @@ TEST(AVERAGE_POOLING_OP, unit_batch_many_channels_large_pool_with_input_scale) {
         AveragePoolingOperatorTester()
           .batchSize(1)
           .inputHeight(2)
-          .inputWidth(poolSize + 1)
+          .inputWidth(poolSize + 2)
           .poolingHeight(1)
           .poolingWidth(poolSize)
           .channels(channels)
@@ -530,7 +525,7 @@ TEST(AVERAGE_POOLING_OP, unit_batch_many_channels_large_pool_with_input_zero_poi
         AveragePoolingOperatorTester()
           .batchSize(1)
           .inputHeight(2)
-          .inputWidth(poolSize + 1)
+          .inputWidth(poolSize + 2)
           .poolingHeight(1)
           .poolingWidth(poolSize)
           .channels(channels)
@@ -557,7 +552,7 @@ TEST(AVERAGE_POOLING_OP, unit_batch_many_channels_large_pool_with_output_stride)
       AveragePoolingOperatorTester()
         .batchSize(1)
         .inputHeight(2)
-        .inputWidth(poolSize + 1)
+        .inputWidth(poolSize + 2)
         .poolingHeight(1)
         .poolingWidth(poolSize)
         .channels(channels)
@@ -584,7 +579,7 @@ TEST(AVERAGE_POOLING_OP, unit_batch_many_channels_large_pool_with_output_scale) 
         AveragePoolingOperatorTester()
           .batchSize(1)
           .inputHeight(2)
-          .inputWidth(poolSize + 1)
+          .inputWidth(poolSize + 2)
           .poolingHeight(1)
           .poolingWidth(poolSize)
           .channels(channels)
@@ -612,7 +607,7 @@ TEST(AVERAGE_POOLING_OP, unit_batch_many_channels_large_pool_with_output_zero_po
         AveragePoolingOperatorTester()
           .batchSize(1)
           .inputHeight(2)
-          .inputWidth(poolSize + 1)
+          .inputWidth(poolSize + 2)
           .poolingHeight(1)
           .poolingWidth(poolSize)
           .channels(channels)
@@ -623,7 +618,7 @@ TEST(AVERAGE_POOLING_OP, unit_batch_many_channels_large_pool_with_output_zero_po
   }
 }
 
-TEST(AVERAGE_POOLING_OP, unit_batch_many_channels_large_pool_with_output_min) {
+TEST(AVERAGE_POOLING_OP, unit_batch_many_channels_large_pool_with_qmin) {
   ASSERT_EQ(qnnp_status_success, qnnp_initialize());
   for (size_t channels = qnnp_params.q8avgpool.kr; channels <= 3 * qnnp_params.q8avgpool.kr; channels += 3) {
     for (size_t poolSize = qnnp_params.q8avgpool.mr + 1; poolSize <= qnnp_params.q8avgpool.mr + qnnp_params.q8avgpool.qr; poolSize++) {
@@ -634,22 +629,22 @@ TEST(AVERAGE_POOLING_OP, unit_batch_many_channels_large_pool_with_output_min) {
         .poolingHeight(poolSize)
         .poolingWidth(1)
         .channels(channels)
-        .outputMin(128)
+        .qmin(128)
         .testQ8();
       AveragePoolingOperatorTester()
         .batchSize(1)
         .inputHeight(2)
-        .inputWidth(poolSize + 1)
+        .inputWidth(poolSize + 2)
         .poolingHeight(1)
         .poolingWidth(poolSize)
         .channels(channels)
-        .outputMin(128)
+        .qmin(128)
         .testQ8();
     }
   }
 }
 
-TEST(AVERAGE_POOLING_OP, unit_batch_many_channels_large_pool_with_output_max) {
+TEST(AVERAGE_POOLING_OP, unit_batch_many_channels_large_pool_with_qmax) {
   ASSERT_EQ(qnnp_status_success, qnnp_initialize());
   for (size_t channels = qnnp_params.q8avgpool.kr; channels <= 3 * qnnp_params.q8avgpool.kr; channels += 3) {
     for (size_t poolSize = qnnp_params.q8avgpool.mr + 1; poolSize <= qnnp_params.q8avgpool.mr + qnnp_params.q8avgpool.qr; poolSize++) {
@@ -660,16 +655,16 @@ TEST(AVERAGE_POOLING_OP, unit_batch_many_channels_large_pool_with_output_max) {
         .poolingHeight(poolSize)
         .poolingWidth(1)
         .channels(channels)
-        .outputMax(128)
+        .qmax(128)
         .testQ8();
       AveragePoolingOperatorTester()
         .batchSize(1)
         .inputHeight(2)
-        .inputWidth(poolSize + 1)
+        .inputWidth(poolSize + 2)
         .poolingHeight(1)
         .poolingWidth(poolSize)
         .channels(channels)
-        .outputMax(128)
+        .qmax(128)
         .testQ8();
     }
   }
@@ -693,7 +688,7 @@ TEST(AVERAGE_POOLING_OP, unit_batch_few_channels_1xM_pool) {
 
 TEST(AVERAGE_POOLING_OP, unit_batch_few_channels_1xM_pool_with_padding) {
   ASSERT_EQ(qnnp_status_success, qnnp_initialize());
-  for (size_t channels = qnnp_params.q8avgpool.kr; channels <= 3 * qnnp_params.q8avgpool.kr; channels++) {
+  for (size_t channels = 1; channels < qnnp_params.q8avgpool.kr; channels++) {
     for (size_t poolSize = 3; poolSize <= qnnp_params.q8avgpool.mr; poolSize++) {
       for (size_t paddingLeft = 0; paddingLeft <= 1; paddingLeft++) {
         for (size_t paddingRight = 0; paddingRight <= 1; paddingRight++) {
@@ -748,7 +743,7 @@ TEST(AVERAGE_POOLING_OP, unit_batch_few_channels_Mx1_pool) {
 
 TEST(AVERAGE_POOLING_OP, unit_batch_few_channels_Mx1_pool_with_padding) {
   ASSERT_EQ(qnnp_status_success, qnnp_initialize());
-  for (size_t channels = qnnp_params.q8avgpool.kr; channels <= 3 * qnnp_params.q8avgpool.kr; channels++) {
+  for (size_t channels = 1; channels < qnnp_params.q8avgpool.kr; channels++) {
     for (size_t poolSize = 2; poolSize <= 2 * qnnp_params.q8avgpool.kr; poolSize++) {
       for (size_t paddingTop = 0; paddingTop <= 1; paddingTop++) {
         for (size_t paddingBottom = 0; paddingBottom <= 1; paddingBottom++) {
@@ -770,22 +765,17 @@ TEST(AVERAGE_POOLING_OP, unit_batch_few_channels_Mx1_pool_with_padding) {
 
 TEST(AVERAGE_POOLING_OP, unit_batch_few_channels_Mx1_pool_with_stride) {
   ASSERT_EQ(qnnp_status_success, qnnp_initialize());
-  for (size_t channels = qnnp_params.q8avgpool.kr; channels <= 3 * qnnp_params.q8avgpool.kr; channels++) {
+  for (size_t channels = 1; channels < qnnp_params.q8avgpool.kr; channels++) {
     for (size_t poolSize = 2; poolSize <= 2 * qnnp_params.q8avgpool.kr; poolSize++) {
-      for (size_t paddingTop = 0; paddingTop <= 1; paddingTop++) {
-        for (size_t paddingBottom = 0; paddingBottom <= 1; paddingBottom++) {
-          AveragePoolingOperatorTester()
-            .batchSize(1)
-            .inputHeight(poolSize + 1)
-            .inputWidth(3)
-            .paddingTop(paddingTop)
-            .paddingBottom(paddingBottom)
-            .poolingHeight(poolSize)
-            .poolingWidth(1)
-            .channels(channels)
-            .testQ8();
-        }
-      }
+      AveragePoolingOperatorTester()
+        .batchSize(1)
+        .inputHeight(poolSize + 3)
+        .inputWidth(3)
+        .poolingHeight(poolSize)
+        .poolingWidth(1)
+        .strideHeight(2)
+        .channels(channels)
+        .testQ8();
     }
   }
 }
@@ -806,7 +796,7 @@ TEST(AVERAGE_POOLING_OP, unit_batch_few_channels_with_input_stride) {
       AveragePoolingOperatorTester()
         .batchSize(1)
         .inputHeight(2)
-        .inputWidth(poolSize + 1)
+        .inputWidth(poolSize + 2)
         .poolingHeight(1)
         .poolingWidth(poolSize)
         .channels(channels)
@@ -818,7 +808,7 @@ TEST(AVERAGE_POOLING_OP, unit_batch_few_channels_with_input_stride) {
 
 TEST(AVERAGE_POOLING_OP, unit_batch_few_channels_with_input_scale) {
   ASSERT_EQ(qnnp_status_success, qnnp_initialize());
-  for (size_t channels = qnnp_params.q8avgpool.kr; channels <= 3 * qnnp_params.q8avgpool.kr; channels++) {
+  for (size_t channels = 1; channels < qnnp_params.q8avgpool.kr; channels++) {
     for (size_t poolSize = 2; poolSize <= 2 * qnnp_params.q8avgpool.kr; poolSize++) {
       for (float inputScale = 0.01f; inputScale < 100.0f; inputScale *= 3.14159265f) {
         AveragePoolingOperatorTester()
@@ -833,7 +823,7 @@ TEST(AVERAGE_POOLING_OP, unit_batch_few_channels_with_input_scale) {
         AveragePoolingOperatorTester()
           .batchSize(1)
           .inputHeight(2)
-          .inputWidth(poolSize + 1)
+          .inputWidth(poolSize + 2)
           .poolingHeight(1)
           .poolingWidth(poolSize)
           .channels(channels)
@@ -846,7 +836,7 @@ TEST(AVERAGE_POOLING_OP, unit_batch_few_channels_with_input_scale) {
 
 TEST(AVERAGE_POOLING_OP, unit_batch_few_channels_with_input_zero_point) {
   ASSERT_EQ(qnnp_status_success, qnnp_initialize());
-  for (size_t channels = qnnp_params.q8avgpool.kr; channels <= 3 * qnnp_params.q8avgpool.kr; channels++) {
+  for (size_t channels = 1; channels < qnnp_params.q8avgpool.kr; channels++) {
     for (size_t poolSize = 2; poolSize <= 2 * qnnp_params.q8avgpool.kr; poolSize++) {
       for (int32_t inputZeroPoint = 0; inputZeroPoint <= 255; inputZeroPoint += 51) {
         AveragePoolingOperatorTester()
@@ -861,7 +851,7 @@ TEST(AVERAGE_POOLING_OP, unit_batch_few_channels_with_input_zero_point) {
         AveragePoolingOperatorTester()
           .batchSize(1)
           .inputHeight(2)
-          .inputWidth(poolSize + 1)
+          .inputWidth(poolSize + 2)
           .poolingHeight(1)
           .poolingWidth(poolSize)
           .channels(channels)
@@ -888,7 +878,7 @@ TEST(AVERAGE_POOLING_OP, unit_batch_few_channels_with_output_stride) {
       AveragePoolingOperatorTester()
         .batchSize(1)
         .inputHeight(2)
-        .inputWidth(poolSize + 1)
+        .inputWidth(poolSize + 2)
         .poolingHeight(1)
         .poolingWidth(poolSize)
         .channels(channels)
@@ -900,7 +890,7 @@ TEST(AVERAGE_POOLING_OP, unit_batch_few_channels_with_output_stride) {
 
 TEST(AVERAGE_POOLING_OP, unit_batch_few_channels_with_output_scale) {
   ASSERT_EQ(qnnp_status_success, qnnp_initialize());
-  for (size_t channels = qnnp_params.q8avgpool.kr; channels <= 3 * qnnp_params.q8avgpool.kr; channels++) {
+  for (size_t channels = 1; channels < qnnp_params.q8avgpool.kr; channels++) {
     for (size_t poolSize = 2; poolSize <= 2 * qnnp_params.q8avgpool.kr; poolSize++) {
       for (float outputScale = 0.01f; outputScale < 100.0f; outputScale *= 3.14159265f) {
         AveragePoolingOperatorTester()
@@ -915,7 +905,7 @@ TEST(AVERAGE_POOLING_OP, unit_batch_few_channels_with_output_scale) {
         AveragePoolingOperatorTester()
           .batchSize(1)
           .inputHeight(2)
-          .inputWidth(poolSize + 1)
+          .inputWidth(poolSize + 2)
           .poolingHeight(1)
           .poolingWidth(poolSize)
           .channels(channels)
@@ -928,7 +918,7 @@ TEST(AVERAGE_POOLING_OP, unit_batch_few_channels_with_output_scale) {
 
 TEST(AVERAGE_POOLING_OP, unit_batch_few_channels_with_output_zero_point) {
   ASSERT_EQ(qnnp_status_success, qnnp_initialize());
-  for (size_t channels = qnnp_params.q8avgpool.kr; channels <= 3 * qnnp_params.q8avgpool.kr; channels++) {
+  for (size_t channels = 1; channels < qnnp_params.q8avgpool.kr; channels++) {
     for (size_t poolSize = 2; poolSize <= 2 * qnnp_params.q8avgpool.kr; poolSize++) {
       for (int32_t outputZeroPoint = 0; outputZeroPoint <= 255; outputZeroPoint += 51) {
         AveragePoolingOperatorTester()
@@ -943,7 +933,7 @@ TEST(AVERAGE_POOLING_OP, unit_batch_few_channels_with_output_zero_point) {
         AveragePoolingOperatorTester()
           .batchSize(1)
           .inputHeight(2)
-          .inputWidth(poolSize + 1)
+          .inputWidth(poolSize + 2)
           .poolingHeight(1)
           .poolingWidth(poolSize)
           .channels(channels)
@@ -954,9 +944,9 @@ TEST(AVERAGE_POOLING_OP, unit_batch_few_channels_with_output_zero_point) {
   }
 }
 
-TEST(AVERAGE_POOLING_OP, unit_batch_few_channels_with_output_min) {
+TEST(AVERAGE_POOLING_OP, unit_batch_few_channels_with_qmin) {
   ASSERT_EQ(qnnp_status_success, qnnp_initialize());
-  for (size_t channels = qnnp_params.q8avgpool.kr; channels <= 3 * qnnp_params.q8avgpool.kr; channels++) {
+  for (size_t channels = 1; channels < qnnp_params.q8avgpool.kr; channels++) {
     for (size_t poolSize = 2; poolSize <= 2 * qnnp_params.q8avgpool.kr; poolSize++) {
       AveragePoolingOperatorTester()
         .batchSize(1)
@@ -965,7 +955,7 @@ TEST(AVERAGE_POOLING_OP, unit_batch_few_channels_with_output_min) {
         .poolingHeight(poolSize)
         .poolingWidth(1)
         .channels(channels)
-        .outputMin(128)
+        .qmin(128)
         .testQ8();
       AveragePoolingOperatorTester()
         .batchSize(1)
@@ -974,15 +964,15 @@ TEST(AVERAGE_POOLING_OP, unit_batch_few_channels_with_output_min) {
         .poolingHeight(1)
         .poolingWidth(poolSize)
         .channels(channels)
-        .outputMin(128)
+        .qmin(128)
         .testQ8();
     }
   }
 }
 
-TEST(AVERAGE_POOLING_OP, unit_batch_few_channels_with_output_max) {
+TEST(AVERAGE_POOLING_OP, unit_batch_few_channels_with_qmax) {
   ASSERT_EQ(qnnp_status_success, qnnp_initialize());
-  for (size_t channels = qnnp_params.q8avgpool.kr; channels <= 3 * qnnp_params.q8avgpool.kr; channels++) {
+  for (size_t channels = 1; channels < qnnp_params.q8avgpool.kr; channels++) {
     for (size_t poolSize = 2; poolSize <= 2 * qnnp_params.q8avgpool.kr; poolSize++) {
       AveragePoolingOperatorTester()
         .batchSize(1)
@@ -991,7 +981,7 @@ TEST(AVERAGE_POOLING_OP, unit_batch_few_channels_with_output_max) {
         .poolingHeight(poolSize)
         .poolingWidth(1)
         .channels(channels)
-        .outputMax(128)
+        .qmax(128)
         .testQ8();
       AveragePoolingOperatorTester()
         .batchSize(1)
@@ -1000,7 +990,7 @@ TEST(AVERAGE_POOLING_OP, unit_batch_few_channels_with_output_max) {
         .poolingHeight(1)
         .poolingWidth(poolSize)
         .channels(channels)
-        .outputMax(128)
+        .qmax(128)
         .testQ8();
     }
   }
@@ -1012,18 +1002,18 @@ TEST(AVERAGE_POOLING_OP, small_batch_many_channels_small_pool) {
     for (size_t poolSize = 2; poolSize <= qnnp_params.q8avgpool.mr; poolSize++) {
       AveragePoolingOperatorTester()
         .batchSize(3)
-        .inputHeight(2)
-        .inputWidth(poolSize + 2)
-        .poolingHeight(1)
-        .poolingWidth(poolSize)
-        .channels(channels)
-        .testQ8();
-      AveragePoolingOperatorTester()
-        .batchSize(3)
         .inputHeight(poolSize + 1)
         .inputWidth(3)
         .poolingHeight(poolSize)
         .poolingWidth(1)
+        .channels(channels)
+        .testQ8();
+      AveragePoolingOperatorTester()
+        .batchSize(3)
+        .inputHeight(2)
+        .inputWidth(poolSize + 2)
+        .poolingHeight(1)
+        .poolingWidth(poolSize)
         .channels(channels)
         .testQ8();
     }
@@ -1032,7 +1022,7 @@ TEST(AVERAGE_POOLING_OP, small_batch_many_channels_small_pool) {
 
 TEST(AVERAGE_POOLING_OP, small_batch_many_channels_small_pool_with_input_stride) {
   ASSERT_EQ(qnnp_status_success, qnnp_initialize());
-  for (size_t channels = qnnp_params.q8avgpool.kr; channels <= 3 * qnnp_params.q8avgpool.kr; channels++) {
+  for (size_t channels = qnnp_params.q8avgpool.kr; channels <= 3 * qnnp_params.q8avgpool.kr; channels += 3) {
     for (size_t poolSize = 2; poolSize <= qnnp_params.q8avgpool.mr; poolSize++) {
       AveragePoolingOperatorTester()
         .batchSize(3)
@@ -1058,7 +1048,7 @@ TEST(AVERAGE_POOLING_OP, small_batch_many_channels_small_pool_with_input_stride)
 
 TEST(AVERAGE_POOLING_OP, small_batch_many_channels_small_pool_with_output_stride) {
   ASSERT_EQ(qnnp_status_success, qnnp_initialize());
-  for (size_t channels = qnnp_params.q8avgpool.kr; channels <= 3 * qnnp_params.q8avgpool.kr; channels++) {
+  for (size_t channels = qnnp_params.q8avgpool.kr; channels <= 3 * qnnp_params.q8avgpool.kr; channels += 3) {
     for (size_t poolSize = 2; poolSize <= qnnp_params.q8avgpool.mr; poolSize++) {
       AveragePoolingOperatorTester()
         .batchSize(3)
@@ -1088,18 +1078,18 @@ TEST(AVERAGE_POOLING_OP, small_batch_many_channels_large_pool) {
     for (size_t poolSize = qnnp_params.q8avgpool.mr + 1; poolSize <= qnnp_params.q8avgpool.mr + qnnp_params.q8avgpool.qr; poolSize++) {
       AveragePoolingOperatorTester()
         .batchSize(3)
-        .inputHeight(2)
-        .inputWidth(poolSize + 2)
-        .poolingHeight(1)
-        .poolingWidth(poolSize)
-        .channels(channels)
-        .testQ8();
-      AveragePoolingOperatorTester()
-        .batchSize(3)
         .inputHeight(poolSize + 1)
         .inputWidth(3)
         .poolingHeight(poolSize)
         .poolingWidth(1)
+        .channels(channels)
+        .testQ8();
+      AveragePoolingOperatorTester()
+        .batchSize(3)
+        .inputHeight(2)
+        .inputWidth(poolSize + 2)
+        .poolingHeight(1)
+        .poolingWidth(poolSize)
         .channels(channels)
         .testQ8();
     }
@@ -1108,7 +1098,7 @@ TEST(AVERAGE_POOLING_OP, small_batch_many_channels_large_pool) {
 
 TEST(AVERAGE_POOLING_OP, small_batch_many_channels_large_pool_with_input_stride) {
   ASSERT_EQ(qnnp_status_success, qnnp_initialize());
-  for (size_t channels = qnnp_params.q8avgpool.kr; channels <= 3 * qnnp_params.q8avgpool.kr; channels++) {
+  for (size_t channels = qnnp_params.q8avgpool.kr; channels <= 3 * qnnp_params.q8avgpool.kr; channels += 5) {
     for (size_t poolSize = qnnp_params.q8avgpool.mr + 1; poolSize <= qnnp_params.q8avgpool.mr + qnnp_params.q8avgpool.qr; poolSize++) {
       AveragePoolingOperatorTester()
         .batchSize(3)
@@ -1134,7 +1124,7 @@ TEST(AVERAGE_POOLING_OP, small_batch_many_channels_large_pool_with_input_stride)
 
 TEST(AVERAGE_POOLING_OP, small_batch_many_channels_large_pool_with_output_stride) {
   ASSERT_EQ(qnnp_status_success, qnnp_initialize());
-  for (size_t channels = qnnp_params.q8avgpool.kr; channels <= 3 * qnnp_params.q8avgpool.kr; channels++) {
+  for (size_t channels = qnnp_params.q8avgpool.kr; channels <= 3 * qnnp_params.q8avgpool.kr; channels += 5) {
     for (size_t poolSize = qnnp_params.q8avgpool.mr + 1; poolSize <= qnnp_params.q8avgpool.mr + qnnp_params.q8avgpool.qr; poolSize++) {
       AveragePoolingOperatorTester()
         .batchSize(3)
@@ -1164,18 +1154,18 @@ TEST(AVERAGE_POOLING_OP, small_batch_few_channels) {
     for (size_t poolSize = 2; poolSize <= 2 * qnnp_params.q8avgpool.kr; poolSize++) {
       AveragePoolingOperatorTester()
         .batchSize(3)
-        .inputHeight(2)
-        .inputWidth(poolSize + 2)
-        .poolingHeight(1)
-        .poolingWidth(poolSize)
-        .channels(channels)
-        .testQ8();
-      AveragePoolingOperatorTester()
-        .batchSize(3)
         .inputHeight(poolSize + 1)
         .inputWidth(3)
         .poolingHeight(poolSize)
         .poolingWidth(1)
+        .channels(channels)
+        .testQ8();
+      AveragePoolingOperatorTester()
+        .batchSize(3)
+        .inputHeight(2)
+        .inputWidth(poolSize + 2)
+        .poolingHeight(1)
+        .poolingWidth(poolSize)
         .channels(channels)
         .testQ8();
     }
@@ -1185,7 +1175,7 @@ TEST(AVERAGE_POOLING_OP, small_batch_few_channels) {
 TEST(AVERAGE_POOLING_OP, small_batch_few_channels_with_input_stride) {
   ASSERT_EQ(qnnp_status_success, qnnp_initialize());
   for (size_t channels = 1; channels < qnnp_params.q8avgpool.kr; channels++) {
-    for (size_t poolSize = 2; poolSize <= 2 * qnnp_params.q8avgpool.kr; poolSize++) {
+    for (size_t poolSize = 2; poolSize <= 2 * qnnp_params.q8avgpool.kr; poolSize += 3) {
       AveragePoolingOperatorTester()
         .batchSize(3)
         .inputHeight(poolSize + 1)
@@ -1198,7 +1188,7 @@ TEST(AVERAGE_POOLING_OP, small_batch_few_channels_with_input_stride) {
       AveragePoolingOperatorTester()
         .batchSize(3)
         .inputHeight(2)
-        .inputWidth(poolSize + 1)
+        .inputWidth(poolSize + 2)
         .poolingHeight(1)
         .poolingWidth(poolSize)
         .channels(channels)
@@ -1211,7 +1201,7 @@ TEST(AVERAGE_POOLING_OP, small_batch_few_channels_with_input_stride) {
 TEST(AVERAGE_POOLING_OP, small_batch_few_channels_with_output_stride) {
   ASSERT_EQ(qnnp_status_success, qnnp_initialize());
   for (size_t channels = 1; channels < qnnp_params.q8avgpool.kr; channels++) {
-    for (size_t poolSize = 2; poolSize <= 2 * qnnp_params.q8avgpool.kr; poolSize++) {
+    for (size_t poolSize = 2; poolSize <= 2 * qnnp_params.q8avgpool.kr; poolSize += 3) {
       AveragePoolingOperatorTester()
         .batchSize(3)
         .inputHeight(poolSize + 1)
@@ -1224,7 +1214,7 @@ TEST(AVERAGE_POOLING_OP, small_batch_few_channels_with_output_stride) {
       AveragePoolingOperatorTester()
         .batchSize(3)
         .inputHeight(2)
-        .inputWidth(poolSize + 1)
+        .inputWidth(poolSize + 2)
         .poolingHeight(1)
         .poolingWidth(poolSize)
         .channels(channels)
