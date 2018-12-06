@@ -136,6 +136,7 @@ SET(QNNPACK_OPERATOR_SRCS
   src/deconvolution.c
   src/fully-connected.c
   src/add.c
+  src/max-pooling.c
   src/average-pooling.c
   src/global-average-pooling.c
   src/channel-shuffle.c)
@@ -376,6 +377,15 @@ IF(QNNPACK_BUILD_TESTS)
   TARGET_INCLUDE_DIRECTORIES(add-test PRIVATE src test)
   TARGET_LINK_LIBRARIES(add-test PRIVATE qnnpack cpuinfo gtest gtest_main)
   ADD_TEST(add-test add-test)
+
+  ADD_EXECUTABLE(max-pooling-test test/max-pooling.cc)
+  SET_TARGET_PROPERTIES(max-pooling-test PROPERTIES
+    CXX_STANDARD 11
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO)
+  TARGET_INCLUDE_DIRECTORIES(max-pooling-test PRIVATE src test)
+  TARGET_LINK_LIBRARIES(max-pooling-test PRIVATE qnnpack cpuinfo gtest gtest_main)
+  ADD_TEST(max-pooling-test max-pooling-test)
 
   ADD_EXECUTABLE(average-pooling-test test/average-pooling.cc)
   SET_TARGET_PROPERTIES(average-pooling-test PROPERTIES
