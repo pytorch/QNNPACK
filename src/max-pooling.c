@@ -52,7 +52,7 @@ enum qnnp_status qnnp_create_max_pooling2d_nhwc_u8(
   enum qnnp_status status = qnnp_status_uninitialized;
 
   if (!qnnp_params.initialized) {
-    qnnp_log_error("qnnp_create_max_pooling2d_nhwc_q8 failed because QNNPACK is not properly initialized");
+    qnnp_log_error("qnnp_create_max_pooling2d_nhwc_u8 failed because QNNPACK is not properly initialized");
     goto error;
   }
 
@@ -145,7 +145,7 @@ enum qnnp_status qnnp_setup_max_pooling2d_nhwc_u8(
     pthreadpool_t threadpool)
 {
   if (!qnnp_params.initialized) {
-    qnnp_log_error("qnnp_setup_max_pooling2d_nhwc_q8 failed because QNNPACK is not properly initialized");
+    qnnp_log_error("qnnp_setup_max_pooling2d_nhwc_u8 failed because QNNPACK is not properly initialized");
     return qnnp_status_uninitialized;
   }
 
