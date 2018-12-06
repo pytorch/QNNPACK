@@ -13,10 +13,6 @@
 #include <string.h>
 #include <math.h>
 
-#include <cpuinfo.h>
-#include <fp16.h>
-#include <fxdiv.h>
-
 #include <qnnpack.h>
 #include <qnnpack/operator.h>
 #include <qnnpack/requantization.h>

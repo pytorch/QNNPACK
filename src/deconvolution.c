@@ -13,15 +13,13 @@
 #include <string.h>
 #include <math.h>
 
-#include <cpuinfo.h>
-#include <fp16.h>
-
 #include <qnnpack.h>
 #include <qnnpack/operator.h>
 #include <qnnpack/requantization.h>
 #include <qnnpack/log.h>
 #include <qnnpack/math.h>
 #include <qnnpack/pack.h>
+#include <qnnpack/params.h>
 
 
 static inline size_t compute_output_dimension(

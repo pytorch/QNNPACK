@@ -14,14 +14,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <fxdiv.h>
-
 #include <qnnpack.h>
 #include <qnnpack/operator.h>
 #include <qnnpack/log.h>
 #include <qnnpack/common.h>
 #include <qnnpack/math.h>
-#include <qnnpack/pack.h>
 #include <qnnpack/params.h>
 
 
@@ -80,7 +77,7 @@ enum qnnp_status qnnp_create_average_pooling2d_nhwc_q8(
   if (stride_height == 0 || stride_width == 0) {
     qnnp_log_error(
       "failed to create average pooling with %" PRIu32 "x%" PRIu32 " stride: "
-      "subsampling dimensions must be non-zero",
+      "stride dimensions must be non-zero",
       stride_width, stride_height);
     goto error;
   }
@@ -267,7 +264,6 @@ enum qnnp_status qnnp_setup_average_pooling2d_nhwc_q8(
               const size_t index =
                 (image * output_height + output_y) * (pooling_size + (output_width * width_step - 1) * pooling_height) +
                 output_x * width_step * pooling_height + pooling_x * pooling_height + pooling_y;
-              assert(index * sizeof(void*) < indirection_buffer_size);
               if (input_x < input_width) {
                 indirection_buffer[index] = input + ((image * input_height + input_y) * input_width + input_x) * input_pixel_stride;
               } else {
@@ -281,7 +277,6 @@ enum qnnp_status qnnp_setup_average_pooling2d_nhwc_q8(
               const size_t index =
                 (image * output_height + output_y) * (pooling_size + (output_width * width_step - 1) * pooling_height) +
                 output_x * width_step * pooling_height + pooling_x * pooling_height + pooling_y;
-              assert(index * sizeof(void*) < indirection_buffer_size);
               indirection_buffer[index] = zero;
             }
           }

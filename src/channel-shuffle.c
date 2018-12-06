@@ -14,7 +14,6 @@
 
 #include <qnnpack.h>
 #include <qnnpack/operator.h>
-#include <qnnpack/requantization.h>
 #include <qnnpack/log.h>
 #include <qnnpack/params.h>
 
