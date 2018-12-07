@@ -62,9 +62,11 @@ def main(args):
                 ]
 
         qnnpack_objects = [
+            # Common parts
             build.cc("init.c"),
             build.cc("operator-delete.c"),
             build.cc("operator-run.c"),
+            # Operators
             build.cc("add.c"),
             build.cc("average-pooling.c"),
             build.cc("channel-shuffle.c"),
@@ -73,6 +75,9 @@ def main(args):
             build.cc("fully-connected.c"),
             build.cc("global-average-pooling.c"),
             build.cc("max-pooling.c"),
+            build.cc("sigmoid.c"),
+            # Scalar micro-kernels
+            build.cc("x8lut/scalar.c"),
         ]
 
         with build.options(isa=arm.neon if build.target.is_arm else None):
@@ -163,6 +168,7 @@ def main(args):
         build.unittest("hgemm-test", build.cxx("hgemm.cc"))
         build.unittest("sgemm-test", build.cxx("sgemm.cc"))
         build.unittest("x8zip-test", build.cxx("x8zip.cc"))
+        build.unittest("x8lut-test", build.cxx("x8lut.cc"))
         build.unittest("add-test", build.cxx("add.cc"))
         build.unittest("channel-shuffle-test", build.cxx("channel-shuffle.cc"))
         build.unittest("convolution-test", build.cxx("convolution.cc"))

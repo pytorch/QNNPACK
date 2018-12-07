@@ -317,6 +317,12 @@ typedef void (*xzipv_ukernel_function)(
     const void* x,
     void* y);
 
+typedef void (*x8lut_ukernel_function)(
+    size_t n,
+    const uint8_t* x,
+    const uint8_t* t,
+    uint8_t* y);
+
 typedef void (*sgemm_ukernel_function)(
     size_t mr,
     size_t nr,
@@ -499,6 +505,7 @@ struct qnnp_parameters {
   struct q8avgpool_parameters q8avgpool;
   struct u8maxpool_parameters u8maxpool;
   struct x8zip_parameters x8zip;
+  x8lut_ukernel_function x8lut;
   bool initialized;
 };
 

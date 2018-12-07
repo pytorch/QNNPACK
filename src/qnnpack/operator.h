@@ -27,6 +27,7 @@ enum qnnp_ukernel_type {
   qnnp_ukernel_type_xzp_gemm,
   qnnp_ukernel_type_dwconv,
   qnnp_ukernel_type_add,
+  qnnp_ukernel_type_lut,
   qnnp_ukernel_type_channel_shuffle,
   qnnp_ukernel_type_global_average_pooling,
   qnnp_ukernel_type_average_pooling,
@@ -85,6 +86,7 @@ struct qnnp_operator {
 
   void* zero_buffer;
   void* zero_pointer;
+  void* lookup_table;
 
   union {
     union qnnp_q31_requantization_params requantization_params;

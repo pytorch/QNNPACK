@@ -501,6 +501,46 @@ static void compute_channel_shuffle_variable(
   context->variable_ukernel(context->n, context->m, x, y);
 }
 
+struct lut_strided_context {
+  size_t n;
+  const void* x;
+  size_t x_stride;
+  const void* t;
+  void* y;
+  size_t y_stride;
+  x8lut_ukernel_function ukernel;
+};
+
+static void compute_lut_strided(
+    const struct lut_strided_context context[restrict static 1],
+    size_t batch_index)
+{
+  const void* x = (const void*) ((uintptr_t) context->x + context->x_stride * batch_index);
+  void* y = (void*) ((uintptr_t) context->y + context->y_stride * batch_index);
+
+  context->ukernel(context->n, x, context->t, y);
+}
+
+struct lut_contiguous_context {
+  const void* x;
+  size_t x_stride;
+  const void* t;
+  void* y;
+  size_t y_stride;
+  x8lut_ukernel_function ukernel;
+};
+
+static void compute_lut_contiguous(
+    const struct lut_contiguous_context context[restrict static 1],
+    size_t offset,
+    size_t size)
+{
+  const void* x = (const void*) ((uintptr_t) context->x + offset);
+  void* y = (void*) ((uintptr_t) context->y + offset);
+
+  context->ukernel(size, x, context->t, y);
+}
+
 enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
 {
   switch (op->ukernel_type) {
@@ -872,6 +912,43 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
       }
 
       pthreadpool_compute_1d(threadpool, compute_function, &context, op->batch_size);
+      break;
+    }
+    case qnnp_ukernel_type_lut:
+    {
+      const size_t batch_size = op->batch_size;
+      const size_t channels = op->channels;
+      const size_t x_stride = op->input_pixel_stride;
+      const size_t y_stride = op->output_pixel_stride;
+      if ((((x_stride ^ channels) | (y_stride ^ channels)) == 0) || batch_size == 1) {
+        const size_t block_size = 1024;
+        struct lut_contiguous_context context = {
+          .x = op->input,
+          .x_stride = x_stride * sizeof(uint8_t),
+          .t = op->lookup_table,
+          .y = op->output,
+          .y_stride = y_stride * sizeof(uint8_t),
+          .ukernel = qnnp_params.x8lut,
+        };
+        pthreadpool_compute_1d_tiled(
+          threadpool,
+          (pthreadpool_function_1d_tiled_t) compute_lut_contiguous, &context,
+          batch_size * channels * sizeof(uint8_t), block_size);
+      } else {
+        struct lut_strided_context context = {
+          .n = channels,
+          .x = op->input,
+          .x_stride = x_stride * sizeof(uint8_t),
+          .t = op->lookup_table,
+          .y = op->output,
+          .y_stride = y_stride * sizeof(uint8_t),
+          .ukernel = qnnp_params.x8lut,
+        };
+        pthreadpool_compute_1d(
+          threadpool,
+          (pthreadpool_function_1d_t) compute_lut_strided, &context,
+          batch_size);
+      }
       break;
     }
     case qnnp_ukernel_type_channel_shuffle:

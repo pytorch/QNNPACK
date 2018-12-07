@@ -23,6 +23,7 @@
 #include <qnnpack/q8gavgpool.h>
 #include <qnnpack/q8gemm.h>
 #include <qnnpack/u8maxpool.h>
+#include <qnnpack/x8lut.h>
 #include <qnnpack/x8zip.h>
 
 static pthread_once_t init_guard = PTHREAD_ONCE_INIT;
@@ -109,6 +110,7 @@ static void init(void) {
       .x4 = qnnp_x8zip_x4__neon,
       .xm = qnnp_x8zip_xm__neon,
   };
+  qnnp_params.x8lut = qnnp_x8lut__scalar;
 #elif CPUINFO_ARCH_ARM64
   qnnp_params.q8conv = (struct q8conv_parameters) {
       .gemm = q8gemm_ukernel_8x8__aarch64_neon,
@@ -159,6 +161,7 @@ static void init(void) {
       .x4 = qnnp_x8zip_x4__neon,
       .xm = qnnp_x8zip_xm__neon,
   };
+  qnnp_params.x8lut = qnnp_x8lut__scalar;
 #elif CPUINFO_ARCH_X86 || CPUINFO_ARCH_X86_64
   if (!cpuinfo_has_x86_sse2()) {
     qnnp_log_error("QNNPACK initialization failed: SSE2 is not supported");
@@ -213,6 +216,7 @@ static void init(void) {
       .x4 = qnnp_x8zip_x4__sse2,
       .xm = qnnp_x8zip_xm__sse2,
   };
+  qnnp_params.x8lut = x8lut_ukernel__scalar;
 #else
   #error "Unsupported architecture"
 #endif
