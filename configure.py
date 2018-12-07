@@ -170,6 +170,7 @@ def main(args):
         build.unittest("x8zip-test", build.cxx("x8zip.cc"))
         build.unittest("x8lut-test", build.cxx("x8lut.cc"))
         build.unittest("add-test", build.cxx("add.cc"))
+        build.unittest("sigmoid-test", build.cxx("sigmoid.cc"))
         build.unittest("channel-shuffle-test", build.cxx("channel-shuffle.cc"))
         build.unittest("convolution-test", build.cxx("convolution.cc"))
         build.unittest("deconvolution-test", build.cxx("deconvolution.cc"))

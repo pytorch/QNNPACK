@@ -110,7 +110,7 @@ static void init(void) {
       .x4 = qnnp_x8zip_x4__neon,
       .xm = qnnp_x8zip_xm__neon,
   };
-  qnnp_params.x8lut = qnnp_x8lut__scalar;
+  qnnp_params.x8lut = x8lut_ukernel__scalar;
 #elif CPUINFO_ARCH_ARM64
   qnnp_params.q8conv = (struct q8conv_parameters) {
       .gemm = q8gemm_ukernel_8x8__aarch64_neon,
@@ -161,7 +161,7 @@ static void init(void) {
       .x4 = qnnp_x8zip_x4__neon,
       .xm = qnnp_x8zip_xm__neon,
   };
-  qnnp_params.x8lut = qnnp_x8lut__scalar;
+  qnnp_params.x8lut = x8lut_ukernel__scalar;
 #elif CPUINFO_ARCH_X86 || CPUINFO_ARCH_X86_64
   if (!cpuinfo_has_x86_sse2()) {
     qnnp_log_error("QNNPACK initialization failed: SSE2 is not supported");

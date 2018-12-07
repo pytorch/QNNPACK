@@ -25,6 +25,7 @@ LOCAL_SRC_FILES += \
 	src/q8mpdw/25c8-neon.c \
 	src/u8maxpool/sub16-neon.c \
 	src/u8maxpool/16x9p8q-neon.c \
+	src/x8lut/scalar.c \
 	src/x8zip/x2-neon.c \
 	src/x8zip/x3-neon.c \
 	src/x8zip/x4-neon.c \
@@ -52,6 +53,7 @@ LOCAL_SRC_FILES += \
 	src/q8mpdw/25c8-neon.c \
 	src/u8maxpool/sub16-neon.c \
 	src/u8maxpool/16x9p8q-neon.c \
+	src/x8lut/scalar.c \
 	src/x8zip/x2-neon.c \
 	src/x8zip/x3-neon.c \
 	src/x8zip/x4-neon.c \
@@ -79,6 +81,7 @@ LOCAL_SRC_FILES += \
 	src/q8updw/9c8-sse2.c \
 	src/u8maxpool/sub16-sse2.c \
 	src/u8maxpool/16x9p8q-sse2.c \
+	src/x8lut/scalar.c \
 	src/x8zip/x2-sse2.c \
 	src/x8zip/x3-sse2.c \
 	src/x8zip/x4-sse2.c \
@@ -93,6 +96,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE = qnnpack_operators
 LOCAL_SRC_FILES := \
 	src/add.c \
+	src/sigmoid.c \
 	src/channel-shuffle.c \
 	src/convolution.c \
 	src/deconvolution.c \
