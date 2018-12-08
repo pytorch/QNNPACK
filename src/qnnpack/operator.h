@@ -28,6 +28,7 @@ enum qnnp_ukernel_type {
   qnnp_ukernel_type_dwconv,
   qnnp_ukernel_type_add,
   qnnp_ukernel_type_lut,
+  qnnp_ukernel_type_softargmax,
   qnnp_ukernel_type_channel_shuffle,
   qnnp_ukernel_type_global_average_pooling,
   qnnp_ukernel_type_average_pooling,

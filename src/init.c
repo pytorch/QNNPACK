@@ -23,6 +23,8 @@
 #include <qnnpack/q8gavgpool.h>
 #include <qnnpack/q8gemm.h>
 #include <qnnpack/u8maxpool.h>
+#include <qnnpack/u8rmax.h>
+#include <qnnpack/u8lut32norm.h>
 #include <qnnpack/x8lut.h>
 #include <qnnpack/x8zip.h>
 
@@ -110,6 +112,8 @@ static void init(void) {
       .x4 = qnnp_x8zip_x4__neon,
       .xm = qnnp_x8zip_xm__neon,
   };
+  qnnp_params.u8rmax = u8rmax_ukernel__neon;
+  qnnp_params.u8lut32norm = u8lut32norm_ukernel__scalar;
   qnnp_params.x8lut = x8lut_ukernel__scalar;
 #elif CPUINFO_ARCH_ARM64
   qnnp_params.q8conv = (struct q8conv_parameters) {
@@ -161,6 +165,8 @@ static void init(void) {
       .x4 = qnnp_x8zip_x4__neon,
       .xm = qnnp_x8zip_xm__neon,
   };
+  qnnp_params.u8rmax = u8rmax_ukernel__neon;
+  qnnp_params.u8lut32norm = u8lut32norm_ukernel__scalar;
   qnnp_params.x8lut = x8lut_ukernel__scalar;
 #elif CPUINFO_ARCH_X86 || CPUINFO_ARCH_X86_64
   if (!cpuinfo_has_x86_sse2()) {
@@ -216,6 +222,8 @@ static void init(void) {
       .x4 = qnnp_x8zip_x4__sse2,
       .xm = qnnp_x8zip_xm__sse2,
   };
+  qnnp_params.u8rmax = u8rmax_ukernel__sse2;
+  qnnp_params.u8lut32norm = u8lut32norm_ukernel__scalar;
   qnnp_params.x8lut = x8lut_ukernel__scalar;
 #else
   #error "Unsupported architecture"

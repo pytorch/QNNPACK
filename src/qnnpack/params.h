@@ -418,6 +418,16 @@ typedef void (*u8maxpool_ukernel_function)(
     size_t y_increment,
     const union qnnp_maxpool_quantization_params* quantization_params);
 
+typedef uint8_t (*u8rmax_ukernel_function)(
+    size_t n,
+    const uint8_t* x);
+
+typedef void (*u8lut32norm_ukernel_function)(
+    size_t n,
+    const uint8_t* x,
+    const uint32_t* t,
+    uint8_t* y);
+
 typedef void (*q8uvadd_ukernel_function)(
     size_t n,
     const uint8_t* a,
@@ -504,6 +514,8 @@ struct qnnp_parameters {
   struct q8gavgpool_parameters q8gavgpool;
   struct q8avgpool_parameters q8avgpool;
   struct u8maxpool_parameters u8maxpool;
+  u8lut32norm_ukernel_function u8lut32norm;
+  u8rmax_ukernel_function u8rmax;
   struct x8zip_parameters x8zip;
   x8lut_ukernel_function x8lut;
   bool initialized;

@@ -25,6 +25,8 @@ LOCAL_SRC_FILES += \
 	src/q8mpdw/25c8-neon.c \
 	src/u8maxpool/sub16-neon.c \
 	src/u8maxpool/16x9p8q-neon.c \
+	src/u8rmax/neon.c \
+	src/u8lut32norm/scalar.c \
 	src/x8lut/scalar.c \
 	src/x8zip/x2-neon.c \
 	src/x8zip/x3-neon.c \
@@ -32,7 +34,7 @@ LOCAL_SRC_FILES += \
 	src/x8zip/xm-neon.c
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/src
 LOCAL_CFLAGS := -std=c99 -Wall -O2 -march=armv7-a -mfloat-abi=softfp -mfpu=neon
-LOCAL_STATIC_LIBRARIES := cpuinfo
+LOCAL_STATIC_LIBRARIES := cpuinfo fxdiv
 include $(BUILD_STATIC_LIBRARY)
 endif # armeabi or armeabi-v7a
 
@@ -53,6 +55,8 @@ LOCAL_SRC_FILES += \
 	src/q8mpdw/25c8-neon.c \
 	src/u8maxpool/sub16-neon.c \
 	src/u8maxpool/16x9p8q-neon.c \
+	src/u8rmax/neon.c \
+	src/u8lut32norm/scalar.c \
 	src/x8lut/scalar.c \
 	src/x8zip/x2-neon.c \
 	src/x8zip/x3-neon.c \
@@ -60,7 +64,7 @@ LOCAL_SRC_FILES += \
 	src/x8zip/xm-neon.c
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/src
 LOCAL_CFLAGS := -std=c99 -Wall -O2
-LOCAL_STATIC_LIBRARIES := cpuinfo
+LOCAL_STATIC_LIBRARIES := cpuinfo fxdiv
 include $(BUILD_STATIC_LIBRARY)
 endif # arm64-v8a
 
@@ -81,6 +85,8 @@ LOCAL_SRC_FILES += \
 	src/q8updw/9c8-sse2.c \
 	src/u8maxpool/sub16-sse2.c \
 	src/u8maxpool/16x9p8q-sse2.c \
+	src/u8rmax/sse2.c \
+	src/u8lut32norm/scalar.c \
 	src/x8lut/scalar.c \
 	src/x8zip/x2-sse2.c \
 	src/x8zip/x3-sse2.c \
@@ -88,7 +94,7 @@ LOCAL_SRC_FILES += \
 	src/x8zip/xm-sse2.c
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/src
 LOCAL_CFLAGS := -std=c99 -Wall -O2
-LOCAL_STATIC_LIBRARIES := cpuinfo FP16
+LOCAL_STATIC_LIBRARIES := cpuinfo FP16 fxdiv
 include $(BUILD_STATIC_LIBRARY)
 endif # x86 or x86_64
 
@@ -97,6 +103,7 @@ LOCAL_MODULE = qnnpack_operators
 LOCAL_SRC_FILES := \
 	src/add.c \
 	src/sigmoid.c \
+	src/softargmax.c \
 	src/channel-shuffle.c \
 	src/convolution.c \
 	src/deconvolution.c \

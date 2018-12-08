@@ -265,6 +265,21 @@ enum qnnp_status qnnp_setup_channel_shuffle_nc_x8(
     uint8_t* output,
     size_t output_stride);
 
+enum qnnp_status qnnp_create_softargmax_nc_q8(
+    size_t channels,
+    float input_scale,
+    uint8_t output_zero_point,
+    float output_scale,
+    qnnp_operator_t* softargmax);
+
+enum qnnp_status qnnp_setup_softargmax_nc_q8(
+    qnnp_operator_t softargmax,
+    size_t batch_size,
+    const uint8_t* input,
+    size_t input_stride,
+    uint8_t* output,
+    size_t output_stride);
+
 enum qnnp_status qnnp_run_operator(
     qnnp_operator_t op,
     pthreadpool_t threadpool);

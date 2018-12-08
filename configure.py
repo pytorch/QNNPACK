@@ -76,7 +76,9 @@ def main(args):
             build.cc("global-average-pooling.c"),
             build.cc("max-pooling.c"),
             build.cc("sigmoid.c"),
+            build.cc("softargmax.c"),
             # Scalar micro-kernels
+            build.cc("u8lut32norm/scalar.c"),
             build.cc("x8lut/scalar.c"),
         ]
 
@@ -106,6 +108,7 @@ def main(args):
                     build.cc("q8avgpool/up8xm-neon.c"),
                     build.cc("u8maxpool/16x9p8q-neon.c"),
                     build.cc("u8maxpool/sub16-neon.c"),
+                    build.cc("u8rmax/neon.c"),
                     build.cc("x8zip/x2-neon.c"),
                     build.cc("x8zip/x3-neon.c"),
                     build.cc("x8zip/x4-neon.c"),
@@ -143,6 +146,7 @@ def main(args):
                         build.cc("q8avgpool/up8xm-sse2.c"),
                         build.cc("u8maxpool/16x9p8q-sse2.c"),
                         build.cc("u8maxpool/sub16-sse2.c"),
+                        build.cc("u8rmax/sse2.c"),
                         build.cc("x8zip/x2-sse2.c"),
                         build.cc("x8zip/x3-sse2.c"),
                         build.cc("x8zip/x4-sse2.c"),
@@ -165,12 +169,15 @@ def main(args):
         build.unittest("q8gavgpool-test", build.cxx("q8gavgpool.cc"))
         build.unittest("q8uvadd-test", build.cxx("q8uvadd.cc"))
         build.unittest("u8maxpool-test", build.cxx("u8maxpool.cc"))
+        build.unittest("u8rmax-test", build.cxx("u8rmax.cc"))
+        build.unittest("u8lut32norm-test", build.cxx("u8lut32norm.cc"))
         build.unittest("hgemm-test", build.cxx("hgemm.cc"))
         build.unittest("sgemm-test", build.cxx("sgemm.cc"))
         build.unittest("x8zip-test", build.cxx("x8zip.cc"))
         build.unittest("x8lut-test", build.cxx("x8lut.cc"))
         build.unittest("add-test", build.cxx("add.cc"))
         build.unittest("sigmoid-test", build.cxx("sigmoid.cc"))
+        build.unittest("softargmax-test", build.cxx("softargmax.cc"))
         build.unittest("channel-shuffle-test", build.cxx("channel-shuffle.cc"))
         build.unittest("convolution-test", build.cxx("convolution.cc"))
         build.unittest("deconvolution-test", build.cxx("deconvolution.cc"))

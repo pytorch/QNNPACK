@@ -541,6 +541,31 @@ static void compute_lut_contiguous(
   context->ukernel(size, x, context->t, y);
 }
 
+struct u8softargmax_context {
+  size_t n;
+  const uint8_t* x;
+  size_t x_stride;
+  const uint32_t* t;
+  uint8_t* y;
+  size_t y_stride;
+  u8rmax_ukernel_function rmax_ukernel;
+  u8lut32norm_ukernel_function lut_norm_ukernel;
+};
+
+static void compute_u8softargmax(
+    const struct u8softargmax_context context[restrict static 1],
+    size_t batch_index)
+{
+  const uint8_t* x = (const uint8_t*) ((uintptr_t) context->x + context->x_stride * batch_index);
+  uint8_t* y = (uint8_t*) ((uintptr_t) context->y + context->y_stride * batch_index);
+  const size_t n = context->n;
+
+  const uint8_t x_max = context->rmax_ukernel(n, x);
+  const size_t adjustment = x_max ^ 255;
+  const uint32_t* t = (const uint32_t*) context->t + adjustment;
+  context->lut_norm_ukernel(n, x, t, y);
+}
+
 enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
 {
   switch (op->ukernel_type) {
@@ -949,6 +974,24 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
           (pthreadpool_function_1d_t) compute_lut_strided, &context,
           batch_size);
       }
+      break;
+    }
+    case qnnp_ukernel_type_softargmax:
+    {
+      struct u8softargmax_context context = {
+        .n = op->channels,
+        .x = op->input,
+        .x_stride = op->input_pixel_stride * sizeof(uint8_t),
+        .t = op->lookup_table,
+        .y = op->output,
+        .y_stride = op->output_pixel_stride * sizeof(uint8_t),
+        .rmax_ukernel = qnnp_params.u8rmax,
+        .lut_norm_ukernel = qnnp_params.u8lut32norm,
+      };
+      pthreadpool_compute_1d(
+        threadpool,
+        (pthreadpool_function_1d_t) compute_u8softargmax, &context,
+        op->batch_size);
       break;
     }
     case qnnp_ukernel_type_channel_shuffle:

@@ -137,12 +137,14 @@ SET(QNNPACK_OPERATOR_SRCS
   src/fully-connected.c
   src/add.c
   src/sigmoid.c
+  src/softargmax.c
   src/max-pooling.c
   src/average-pooling.c
   src/global-average-pooling.c
   src/channel-shuffle.c)
 
 SET(QNNPACK_SCALAR_UKERNELS
+  src/u8lut32norm/scalar.c
   src/x8lut/scalar.c)
 
 SET(QNNPACK_PSIMD_UKERNELS
@@ -167,6 +169,7 @@ SET(QNNPACK_ARM_NEON_UKERNELS
   src/q8avgpool/up8xm-neon.c
   src/u8maxpool/16x9p8q-neon.c
   src/u8maxpool/sub16-neon.c
+  src/u8rmax/neon.c
   src/x8zip/x2-neon.c
   src/x8zip/x3-neon.c
   src/x8zip/x4-neon.c
@@ -200,6 +203,7 @@ SET(QNNPACK_X86_SSE2_UKERNELS
   src/q8avgpool/up8xm-sse2.c
   src/u8maxpool/16x9p8q-sse2.c
   src/u8maxpool/sub16-sse2.c
+  src/u8rmax/sse2.c
   src/x8zip/x2-sse2.c
   src/x8zip/x3-sse2.c
   src/x8zip/x4-sse2.c
@@ -398,6 +402,15 @@ IF(QNNPACK_BUILD_TESTS)
   TARGET_LINK_LIBRARIES(sigmoid-test PRIVATE qnnpack cpuinfo gtest gtest_main)
   ADD_TEST(sigmoid-test sigmoid-test)
 
+  ADD_EXECUTABLE(softargmax-test test/softargmax.cc)
+  SET_TARGET_PROPERTIES(softargmax-test PROPERTIES
+    CXX_STANDARD 11
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO)
+  TARGET_INCLUDE_DIRECTORIES(softargmax-test PRIVATE src test)
+  TARGET_LINK_LIBRARIES(softargmax-test PRIVATE qnnpack cpuinfo gtest gtest_main)
+  ADD_TEST(softargmax-test softargmax-test)
+
   ADD_EXECUTABLE(max-pooling-test test/max-pooling.cc)
   SET_TARGET_PROPERTIES(max-pooling-test PROPERTIES
     CXX_STANDARD 11
@@ -497,6 +510,24 @@ IF(QNNPACK_BUILD_TESTS)
   TARGET_INCLUDE_DIRECTORIES(u8maxpool-test PRIVATE src test)
   TARGET_LINK_LIBRARIES(u8maxpool-test PRIVATE qnnpack cpuinfo fp16 gtest gtest_main)
   ADD_TEST(u8maxpool-test u8maxpool-test)
+
+  ADD_EXECUTABLE(u8rmax-test test/u8rmax.cc)
+  SET_TARGET_PROPERTIES(u8rmax-test PROPERTIES
+    CXX_STANDARD 11
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO)
+  TARGET_INCLUDE_DIRECTORIES(u8rmax-test PRIVATE src test)
+  TARGET_LINK_LIBRARIES(u8rmax-test PRIVATE qnnpack cpuinfo fp16 gtest gtest_main)
+  ADD_TEST(u8rmax-test u8rmax-test)
+
+  ADD_EXECUTABLE(u8lut32norm-test test/u8lut32norm.cc)
+  SET_TARGET_PROPERTIES(u8lut32norm-test PROPERTIES
+    CXX_STANDARD 11
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO)
+  TARGET_INCLUDE_DIRECTORIES(u8lut32norm-test PRIVATE src test)
+  TARGET_LINK_LIBRARIES(u8lut32norm-test PRIVATE qnnpack cpuinfo fp16 gtest gtest_main)
+  ADD_TEST(u8lut32norm-test u8lut32norm-test)
 
   ADD_EXECUTABLE(x8lut-test test/x8lut.cc)
   SET_TARGET_PROPERTIES(x8lut-test PROPERTIES
