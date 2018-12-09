@@ -22,17 +22,18 @@ enum qnnp_format {
 
 enum qnnp_ukernel_type {
   qnnp_ukernel_type_none = 0,
-  qnnp_ukernel_type_conv,
-  qnnp_ukernel_type_gemm,
-  qnnp_ukernel_type_xzp_gemm,
-  qnnp_ukernel_type_dwconv,
   qnnp_ukernel_type_add,
-  qnnp_ukernel_type_lut,
-  qnnp_ukernel_type_softargmax,
-  qnnp_ukernel_type_channel_shuffle,
-  qnnp_ukernel_type_global_average_pooling,
   qnnp_ukernel_type_average_pooling,
+  qnnp_ukernel_type_channel_shuffle,
+  qnnp_ukernel_type_clamp,
+  qnnp_ukernel_type_conv,
+  qnnp_ukernel_type_dwconv,
+  qnnp_ukernel_type_gemm,
+  qnnp_ukernel_type_global_average_pooling,
+  qnnp_ukernel_type_lut,
   qnnp_ukernel_type_max_pooling,
+  qnnp_ukernel_type_softargmax,
+  qnnp_ukernel_type_xzp_gemm,
 };
 
 struct qnnp_operator {

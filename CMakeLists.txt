@@ -135,6 +135,7 @@ SET(QNNPACK_OPERATOR_SRCS
   src/add.c
   src/average-pooling.c
   src/channel-shuffle.c
+  src/clamp.c
   src/convolution.c
   src/deconvolution.c
   src/fully-connected.c
@@ -170,6 +171,7 @@ SET(QNNPACK_ARM_NEON_UKERNELS
   src/q8avgpool/up8xm-neon.c
   src/u8maxpool/16x9p8q-neon.c
   src/u8maxpool/sub16-neon.c
+  src/u8clamp/neon.c
   src/u8rmax/neon.c
   src/x8zip/x2-neon.c
   src/x8zip/x3-neon.c
@@ -204,6 +206,7 @@ SET(QNNPACK_X86_SSE2_UKERNELS
   src/q8avgpool/up8xm-sse2.c
   src/u8maxpool/16x9p8q-sse2.c
   src/u8maxpool/sub16-sse2.c
+  src/u8clamp/sse2.c
   src/u8rmax/sse2.c
   src/x8zip/x2-sse2.c
   src/x8zip/x3-sse2.c
@@ -412,6 +415,15 @@ IF(QNNPACK_BUILD_TESTS)
   TARGET_LINK_LIBRARIES(sigmoid-test PRIVATE qnnpack cpuinfo gtest gtest_main)
   ADD_TEST(sigmoid-test sigmoid-test)
 
+  ADD_EXECUTABLE(clamp-test test/clamp.cc)
+  SET_TARGET_PROPERTIES(clamp-test PROPERTIES
+    CXX_STANDARD 11
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO)
+  TARGET_INCLUDE_DIRECTORIES(clamp-test PRIVATE src test)
+  TARGET_LINK_LIBRARIES(clamp-test PRIVATE qnnpack cpuinfo gtest gtest_main)
+  ADD_TEST(clamp-test clamp-test)
+
   ADD_EXECUTABLE(softargmax-test test/softargmax.cc)
   SET_TARGET_PROPERTIES(softargmax-test PROPERTIES
     CXX_STANDARD 11
@@ -520,6 +532,15 @@ IF(QNNPACK_BUILD_TESTS)
   TARGET_INCLUDE_DIRECTORIES(u8maxpool-test PRIVATE src test)
   TARGET_LINK_LIBRARIES(u8maxpool-test PRIVATE qnnpack cpuinfo fp16 gtest gtest_main)
   ADD_TEST(u8maxpool-test u8maxpool-test)
+
+  ADD_EXECUTABLE(u8clamp-test test/u8clamp.cc)
+  SET_TARGET_PROPERTIES(u8clamp-test PROPERTIES
+    CXX_STANDARD 11
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO)
+  TARGET_INCLUDE_DIRECTORIES(u8clamp-test PRIVATE src test)
+  TARGET_LINK_LIBRARIES(u8clamp-test PRIVATE qnnpack cpuinfo fp16 gtest gtest_main)
+  ADD_TEST(u8clamp-test u8clamp-test)
 
   ADD_EXECUTABLE(u8rmax-test test/u8rmax.cc)
   SET_TARGET_PROPERTIES(u8rmax-test PROPERTIES

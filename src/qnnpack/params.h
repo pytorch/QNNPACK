@@ -521,6 +521,7 @@ struct qnnp_parameters {
   struct q8avgpool_parameters q8avgpool;
   struct u8maxpool_parameters u8maxpool;
   u8lut32norm_ukernel_function u8lut32norm;
+  u8clamp_ukernel_function u8clamp;
   u8rmax_ukernel_function u8rmax;
   struct x8zip_parameters x8zip;
   x8lut_ukernel_function x8lut;

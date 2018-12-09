@@ -67,21 +67,25 @@ TEST(U8CLAMP__SSE2, inplace) {
 
 TEST(U8CLAMP__SSE2, qmin) {
   for (size_t n = 1; n < 128; n += 11) {
-    ClampMicrokernelTester()
-      .iterations(1)
-      .n(n)
-      .qmin(128)
-      .test(u8clamp_ukernel__sse2);
+    for (uint8_t qmin = 1; qmin < 255; qmin++) {
+      ClampMicrokernelTester()
+        .iterations(1)
+        .n(n)
+        .qmin(qmin)
+        .test(u8clamp_ukernel__sse2);
+    }
   }
 }
 
 TEST(U8CLAMP__SSE2, qmax) {
   for (size_t n = 1; n < 128; n += 11) {
-    ClampMicrokernelTester()
-      .iterations(1)
-      .n(n)
-      .qmax(128)
-      .test(u8clamp_ukernel__sse2);
+    for (uint8_t qmax = 1; qmax < 255; qmax++) {
+      ClampMicrokernelTester()
+        .iterations(1)
+        .n(n)
+        .qmax(qmax)
+        .test(u8clamp_ukernel__sse2);
+    }
   }
 }
 #endif /* CPUINFO_ARCH_X86 || CPUINFO_ARCH_X86_64 */
@@ -129,21 +133,25 @@ TEST(U8CLAMP__NEON, inplace) {
 
 TEST(U8CLAMP__NEON, qmin) {
   for (size_t n = 1; n < 128; n += 11) {
-    ClampMicrokernelTester()
-      .iterations(1)
-      .n(n)
-      .qmin(128)
-      .test(u8clamp_ukernel__neon);
+    for (uint8_t qmin = 1; qmin < 255; qmin++) {
+      ClampMicrokernelTester()
+        .iterations(1)
+        .n(n)
+        .qmin(qmin)
+        .test(u8clamp_ukernel__neon);
+    }
   }
 }
 
 TEST(U8CLAMP__NEON, qmax) {
   for (size_t n = 1; n < 128; n += 11) {
-    ClampMicrokernelTester()
-      .iterations(1)
-      .n(n)
-      .qmax(128)
-      .test(u8clamp_ukernel__neon);
+    for (uint8_t qmax = 1; qmax < 255; qmax++) {
+      ClampMicrokernelTester()
+        .iterations(1)
+        .n(n)
+        .qmax(qmax)
+        .test(u8clamp_ukernel__neon);
+    }
   }
 }
 #endif /* CPUINFO_ARCH_ARM || CPUINFO_ARCH_ARM64 */

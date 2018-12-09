@@ -110,6 +110,10 @@ class ClampMicrokernelTester {
 
       /* Verify results */
       for (size_t i = 0; i < n(); i++) {
+        ASSERT_LE(uint32_t(y[i]), uint32_t(qmax()))
+          << "at position " << i << ", n = " << n();
+        ASSERT_GE(uint32_t(y[i]), uint32_t(qmin()))
+          << "at position " << i << ", n = " << n();
         ASSERT_EQ(uint32_t(yRef[i]), uint32_t(y[i]))
           << "at position " << i << ", n = " << n()
           << ", qmin = " << qmin() << ", qmax = " << qmax();

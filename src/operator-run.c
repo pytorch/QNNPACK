@@ -541,6 +541,44 @@ static void compute_lut_contiguous(
   context->ukernel(size, x, context->t, y);
 }
 
+struct clamp_strided_context {
+  size_t n;
+  const void* x;
+  size_t x_stride;
+  void* y;
+  size_t y_stride;
+  u8clamp_ukernel_function ukernel;
+  union qnnp_u8_clamping_params params;
+};
+
+static void compute_clamp_strided(
+    const struct clamp_strided_context context[restrict static 1],
+    size_t batch_index)
+{
+  const void* x = (const void*) ((uintptr_t) context->x + context->x_stride * batch_index);
+  void* y = (void*) ((uintptr_t) context->y + context->y_stride * batch_index);
+  context->ukernel(context->n, x, y, &context->params);
+}
+
+struct clamp_contiguous_context {
+  const void* x;
+  size_t x_stride;
+  void* y;
+  size_t y_stride;
+  u8clamp_ukernel_function ukernel;
+  union qnnp_u8_clamping_params params;
+};
+
+static void compute_clamp_contiguous(
+    const struct clamp_contiguous_context context[restrict static 1],
+    size_t offset,
+    size_t size)
+{
+  const void* x = (const void*) ((uintptr_t) context->x + offset);
+  void* y = (void*) ((uintptr_t) context->y + offset);
+  context->ukernel(size, x, y, &context->params);
+}
+
 struct u8softargmax_context {
   size_t n;
   const uint8_t* x;
@@ -972,6 +1010,43 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
         pthreadpool_compute_1d(
           threadpool,
           (pthreadpool_function_1d_t) compute_lut_strided, &context,
+          batch_size);
+      }
+      break;
+    }
+    case qnnp_ukernel_type_clamp:
+    {
+      const size_t batch_size = op->batch_size;
+      const size_t channels = op->channels;
+      const size_t x_stride = op->input_pixel_stride;
+      const size_t y_stride = op->output_pixel_stride;
+      if ((((x_stride ^ channels) | (y_stride ^ channels)) == 0) || batch_size == 1) {
+        const size_t block_size = 4096;
+        struct clamp_contiguous_context context = {
+          .x = op->input,
+          .x_stride = x_stride * sizeof(uint8_t),
+          .y = op->output,
+          .y_stride = y_stride * sizeof(uint8_t),
+          .ukernel = qnnp_params.u8clamp,
+          .params = op->u8_clamping_params,
+        };
+        pthreadpool_compute_1d_tiled(
+          threadpool,
+          (pthreadpool_function_1d_tiled_t) compute_clamp_contiguous, &context,
+          batch_size * channels * sizeof(uint8_t), block_size);
+      } else {
+        struct clamp_strided_context context = {
+          .n = channels,
+          .x = op->input,
+          .x_stride = x_stride * sizeof(uint8_t),
+          .y = op->output,
+          .y_stride = y_stride * sizeof(uint8_t),
+          .ukernel = qnnp_params.u8clamp,
+          .params = op->u8_clamping_params,
+        };
+        pthreadpool_compute_1d(
+          threadpool,
+          (pthreadpool_function_1d_t) compute_clamp_strided, &context,
           batch_size);
       }
       break;

@@ -70,6 +70,7 @@ def main(args):
             build.cc("add.c"),
             build.cc("average-pooling.c"),
             build.cc("channel-shuffle.c"),
+            build.cc("clamp.c"),
             build.cc("convolution.c"),
             build.cc("deconvolution.c"),
             build.cc("fully-connected.c"),
@@ -178,17 +179,19 @@ def main(args):
         build.unittest("sgemm-test", build.cxx("sgemm.cc"))
         build.unittest("x8zip-test", build.cxx("x8zip.cc"))
         build.unittest("x8lut-test", build.cxx("x8lut.cc"))
+
         build.unittest("add-test", build.cxx("add.cc"))
-        build.unittest("sigmoid-test", build.cxx("sigmoid.cc"))
-        build.unittest("leaky-relu-test", build.cxx("leaky-relu.cc"))
-        build.unittest("softargmax-test", build.cxx("softargmax.cc"))
+        build.unittest("average-pooling-test", build.cxx("average-pooling.cc"))
         build.unittest("channel-shuffle-test", build.cxx("channel-shuffle.cc"))
+        build.unittest("clamp-test", build.cxx("clamp.cc"))
         build.unittest("convolution-test", build.cxx("convolution.cc"))
         build.unittest("deconvolution-test", build.cxx("deconvolution.cc"))
-        build.unittest("global-average-pooling-test", build.cxx("global-average-pooling.cc"))
-        build.unittest("average-pooling-test", build.cxx("average-pooling.cc"))
-        build.unittest("max-pooling-test", build.cxx("max-pooling.cc"))
         build.unittest("fully-connected-test", build.cxx("fully-connected.cc"))
+        build.unittest("global-average-pooling-test", build.cxx("global-average-pooling.cc"))
+        build.unittest("leaky-relu-test", build.cxx("leaky-relu.cc"))
+        build.unittest("max-pooling-test", build.cxx("max-pooling.cc"))
+        build.unittest("sigmoid-test", build.cxx("sigmoid.cc"))
+        build.unittest("softargmax-test", build.cxx("softargmax.cc"))
         build.unittest("requantization-test", [build.cxx("requantization.cc")] + requantization_objects)
 
     benchmark_isa = None

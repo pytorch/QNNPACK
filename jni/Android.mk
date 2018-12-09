@@ -25,6 +25,7 @@ LOCAL_SRC_FILES += \
 	src/q8mpdw/25c8-neon.c \
 	src/u8maxpool/sub16-neon.c \
 	src/u8maxpool/16x9p8q-neon.c \
+	src/u8clamp/neon.c \
 	src/u8rmax/neon.c \
 	src/u8lut32norm/scalar.c \
 	src/x8lut/scalar.c \
@@ -55,6 +56,7 @@ LOCAL_SRC_FILES += \
 	src/q8mpdw/25c8-neon.c \
 	src/u8maxpool/sub16-neon.c \
 	src/u8maxpool/16x9p8q-neon.c \
+	src/u8clamp/neon.c \
 	src/u8rmax/neon.c \
 	src/u8lut32norm/scalar.c \
 	src/x8lut/scalar.c \
@@ -85,6 +87,7 @@ LOCAL_SRC_FILES += \
 	src/q8updw/9c8-sse2.c \
 	src/u8maxpool/sub16-sse2.c \
 	src/u8maxpool/16x9p8q-sse2.c \
+	src/u8clamp/sse2.c \
 	src/u8rmax/sse2.c \
 	src/u8lut32norm/scalar.c \
 	src/x8lut/scalar.c \
@@ -104,6 +107,7 @@ LOCAL_SRC_FILES := \
 	src/add.c \
 	src/average-pooling.c \
 	src/channel-shuffle.c \
+	src/clamp.c \
 	src/convolution.c \
 	src/deconvolution.c \
 	src/fully-connected.c \
