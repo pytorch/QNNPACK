@@ -522,35 +522,33 @@ enum qnnp_status qnnp_setup_convolution2d_nhwc_q8(
       convolution->indirection_buffer = indirection_buffer;
 
       const void* zero = convolution->zero_pointer;
-      for (size_t group = 0; group < groups; group++) {
-        for (size_t image = 0; image < batch_size; image++) {
-          for (size_t output_y = 0; output_y < output_height; output_y++) {
-            for (size_t kernel_y = 0; kernel_y < kernel_height; kernel_y++) {
-              const size_t input_y =
-                output_y * convolution->stride_height + kernel_y * convolution->dilation_height - convolution->input_padding_top;
-              if (input_y < input_height) {
-                for (size_t output_x = 0; output_x < output_width; output_x++) {
-                  for (size_t kernel_x = 0; kernel_x < kernel_width; kernel_x++) {
-                    const size_t input_x =
-                      output_x * convolution->stride_width + kernel_x * convolution->dilation_width - convolution->input_padding_left;
-                    const size_t index =
-                      (image * output_height + output_y) * (kernel_size + (output_width * width_step - 1) * kernel_height) +
-                      output_x * width_step * kernel_height + kernel_x * kernel_height + kernel_y;
-                    if (input_x < input_width) {
-                      indirection_buffer[index] = input + ((image * input_height + input_y) * input_width + input_x) * input_pixel_stride;
-                    } else {
-                      indirection_buffer[index] = zero;
-                    }
-                  }
-                }
-              } else {
-                for (size_t output_x = 0; output_x < output_width; output_x++) {
-                  for (size_t kernel_x = 0; kernel_x < kernel_width; kernel_x++) {
-                    const size_t index =
-                      (image * output_height + output_y) * (kernel_size + (output_width * width_step - 1) * kernel_height) +
-                      output_x * width_step * kernel_height + kernel_x * kernel_height + kernel_y;
+      for (size_t image = 0; image < batch_size; image++) {
+        for (size_t output_y = 0; output_y < output_height; output_y++) {
+          for (size_t kernel_y = 0; kernel_y < kernel_height; kernel_y++) {
+            const size_t input_y =
+              output_y * convolution->stride_height + kernel_y * convolution->dilation_height - convolution->input_padding_top;
+            if (input_y < input_height) {
+              for (size_t output_x = 0; output_x < output_width; output_x++) {
+                for (size_t kernel_x = 0; kernel_x < kernel_width; kernel_x++) {
+                  const size_t input_x =
+                    output_x * convolution->stride_width + kernel_x * convolution->dilation_width - convolution->input_padding_left;
+                  const size_t index =
+                    (image * output_height + output_y) * (kernel_size + (output_width * width_step - 1) * kernel_height) +
+                    output_x * width_step * kernel_height + kernel_x * kernel_height + kernel_y;
+                  if (input_x < input_width) {
+                    indirection_buffer[index] = input + ((image * input_height + input_y) * input_width + input_x) * input_pixel_stride;
+                  } else {
                     indirection_buffer[index] = zero;
                   }
+                }
+              }
+            } else {
+              for (size_t output_x = 0; output_x < output_width; output_x++) {
+                for (size_t kernel_x = 0; kernel_x < kernel_width; kernel_x++) {
+                  const size_t index =
+                    (image * output_height + output_y) * (kernel_size + (output_width * width_step - 1) * kernel_height) +
+                    output_x * width_step * kernel_height + kernel_x * kernel_height + kernel_y;
+                  indirection_buffer[index] = zero;
                 }
               }
             }
