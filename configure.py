@@ -74,6 +74,7 @@ def main(args):
             build.cc("deconvolution.c"),
             build.cc("fully-connected.c"),
             build.cc("global-average-pooling.c"),
+            build.cc("leaky-relu.c"),
             build.cc("max-pooling.c"),
             build.cc("sigmoid.c"),
             build.cc("softargmax.c"),
@@ -177,6 +178,7 @@ def main(args):
         build.unittest("x8lut-test", build.cxx("x8lut.cc"))
         build.unittest("add-test", build.cxx("add.cc"))
         build.unittest("sigmoid-test", build.cxx("sigmoid.cc"))
+        build.unittest("leaky-relu-test", build.cxx("leaky-relu.cc"))
         build.unittest("softargmax-test", build.cxx("softargmax.cc"))
         build.unittest("channel-shuffle-test", build.cxx("channel-shuffle.cc"))
         build.unittest("convolution-test", build.cxx("convolution.cc"))

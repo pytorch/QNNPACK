@@ -102,15 +102,16 @@ include $(CLEAR_VARS)
 LOCAL_MODULE = qnnpack_operators
 LOCAL_SRC_FILES := \
 	src/add.c \
-	src/sigmoid.c \
-	src/softargmax.c \
+	src/average-pooling.c \
 	src/channel-shuffle.c \
 	src/convolution.c \
 	src/deconvolution.c \
 	src/fully-connected.c \
-	src/max-pooling.c \
-	src/average-pooling.c \
 	src/global-average-pooling.c \
+	src/leaky-relu.c \
+	src/max-pooling.c \
+	src/sigmoid.c \
+	src/softargmax.c \
 	src/operator-run.c
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/include $(LOCAL_PATH)/src
 LOCAL_CFLAGS := -std=c99 -Wall -O2

@@ -132,16 +132,17 @@ SET(QNNPACK_INIT_SRCS src/init.c)
 SET(QNNPACK_OPERATOR_SRCS
   src/operator-delete.c
   src/operator-run.c
+  src/add.c
+  src/average-pooling.c
+  src/channel-shuffle.c
   src/convolution.c
   src/deconvolution.c
   src/fully-connected.c
-  src/add.c
-  src/sigmoid.c
-  src/softargmax.c
-  src/max-pooling.c
-  src/average-pooling.c
   src/global-average-pooling.c
-  src/channel-shuffle.c)
+  src/leaky-relu.c
+  src/max-pooling.c
+  src/sigmoid.c
+  src/softargmax.c)
 
 SET(QNNPACK_SCALAR_UKERNELS
   src/u8lut32norm/scalar.c
@@ -392,6 +393,15 @@ IF(QNNPACK_BUILD_TESTS)
   TARGET_INCLUDE_DIRECTORIES(add-test PRIVATE src test)
   TARGET_LINK_LIBRARIES(add-test PRIVATE qnnpack cpuinfo gtest gtest_main)
   ADD_TEST(add-test add-test)
+
+  ADD_EXECUTABLE(leaky-relu-test test/leaky-relu.cc)
+  SET_TARGET_PROPERTIES(leaky-relu-test PROPERTIES
+    CXX_STANDARD 11
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO)
+  TARGET_INCLUDE_DIRECTORIES(leaky-relu-test PRIVATE src test)
+  TARGET_LINK_LIBRARIES(leaky-relu-test PRIVATE qnnpack cpuinfo gtest gtest_main)
+  ADD_TEST(leaky-relu-test leaky-relu-test)
 
   ADD_EXECUTABLE(sigmoid-test test/sigmoid.cc)
   SET_TARGET_PROPERTIES(sigmoid-test PROPERTIES

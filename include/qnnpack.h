@@ -212,6 +212,19 @@ enum qnnp_status qnnp_setup_max_pooling2d_nhwc_u8(
     size_t output_stride,
     pthreadpool_t threadpool);
 
+enum qnnp_status qnnp_create_channel_shuffle_nc_x8(
+    size_t groups,
+    size_t group_channels,
+    qnnp_operator_t* channel_shuffle);
+
+enum qnnp_status qnnp_setup_channel_shuffle_nc_x8(
+    qnnp_operator_t channel_shuffle,
+    size_t batch_size,
+    const uint8_t* input,
+    size_t input_stride,
+    uint8_t* output,
+    size_t output_stride);
+
 enum qnnp_status qnnp_create_add_nc_q8(
     size_t channels,
     uint8_t a_zero_point,
@@ -252,13 +265,19 @@ enum qnnp_status qnnp_setup_sigmoid_nc_q8(
     uint8_t* output,
     size_t output_stride);
 
-enum qnnp_status qnnp_create_channel_shuffle_nc_x8(
-    size_t groups,
-    size_t group_channels,
-    qnnp_operator_t* channel_shuffle);
+enum qnnp_status qnnp_create_leaky_relu_nc_q8(
+    size_t channels,
+    float negative_slope,
+    uint8_t input_zero_point,
+    float input_scale,
+    uint8_t output_zero_point,
+    float output_scale,
+    uint8_t output_min,
+    uint8_t output_max,
+    qnnp_operator_t* leaky_relu);
 
-enum qnnp_status qnnp_setup_channel_shuffle_nc_x8(
-    qnnp_operator_t channel_shuffle,
+enum qnnp_status qnnp_setup_leaky_relu_nc_q8(
+    qnnp_operator_t leaky_relu,
     size_t batch_size,
     const uint8_t* input,
     size_t input_stride,
