@@ -189,7 +189,7 @@ void q8uvadd_ukernel__neon(
       vy = vmin_u8(vy, vget_low_u8(vy_max));
 
       vst1_u8(y, vy); y += 8;
-    } while (n >= 8);
+    }
     if (n != 0) {
       const size_t n_increment = n - 8;
       const int64x1_t vld_shift = vmov_n_s64(8 * n_increment);
