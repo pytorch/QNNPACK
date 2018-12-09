@@ -1,7 +1,25 @@
 # QNNPACK
-QNNPACK (Quantized Neural Networks PACKage) is a mobile-optimized library for low-precision high-performance neural network inference. QNNPACK provides implementation of convolutional, deconvolutional, and fully connected neural network operators on quantized 8-bit tensors.
+QNNPACK (Quantized Neural Networks PACKage) is a mobile-optimized library for low-precision high-performance neural network inference. QNNPACK provides implementation of common neural network operators on quantized 8-bit tensors.
 
 QNNPACK is not intended to be directly used by machine learning researchers; instead it provides low-level performance primitives for high-level deep learning frameworks. As of today, QNNPACK is integrated in [PyTorch 1.0](https://github.com/pytorch/pytorch) with Caffe2 graph representation.
+
+## Operator Coverage
+
+Currently implemented and planned for implementation operators are below:
+
+- [x] 2D Convolution
+- [x] 2D Deconvolution
+- [x] Channel Shuffle
+- [x] Fully Connected
+- [ ] Locally Connected
+- [x] 2D Max Pooling
+- [x] 2D Average Pooling
+- [x] Global Average Pooling
+- [x] Sigmoid
+- [x] Leaky ReLU
+- [x] Clamp (can be used for ReLU, ReLU6 if it is not fused in another operator)
+- [x] SoftArgMax (aka SoftMax)
+- [ ] Group Normalization
 
 ## Building
 
