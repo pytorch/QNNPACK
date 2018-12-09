@@ -109,6 +109,7 @@ def main(args):
                     build.cc("q8avgpool/up8xm-neon.c"),
                     build.cc("u8maxpool/16x9p8q-neon.c"),
                     build.cc("u8maxpool/sub16-neon.c"),
+                    build.cc("u8clamp/neon.c"),
                     build.cc("u8rmax/neon.c"),
                     build.cc("x8zip/x2-neon.c"),
                     build.cc("x8zip/x3-neon.c"),
@@ -147,6 +148,7 @@ def main(args):
                         build.cc("q8avgpool/up8xm-sse2.c"),
                         build.cc("u8maxpool/16x9p8q-sse2.c"),
                         build.cc("u8maxpool/sub16-sse2.c"),
+                        build.cc("u8clamp/sse2.c"),
                         build.cc("u8rmax/sse2.c"),
                         build.cc("x8zip/x2-sse2.c"),
                         build.cc("x8zip/x3-sse2.c"),
@@ -154,7 +156,6 @@ def main(args):
                         build.cc("x8zip/xm-sse2.c"),
                     ]
             build.static_library("qnnpack", qnnpack_objects)
-
 
     with build.options(source_dir="test",
             deps={
@@ -170,6 +171,7 @@ def main(args):
         build.unittest("q8gavgpool-test", build.cxx("q8gavgpool.cc"))
         build.unittest("q8uvadd-test", build.cxx("q8uvadd.cc"))
         build.unittest("u8maxpool-test", build.cxx("u8maxpool.cc"))
+        build.unittest("u8clamp-test", build.cxx("u8clamp.cc"))
         build.unittest("u8rmax-test", build.cxx("u8rmax.cc"))
         build.unittest("u8lut32norm-test", build.cxx("u8lut32norm.cc"))
         build.unittest("hgemm-test", build.cxx("hgemm.cc"))

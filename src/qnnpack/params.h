@@ -418,6 +418,12 @@ typedef void (*u8maxpool_ukernel_function)(
     size_t y_increment,
     const union qnnp_u8_clamping_params* params);
 
+typedef void (*u8clamp_ukernel_function)(
+    size_t n,
+    const uint8_t* x,
+    uint8_t* y,
+    const union qnnp_u8_clamping_params* params);
+
 typedef uint8_t (*u8rmax_ukernel_function)(
     size_t n,
     const uint8_t* x);
