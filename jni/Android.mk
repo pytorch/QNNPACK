@@ -134,7 +134,14 @@ LOCAL_SRC_FILES := \
 	src/operator-delete.c
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/include
 LOCAL_C_INCLUDES := $(LOCAL_EXPORT_C_INCLUDES) $(LOCAL_PATH)/src
-LOCAL_CFLAGS := -std=c99 -Wall -Oz
+LOCAL_CFLAGS := -std=c99 -Wall
+ifeq (,$(findstring 4.9,$(NDK_TOOLCHAIN)))
+# Clang compiler supports -Oz
+LOCAL_CFLAGS += -Oz
+else
+# gcc-4.9 compiler supports only -Os
+LOCAL_CFLAGS += -Os
+endif
 ifeq ($(NDK_DEBUG),1)
 LOCAL_CFLAGS += -DQNNP_LOG_LEVEL=5
 else

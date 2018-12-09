@@ -12,5 +12,12 @@ LOCAL_SRC_FILES := src/clog.c
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/include
 LOCAL_C_INCLUDES := $(LOCAL_EXPORT_C_INCLUDES)
 LOCAL_CFLAGS := -std=c99 -Wall
+ifeq (,$(findstring 4.9,$(NDK_TOOLCHAIN)))
+# Clang compiler supports -Oz
+LOCAL_CFLAGS += -Oz
+else
+# gcc-4.9 compiler supports only -Os
+LOCAL_CFLAGS += -Os
+endif
 LOCAL_EXPORT_LDLIBS := -llog
 include $(BUILD_STATIC_LIBRARY)
