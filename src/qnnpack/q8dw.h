@@ -12,13 +12,14 @@
 #include <stdint.h>
 
 #include <qnnpack/params.h>
+#include <qnnpack/common.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #define DECLARE_Q8UPDW_FUNCTION(fn_name)                             \
-  void fn_name(                                                      \
+  QNNP_INTERNAL void fn_name(                                        \
     size_t channels,                                                 \
     size_t output_width,                                             \
     const uint8_t** input,                                           \
@@ -33,7 +34,7 @@ DECLARE_Q8UPDW_FUNCTION(q8updw_ukernel_9c8__aarch32_neon)
 DECLARE_Q8UPDW_FUNCTION(q8updw_ukernel_9c8__sse2)
 
 #define DECLARE_Q8MPDW_FUNCTION(fn_name)                             \
-  void fn_name(                                                      \
+  QNNP_INTERNAL void fn_name(                                        \
     size_t channels,                                                 \
     size_t output_width,                                             \
     const uint8_t** input,                                           \

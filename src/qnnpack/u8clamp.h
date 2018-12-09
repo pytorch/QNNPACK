@@ -12,13 +12,14 @@
 #include <stdint.h>
 
 #include <qnnpack/params.h>
+#include <qnnpack/common.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #define DECLARE_U8CLAMP_UKERNEL_FUNCTION(fn_name)   \
-  void fn_name(                                     \
+  QNNP_INTERNAL void fn_name(                       \
       size_t n,                                     \
       const uint8_t* x,                             \
       uint8_t* y,                                   \

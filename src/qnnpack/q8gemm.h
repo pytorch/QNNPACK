@@ -12,13 +12,14 @@
 #include <stdint.h>
 
 #include <qnnpack/params.h>
+#include <qnnpack/common.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #define DECLARE_Q8GEMM_UKERNEL_FUNCTION(fn_name)                       \
-  void fn_name(                                                        \
+  QNNP_INTERNAL void fn_name(                                          \
       size_t mr,                                                       \
       size_t nr,                                                       \
       size_t k,                                                        \
@@ -43,7 +44,7 @@ DECLARE_Q8GEMM_UKERNEL_FUNCTION(q8gemm_ukernel_2x4c8__sse2)
 DECLARE_Q8GEMM_UKERNEL_FUNCTION(q8gemm_ukernel_4x4c2__sse2)
 
 #define DECLARE_Q8GEMM_XZP_UKERNEL_FUNCTION(fn_name) \
-  void fn_name(                                      \
+  QNNP_INTERNAL void fn_name(                        \
       size_t mr,                                     \
       size_t nr,                                     \
       size_t k,                                      \
@@ -57,7 +58,7 @@ DECLARE_Q8GEMM_UKERNEL_FUNCTION(q8gemm_ukernel_4x4c2__sse2)
 DECLARE_Q8GEMM_XZP_UKERNEL_FUNCTION(q8gemm_xzp_ukernel_4x8c2__neon)
 DECLARE_Q8GEMM_XZP_UKERNEL_FUNCTION(q8gemm_xzp_ukernel_4x8c2__aarch32_neon)
 
-void q8sumrows_ukernel_4x__neon(
+QNNP_INTERNAL void q8sumrows_ukernel_4x__neon(
     const uint8_t* a,
     size_t m,
     size_t k,

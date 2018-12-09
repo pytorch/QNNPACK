@@ -528,4 +528,4 @@ struct qnnp_parameters {
   bool initialized;
 };
 
-extern struct qnnp_parameters qnnp_params;
+extern QNNP_INTERNAL struct qnnp_parameters qnnp_params;

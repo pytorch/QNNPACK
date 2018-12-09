@@ -12,13 +12,14 @@
 #include <stdint.h>
 
 #include <qnnpack/params.h>
+#include <qnnpack/common.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #define DECLARE_Q8MPGAVGPOOL_UKERNEL_FUNCTION(fn_name)                    \
-  void fn_name(                                                           \
+  QNNP_INTERNAL void fn_name(                                             \
       size_t m,                                                           \
       size_t n,                                                           \
       const uint8_t* x,                                                   \
@@ -32,7 +33,7 @@ DECLARE_Q8MPGAVGPOOL_UKERNEL_FUNCTION(q8gavgpool_ukernel_mp8x7__neon)
 DECLARE_Q8MPGAVGPOOL_UKERNEL_FUNCTION(q8gavgpool_ukernel_mp8x7__sse2)
 
 #define DECLARE_Q8UPGAVGPOOL_UKERNEL_FUNCTION(fn_name)                    \
-  void fn_name(                                                           \
+  QNNP_INTERNAL void fn_name(                                             \
       size_t m,                                                           \
       size_t n,                                                           \
       const uint8_t* x,                                                   \

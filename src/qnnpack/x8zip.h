@@ -12,13 +12,14 @@
 #include <stdint.h>
 
 #include <qnnpack/params.h>
+#include <qnnpack/common.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #define DECLARE_XZIPC_UKERNEL_FUNCTION(fn_name) \
-  void fn_name(                                 \
+  QNNP_INTERNAL void fn_name(                   \
       size_t n,                                 \
       const void* x,                            \
       void* y);
@@ -32,7 +33,7 @@ DECLARE_XZIPC_UKERNEL_FUNCTION(qnnp_x8zip_x4__sse2)
 
 
 #define DECLARE_XZIPV_UKERNEL_FUNCTION(fn_name) \
-  void fn_name(                                 \
+  QNNP_INTERNAL void fn_name(                   \
       size_t n,                                 \
       size_t m,                                 \
       const void* x,                            \
