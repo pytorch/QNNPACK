@@ -94,7 +94,7 @@ struct qnnp_operator {
     union qnnp_conv_quantization_params conv_quantization_params;
     union qnnp_add_quantization_params add_quantization_params;
     union qnnp_avgpool_quantization_params avgpool_quantization_params;
-    union qnnp_maxpool_quantization_params maxpool_quantization_params;
+    union qnnp_u8_clamping_params u8_clamping_params;
   };
   enum qnnp_ukernel_type ukernel_type;
   enum qnnp_format format;

@@ -245,7 +245,7 @@ union qnnp_avgpool_quantization_params {
 #endif
 };
 
-union qnnp_maxpool_quantization_params {
+union qnnp_u8_clamping_params {
   struct {
     int32_t output_max;
     int32_t output_min;
@@ -416,7 +416,7 @@ typedef void (*u8maxpool_ukernel_function)(
     uint8_t* y,
     size_t x_increment,
     size_t y_increment,
-    const union qnnp_maxpool_quantization_params* quantization_params);
+    const union qnnp_u8_clamping_params* params);
 
 typedef uint8_t (*u8rmax_ukernel_function)(
     size_t n,

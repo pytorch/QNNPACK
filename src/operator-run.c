@@ -282,7 +282,7 @@ struct max_pooling_context {
   size_t channels;
   size_t input_increment;
   size_t output_increment;
-  union qnnp_maxpool_quantization_params quantization_params;
+  union qnnp_u8_clamping_params params;
   u8maxpool_ukernel_function ukernel;
 };
 
@@ -301,7 +301,7 @@ static void compute_max_pooling(
     context->output_width, context->pooling_size, context->channels,
     (const uint8_t**) indirect_input, output,
     context->input_increment, context->output_increment,
-    &context->quantization_params);
+    &context->params);
 }
 
 struct average_pooling_context {
@@ -853,7 +853,7 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
           .channels = channels,
           .input_increment = (pooling_height * width_step - multipass_adjustment) * sizeof(void*),
           .output_increment = (op->output_pixel_stride - channels) * sizeof(uint8_t),
-          .quantization_params = op->maxpool_quantization_params,
+          .params = op->u8_clamping_params,
           .ukernel = channels < kr ? qnnp_params.u8maxpool.ltkr : qnnp_params.u8maxpool.gekr,
       };
 

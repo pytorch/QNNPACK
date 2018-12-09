@@ -302,13 +302,13 @@ static inline union qnnp_avgpool_quantization_params qnnp_compute_scalar_avgpool
   return params;
 }
 
-static inline union qnnp_maxpool_quantization_params qnnp_compute_maxpool_quantization_params(
+static inline union qnnp_u8_clamping_params qnnp_compute_u8_clamping_params(
   uint8_t output_min,
   uint8_t output_max)
 {
   assert(output_min < output_max);
 
-  union qnnp_maxpool_quantization_params params;
+  union qnnp_u8_clamping_params params;
   #if CPUINFO_ARCH_X86 || CPUINFO_ARCH_X86_64
     for (uint32_t i = 0; i < 16; i++) {
       params.sse2.output_max[i] = output_max;

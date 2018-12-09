@@ -119,8 +119,7 @@ enum qnnp_status qnnp_create_max_pooling2d_nhwc_u8(
   max_pooling->dilation_width = dilation_width;
   max_pooling->channels = channels;
 
-  max_pooling->maxpool_quantization_params =
-    qnnp_compute_maxpool_quantization_params(output_min, output_max);
+  max_pooling->u8_clamping_params = qnnp_compute_u8_clamping_params(output_min, output_max);
 
   max_pooling->ukernel_type = qnnp_ukernel_type_max_pooling;
   max_pooling->format = qnnp_format_quint8;

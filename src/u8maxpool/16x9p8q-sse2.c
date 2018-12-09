@@ -21,14 +21,14 @@ void u8maxpool_ukernel_16x9p8q__sse2(
     uint8_t* output,
     size_t input_increment,
     size_t output_increment,
-    const union qnnp_maxpool_quantization_params quantization_params[restrict static 1])
+    const union qnnp_u8_clamping_params params[restrict static 1])
 {
   assert(n != 0);
   assert(ks != 0);
   assert(kc >= 16);
 
-  const __m128i voutput_max = _mm_load_si128((const __m128i*) quantization_params->sse2.output_max);
-  const __m128i voutput_min = _mm_load_si128((const __m128i*) quantization_params->sse2.output_min);
+  const __m128i voutput_max = _mm_load_si128((const __m128i*) params->sse2.output_max);
+  const __m128i voutput_min = _mm_load_si128((const __m128i*) params->sse2.output_min);
 
   do {
     uint8_t* o = output;

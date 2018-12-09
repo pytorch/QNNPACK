@@ -199,8 +199,8 @@ class MaxPoolMicrokernelTester {
       std::shuffle(indirectX.begin(), indirectX.end(), rng);
 
       /* Prepare quantization parameters */
-      const union qnnp_maxpool_quantization_params quantizationParams =
-        qnnp_compute_maxpool_quantization_params(qmin(), qmax());
+      const union qnnp_u8_clamping_params clampingParams =
+        qnnp_compute_u8_clamping_params(qmin(), qmax());
 
       /* Compute reference results */
       for (size_t i = 0; i < n(); i++) {
@@ -221,7 +221,7 @@ class MaxPoolMicrokernelTester {
         indirectX.data(), y.data(),
         (kh() * s() - packedKs()) * sizeof(void*),
         (yStride() - kc()) * sizeof(uint8_t),
-        &quantizationParams);
+        &clampingParams);
 
       /* Verify results */
       for (size_t i = 0; i < n(); i++) {

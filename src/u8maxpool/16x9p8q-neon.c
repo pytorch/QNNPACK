@@ -21,14 +21,14 @@ void u8maxpool_ukernel_16x9p8q__neon(
     uint8_t* output,
     size_t input_increment,
     size_t output_increment,
-    const union qnnp_maxpool_quantization_params quantization_params[restrict static 1])
+    const union qnnp_u8_clamping_params params[restrict static 1])
 {
   assert(n != 0);
   assert(ks != 0);
   assert(kc >= 16);
 
-  const uint8x16_t voutput_max = vld1q_dup_u8(&quantization_params->neon.output_max);
-  const uint8x16_t voutput_min = vld1q_dup_u8(&quantization_params->neon.output_min);
+  const uint8x16_t voutput_max = vld1q_dup_u8(&params->neon.output_max);
+  const uint8x16_t voutput_min = vld1q_dup_u8(&params->neon.output_min);
   do {
     uint8_t* o = output;
     {
