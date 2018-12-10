@@ -122,16 +122,16 @@ class SoftArgMaxOperatorTester {
 
       /* Compute reference results */
       for (size_t i = 0; i < batchSize(); i++) {
-        const float maxInput = *std::max_element(
+        const int32_t maxInput = *std::max_element(
           input.data() + i * inputStride(),
           input.data() + i * inputStride() + channels());
         float sumExp = 0.0f;
         for (size_t c = 0; c < channels(); c++) {
-          sumExp += exp((input[i * inputStride() + c] - maxInput) * inputScale());
+          sumExp += exp((int32_t(input[i * inputStride() + c]) - maxInput) * inputScale());
         }
         for (size_t c = 0; c < channels(); c++) {
           outputRef[i * channels() + c] =
-            exp((input[i * inputStride() + c] - maxInput) * inputScale()) / (sumExp * outputScale());
+            exp((int32_t(input[i * inputStride() + c]) - maxInput) * inputScale()) / (sumExp * outputScale());
           outputRef[i * channels() + c] = std::min(outputRef[i * channels() + c], 255.0f);
         }
       }
