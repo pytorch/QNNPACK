@@ -23,6 +23,7 @@
 #include <qnnpack/math.h>
 #include <qnnpack/pack.h>
 #include <qnnpack/params.h>
+#include <qnnpack/indirection.h>
 
 
 static inline size_t compute_output_dimension(
@@ -459,59 +460,19 @@ enum qnnp_status qnnp_setup_convolution2d_nhwc_q8(
       }
       convolution->indirection_buffer = indirection_buffer;
 
-      const void* zero = convolution->zero_pointer;
-      const struct fxdiv_divisor_size_t output_width_divisor = fxdiv_init_size_t(output_width);
-      for (size_t group = 0; group < groups; group++) {
-        for (size_t image = 0; image < batch_size; image++) {
-          for (size_t output_tile_start = 0; output_tile_start < tiled_output_size; output_tile_start += output_tile_size) {
-            for (size_t output_tile_offset = 0; output_tile_offset < output_tile_size; output_tile_offset++) {
-              const size_t tiled_output_index = output_tile_start + output_tile_offset;
-              const size_t output_index = min(tiled_output_index, output_size - 1);
-              const struct fxdiv_result_size_t output_index_components =
-                fxdiv_divide_size_t(output_index, output_width_divisor);
-              const size_t output_y = output_index_components.quotient;
-              const size_t output_x = output_index_components.remainder;
-              for (size_t kernel_y = 0; kernel_y < kernel_height; kernel_y++) {
-                const size_t input_y =
-                  output_y * convolution->stride_height + kernel_y * convolution->dilation_height - convolution->input_padding_top;
-                if (input_y < input_height) {
-                  for (size_t kernel_x = 0; kernel_x < kernel_width; kernel_x++) {
-                    const size_t input_x =
-                      output_x * convolution->stride_width + kernel_x * convolution->dilation_width - convolution->input_padding_left;
-                    const size_t index =
-                      (group * batch_size + image) * tiled_output_size * kernel_size + output_tile_start * kernel_size + (kernel_y * kernel_width + kernel_x) * output_tile_size + output_tile_offset;
-                    if (input_x < input_width) {
-                      indirection_buffer[index] =
-                        input + ((image * input_height + input_y) * input_width + input_x) * input_pixel_stride + group * convolution->group_input_channels;
-                    } else {
-                      indirection_buffer[index] = zero;
-                    }
-                  }
-                } else {
-                  for (size_t kernel_x = 0; kernel_x < kernel_width; kernel_x++) {
-                    const size_t index =
-                      (group * batch_size + image) * tiled_output_size * kernel_size + output_tile_start * kernel_size + (kernel_y * kernel_width + kernel_x) * output_tile_size + output_tile_offset;
-                    indirection_buffer[index] = zero;
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
+      qnnp_indirection_init_conv2d(convolution, output_tile_size, tiled_output_size);
       return qnnp_status_success;
     }
     case qnnp_ukernel_type_dwconv:
     {
-      const size_t groups = convolution->groups;
       const size_t kernel_height = convolution->kernel_height;
       const size_t kernel_width = convolution->kernel_width;
       const size_t kernel_size = kernel_height * kernel_width;
       const size_t output_height = convolution->output_height;
       const size_t output_width = convolution->output_width;
-      const size_t width_step = convolution->dilation_width == 1 ? convolution->stride_width : kernel_width;
-      const size_t indirection_buffer_size = sizeof(void*) * batch_size * output_height *
-        (kernel_size + (output_width * width_step - 1) * kernel_height);
+      const size_t step_width = convolution->dilation_width == 1 ? convolution->stride_width : kernel_width;
+      const size_t step_height = kernel_size + (output_width * step_width - 1) * kernel_height;
+      const size_t indirection_buffer_size = sizeof(void*) * batch_size * output_height * step_height;
 
       const void** indirection_buffer =
         (const void**) realloc(convolution->indirection_buffer, indirection_buffer_size);
@@ -521,40 +482,7 @@ enum qnnp_status qnnp_setup_convolution2d_nhwc_q8(
       }
       convolution->indirection_buffer = indirection_buffer;
 
-      const void* zero = convolution->zero_pointer;
-      for (size_t image = 0; image < batch_size; image++) {
-        for (size_t output_y = 0; output_y < output_height; output_y++) {
-          for (size_t kernel_y = 0; kernel_y < kernel_height; kernel_y++) {
-            const size_t input_y =
-              output_y * convolution->stride_height + kernel_y * convolution->dilation_height - convolution->input_padding_top;
-            if (input_y < input_height) {
-              for (size_t output_x = 0; output_x < output_width; output_x++) {
-                for (size_t kernel_x = 0; kernel_x < kernel_width; kernel_x++) {
-                  const size_t input_x =
-                    output_x * convolution->stride_width + kernel_x * convolution->dilation_width - convolution->input_padding_left;
-                  const size_t index =
-                    (image * output_height + output_y) * (kernel_size + (output_width * width_step - 1) * kernel_height) +
-                    output_x * width_step * kernel_height + kernel_x * kernel_height + kernel_y;
-                  if (input_x < input_width) {
-                    indirection_buffer[index] = input + ((image * input_height + input_y) * input_width + input_x) * input_pixel_stride;
-                  } else {
-                    indirection_buffer[index] = zero;
-                  }
-                }
-              }
-            } else {
-              for (size_t output_x = 0; output_x < output_width; output_x++) {
-                for (size_t kernel_x = 0; kernel_x < kernel_width; kernel_x++) {
-                  const size_t index =
-                    (image * output_height + output_y) * (kernel_size + (output_width * width_step - 1) * kernel_height) +
-                    output_x * width_step * kernel_height + kernel_x * kernel_height + kernel_y;
-                  indirection_buffer[index] = zero;
-                }
-              }
-            }
-          }
-        }
-      }
+      qnnp_indirection_init_dwconv2d(convolution, 0, step_height, step_width);
       return qnnp_status_success;
     }
     default:

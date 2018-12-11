@@ -20,6 +20,7 @@
 #include <qnnpack/common.h>
 #include <qnnpack/math.h>
 #include <qnnpack/params.h>
+#include <qnnpack/indirection.h>
 
 
 static inline size_t compute_output_dimension(
@@ -157,6 +158,8 @@ enum qnnp_status qnnp_create_average_pooling2d_nhwc_q8(
   average_pooling->kernel_width = pooling_width;
   average_pooling->stride_height = stride_height;
   average_pooling->stride_width = stride_width;
+  average_pooling->dilation_height = 1;
+  average_pooling->dilation_width = 1;
   average_pooling->channels = channels;
 
   size_t nrows = pooling_height * pooling_width;
@@ -251,9 +254,9 @@ enum qnnp_status qnnp_setup_average_pooling2d_nhwc_q8(
   /* Micro-kernel may read up to (mr - 1) elements after the end of indirection buffer */
   const uint32_t mr = qnnp_params.q8avgpool.mr;
 
-  const size_t width_step = min(average_pooling->stride_width, pooling_width);
-  const size_t indirection_buffer_size = sizeof(void*) * ((mr - 1) + batch_size * output_height *
-    (pooling_size + (output_width * width_step - 1) * pooling_height));
+  const size_t step_width = min(average_pooling->stride_width, pooling_width);
+  const size_t step_height = pooling_size + (output_width * step_width - 1) * pooling_height;
+  const size_t indirection_buffer_size = sizeof(void*) * ((mr - 1) + batch_size * output_height * step_height);
 
   const void** indirection_buffer = (const void**) realloc(average_pooling->indirection_buffer, indirection_buffer_size);
   if (indirection_buffer == NULL) {
@@ -262,38 +265,8 @@ enum qnnp_status qnnp_setup_average_pooling2d_nhwc_q8(
   }
   average_pooling->indirection_buffer = indirection_buffer;
 
-  const void* zero = average_pooling->zero_pointer;
-  for (size_t image = valid_batch_size; image < batch_size; image++) {
-    for (size_t output_y = 0; output_y < output_height; output_y++) {
-      for (size_t pooling_y = 0; pooling_y < pooling_height; pooling_y++) {
-        const size_t input_y = output_y * average_pooling->stride_height + pooling_y - average_pooling->input_padding_top;
-        if (input_y < input_height) {
-          for (size_t output_x = 0; output_x < output_width; output_x++) {
-            for (size_t pooling_x = 0; pooling_x < pooling_width; pooling_x++) {
-              const size_t input_x = output_x * average_pooling->stride_width + pooling_x - average_pooling->input_padding_left;
-              const size_t index =
-                (image * output_height + output_y) * (pooling_size + (output_width * width_step - 1) * pooling_height) +
-                output_x * width_step * pooling_height + pooling_x * pooling_height + pooling_y;
-              if (input_x < input_width) {
-                indirection_buffer[index] = input + ((image * input_height + input_y) * input_width + input_x) * input_pixel_stride;
-              } else {
-                indirection_buffer[index] = zero;
-              }
-            }
-          }
-        } else {
-          for (size_t output_x = 0; output_x < output_width; output_x++) {
-            for (size_t pooling_x = 0; pooling_x < pooling_width; pooling_x++) {
-              const size_t index =
-                (image * output_height + output_y) * (pooling_size + (output_width * width_step - 1) * pooling_height) +
-                output_x * width_step * pooling_height + pooling_x * pooling_height + pooling_y;
-              indirection_buffer[index] = zero;
-            }
-          }
-        }
-      }
-    }
-  }
+  qnnp_indirection_init_dwconv2d(average_pooling, valid_batch_size, step_height, step_width);
+
   average_pooling->last_input = input;
   average_pooling->last_input_height = input_height;
   average_pooling->last_input_width = input_width;

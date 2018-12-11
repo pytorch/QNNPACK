@@ -72,6 +72,7 @@ def main(args):
             build.cc("channel-shuffle.c"),
             build.cc("clamp.c"),
             build.cc("convolution.c"),
+            build.cc("indirection.c"),
             build.cc("deconvolution.c"),
             build.cc("fully-connected.c"),
             build.cc("global-average-pooling.c"),

@@ -102,20 +102,9 @@ include $(BUILD_STATIC_LIBRARY)
 endif # x86 or x86_64
 
 include $(CLEAR_VARS)
-LOCAL_MODULE = qnnpack_operators
+LOCAL_MODULE = qnnpack_exec
 LOCAL_SRC_FILES := \
-	src/add.c \
-	src/average-pooling.c \
-	src/channel-shuffle.c \
-	src/clamp.c \
-	src/convolution.c \
-	src/deconvolution.c \
-	src/fully-connected.c \
-	src/global-average-pooling.c \
-	src/leaky-relu.c \
-	src/max-pooling.c \
-	src/sigmoid.c \
-	src/softargmax.c \
+	src/indirection.c \
 	src/operator-run.c
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/include $(LOCAL_PATH)/src
 LOCAL_CFLAGS := -std=c99 -Wall -O2
@@ -131,6 +120,18 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := qnnpack
 LOCAL_SRC_FILES := \
 	src/init.c \
+	src/add.c \
+	src/average-pooling.c \
+	src/channel-shuffle.c \
+	src/clamp.c \
+	src/convolution.c \
+	src/deconvolution.c \
+	src/fully-connected.c \
+	src/global-average-pooling.c \
+	src/leaky-relu.c \
+	src/max-pooling.c \
+	src/sigmoid.c \
+	src/softargmax.c \
 	src/operator-delete.c
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/include
 LOCAL_C_INCLUDES := $(LOCAL_EXPORT_C_INCLUDES) $(LOCAL_PATH)/src
@@ -147,7 +148,7 @@ LOCAL_CFLAGS += -DQNNP_LOG_LEVEL=5
 else
 LOCAL_CFLAGS += -DQNNP_LOG_LEVEL=0
 endif
-LOCAL_STATIC_LIBRARIES := clog cpuinfo pthreadpool_interface qnnpack_operators
+LOCAL_STATIC_LIBRARIES := clog cpuinfo pthreadpool_interface qnnpack_exec
 ifeq ($(TARGET_ARCH_ABI),$(filter $(TARGET_ARCH_ABI),x86 x86_64))
 LOCAL_STATIC_LIBRARIES += qnnpack_sse2_ukernels
 endif # x86 or x86_64

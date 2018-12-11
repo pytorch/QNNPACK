@@ -20,6 +20,7 @@
 #include <qnnpack/math.h>
 #include <qnnpack/pack.h>
 #include <qnnpack/params.h>
+#include <qnnpack/indirection.h>
 
 
 static inline size_t compute_output_dimension(
@@ -269,35 +270,7 @@ enum qnnp_status qnnp_setup_deconvolution2d_nhwc_q8(
   }
   deconvolution->indirection_buffer = indirection_buffer;
 
-  const void* zero = deconvolution->zero_pointer;
-  for (size_t group = 0; group < groups; group++) {
-    for (size_t image = 0; image < batch_size; image++) {
-      for (size_t output_tile_start = 0; output_tile_start < tiled_output_size; output_tile_start += output_tile_size) {
-        for (size_t output_tile_offset = 0; output_tile_offset < output_tile_size; output_tile_offset++) {
-          const size_t tiled_output_index = output_tile_start + output_tile_offset;
-          const size_t output_index = min(tiled_output_index, output_size - 1);
-          const size_t output_y = output_index / output_width;
-          const size_t output_x = output_index % output_width;
-          for (size_t kernel_y = 0; kernel_y < kernel_height; kernel_y++) {
-            const size_t y = output_y + deconvolution->input_padding_top - kernel_y * deconvolution->dilation_height;
-            const size_t input_y = y / stride_height;
-            for (size_t kernel_x = 0; kernel_x < kernel_width; kernel_x++) {
-              const size_t x = output_x + deconvolution->input_padding_left - kernel_x * deconvolution->dilation_width;
-              const size_t input_x = x / stride_width;
-              const size_t index =
-                (group * batch_size + image) * tiled_output_size * kernel_size + output_tile_start * kernel_size + (kernel_y * kernel_width + kernel_x) * output_tile_size + output_tile_offset;
-              if (input_y * stride_height == y && input_y < input_height && input_x * stride_width == x && input_x < input_width) {
-                indirection_buffer[index] =
-                  input + ((image * input_height + input_y) * input_width + input_x) * input_pixel_stride + group * deconvolution->group_input_channels;
-              } else {
-                indirection_buffer[index] = zero;
-              }
-            }
-          }
-        }
-      }
-    }
-  }
+  qnnp_indirection_init_deconv2d(deconvolution, output_tile_size, tiled_output_size);
 
   return qnnp_status_success;
 }

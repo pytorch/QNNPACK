@@ -20,6 +20,7 @@
 #include <qnnpack/common.h>
 #include <qnnpack/math.h>
 #include <qnnpack/params.h>
+#include <qnnpack/indirection.h>
 
 
 static inline size_t compute_output_dimension(
@@ -198,10 +199,10 @@ enum qnnp_status qnnp_setup_max_pooling2d_nhwc_u8(
   /* Micro-kernel may read up to (mr - 1) elements after the end of indirection buffer */
   const uint32_t mr = qnnp_params.u8maxpool.mr;
 
-  const size_t width_step =
+  const size_t step_width =
     max_pooling->dilation_width > 1 ? pooling_width : min(max_pooling->stride_width, pooling_width);
-  const size_t indirection_buffer_size = sizeof(void*) * ((mr - 1) + batch_size * output_height *
-    (pooling_size + (output_width * width_step - 1) * pooling_height));
+  const size_t step_height = pooling_size + (output_width * step_width - 1) * pooling_height;
+  const size_t indirection_buffer_size = sizeof(void*) * ((mr - 1) + batch_size * output_height * step_height);
 
   const void** indirection_buffer = (const void**) realloc(max_pooling->indirection_buffer, indirection_buffer_size);
   if (indirection_buffer == NULL) {
@@ -210,24 +211,8 @@ enum qnnp_status qnnp_setup_max_pooling2d_nhwc_u8(
   }
   max_pooling->indirection_buffer = indirection_buffer;
 
-  for (size_t image = 0; image < batch_size; image++) {
-    for (size_t output_y = 0; output_y < output_height; output_y++) {
-      for (size_t pooling_y = 0; pooling_y < pooling_height; pooling_y++) {
-        const size_t input_y = doz(output_y * max_pooling->stride_height + pooling_y * max_pooling->dilation_height, max_pooling->input_padding_top);
-        const size_t clamped_input_y = min(input_y, input_height - 1);
-        for (size_t output_x = 0; output_x < output_width; output_x++) {
-          for (size_t pooling_x = 0; pooling_x < pooling_width; pooling_x++) {
-            const size_t input_x = doz(output_x * max_pooling->stride_width + pooling_x * max_pooling->dilation_width, max_pooling->input_padding_left);
-            const size_t clamped_input_x = min(input_x, input_width - 1);
-            const size_t index =
-              (image * output_height + output_y) * (pooling_size + (output_width * width_step - 1) * pooling_height) +
-              output_x * width_step * pooling_height + pooling_x * pooling_height + pooling_y;
-            indirection_buffer[index] = input + ((image * input_height + clamped_input_y) * input_width + clamped_input_x) * input_pixel_stride;
-          }
-        }
-      }
-    }
-  }
+  qnnp_indirection_init_maxpool2d(max_pooling, valid_batch_size, step_height, step_width);
+
   max_pooling->last_input = input;
   max_pooling->last_input_height = input_height;
   max_pooling->last_input_width = input_width;

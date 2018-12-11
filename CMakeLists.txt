@@ -128,10 +128,8 @@ IF(QNNPACK_BUILD_BENCHMARKS AND NOT DEFINED GOOGLEBENCHMARK_SOURCE_DIR)
 ENDIF()
 
 # ---[ QNNPACK library
-SET(QNNPACK_INIT_SRCS src/init.c)
-SET(QNNPACK_OPERATOR_SRCS
-  src/operator-delete.c
-  src/operator-run.c
+SET(QNNPACK_INIT_SRCS
+  src/init.c
   src/add.c
   src/average-pooling.c
   src/channel-shuffle.c
@@ -143,7 +141,12 @@ SET(QNNPACK_OPERATOR_SRCS
   src/leaky-relu.c
   src/max-pooling.c
   src/sigmoid.c
-  src/softargmax.c)
+  src/softargmax.c
+  src/operator-delete.c)
+
+SET(QNNPACK_EXEC_SRCS
+  src/indirection.c
+  src/operator-run.c)
 
 SET(QNNPACK_SCALAR_UKERNELS
   src/u8lut32norm/scalar.c
@@ -227,11 +230,11 @@ IF(CMAKE_SYSTEM_PROCESSOR MATCHES "^(i[3-6]86|x86_64)$" OR IOS_ARCH MATCHES "^(i
 ENDIF()
 
 IF(QNNPACK_LIBRARY_TYPE STREQUAL "default")
-  ADD_LIBRARY(qnnpack ${QNNPACK_INIT_SRCS} ${QNNPACK_OPERATOR_SRCS} ${QNNPACK_UKERNELS})
+  ADD_LIBRARY(qnnpack ${QNNPACK_INIT_SRCS} ${QNNPACK_EXEC_SRCS} ${QNNPACK_UKERNELS})
 ELSEIF(QNNPACK_LIBRARY_TYPE STREQUAL "shared")
-  ADD_LIBRARY(qnnpack SHARED ${QNNPACK_INIT_SRCS} ${QNNPACK_OPERATOR_SRCS} ${QNNPACK_UKERNELS})
+  ADD_LIBRARY(qnnpack SHARED ${QNNPACK_INIT_SRCS} ${QNNPACK_EXEC_SRCS} ${QNNPACK_UKERNELS})
 ELSEIF(QNNPACK_LIBRARY_TYPE STREQUAL "static")
-  ADD_LIBRARY(qnnpack STATIC ${QNNPACK_INIT_SRCS} ${QNNPACK_OPERATOR_SRCS} ${QNNPACK_UKERNELS})
+  ADD_LIBRARY(qnnpack STATIC ${QNNPACK_INIT_SRCS} ${QNNPACK_EXEC_SRCS} ${QNNPACK_UKERNELS})
 ELSE()
   MESSAGE(FATAL_ERROR "Unsupported QNNPACK library type \"${QNNPACK_LIBRARY_TYPE}\". Must be \"static\", \"shared\", or \"default\"")
 ENDIF()
