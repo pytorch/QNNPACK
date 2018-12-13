@@ -31,7 +31,7 @@ Users are recommended to use `scripts/build-local.sh` script to build QNNPACK fo
 
 ### Cross-compilation for Android
 
-To cross-compile for Android, set `$ANDROID_NDK` environment variable (where `$ANDROID_NDK` is the path to Android NDK directorory, e.g. `/opt/android-ndk-r15c`) and use one of the scripts from the table below:
+To cross-compile for Android, set `$ANDROID_NDK` environment variable (where `$ANDROID_NDK` is the path to Android NDK directory, e.g. `/opt/android-ndk-r15c`) and use one of the scripts from the table below:
 
 | ABI         | Build script                     | Restrictions               |
 | ----------- | ---------------------------------| -------------------------- |
