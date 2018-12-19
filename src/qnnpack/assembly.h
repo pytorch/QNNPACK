@@ -24,6 +24,7 @@
 		.text
 		.align 2
 		.global _\name
+		.private_extern _\name
 		_\name:
 	.endm
 
