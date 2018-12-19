@@ -477,9 +477,6 @@ class AveragePoolingOperatorTester {
     auto rng = std::mt19937(randomDevice());
     auto u8rng = std::bind(std::uniform_int_distribution<uint8_t>(), rng);
 
-    const size_t maxBatchSize = std::max(batchSize(), nextBatchSize());
-    const size_t maxInputHeight = std::max(batchSize(), nextBatchSize());
-
     std::vector<uint8_t> input(std::max(
       (batchSize() * inputHeight() * inputWidth() - 1) * inputPixelStride() + channels(),
       (nextBatchSize() * nextInputHeight() * nextInputWidth() - 1) * inputPixelStride() + channels()));

@@ -10,8 +10,6 @@
 
 #include "channel-shuffle-operator-tester.h"
 
-#include <qnnpack/params.h>
-
 
 TEST(CHANNEL_SHUFFLE_OP, two_groups_unit_batch) {
   for (size_t groupChannels = 1; groupChannels < 100; groupChannels += 15) {

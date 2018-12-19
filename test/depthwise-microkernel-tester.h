@@ -20,7 +20,6 @@
 #include <qnnpack/AlignedAllocator.h>
 #include <qnnpack/pack.h>
 #include <qnnpack/params.h>
-#include <qnnpack/scalar-utils.h>
 #include <qnnpack/requantization.h>
 #include <qnnpack/q8dw.h>
 
@@ -236,9 +235,6 @@ class DepthwiseMicrokernelTester {
       const union qnnp_conv_quantization_params quantizationParams =
         qnnp_compute_conv_quantization_params(
           inputZeroPoint(), kernelZeroPoint(),
-          requantizationScale, outputZeroPoint, qmin(), qmax());
-      const union qnnp_q31_requantization_params scalarRequantizationParams =
-        qnnp_compute_scalar_requantization_params(
           requantizationScale, outputZeroPoint, qmin(), qmax());
 
       q8updw(

@@ -302,7 +302,7 @@ class AvgPoolMicrokernelTester {
 
     std::vector<const uint8_t*> indirectX(packedKs() + (n() * s() - 1) * kh());
     std::vector<uint8_t> x((indirectX.size() - 1) * xStride() + kc());
-    std::vector<int32_t> acc(packedN());
+    std::vector<int32_t> mpAcc(packedN());
 
     std::vector<uint8_t> zero(kc());
     std::vector<uint8_t> y((n() - 1) * yStride() + kc());
@@ -347,7 +347,7 @@ class AvgPoolMicrokernelTester {
 
       /* Call optimized micro-kernel */
       q8avgpool(n(), ks(), kc(),
-        indirectX.data(), zero.data(), acc.data(), y.data(),
+        indirectX.data(), zero.data(), mpAcc.data(), y.data(),
         (kh() * s() - (packedKs() - qr())) * sizeof(void*),
         (yStride() - kc()) * sizeof(uint8_t),
         &quantizationParams);
