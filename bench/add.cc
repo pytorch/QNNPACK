@@ -28,6 +28,8 @@ static void add_nc_q8(benchmark::State& state) {
   std::vector<uint8_t> a(batchSize * channels);
   std::vector<uint8_t> b(batchSize * channels);
   std::vector<uint8_t> y(batchSize * channels);
+  std::generate(a.begin(), a.end(), std::ref(u8rng));
+  std::generate(b.begin(), b.end(), std::ref(u8rng));
 
   qnnp_status status = qnnp_initialize();
   if (status != qnnp_status_success) {
@@ -85,6 +87,7 @@ static void add_nc_q8_inplace(benchmark::State& state) {
 
   std::vector<uint8_t> a(batchSize * channels);
   std::vector<uint8_t> y(batchSize * channels);
+  std::generate(a.begin(), a.end(), std::ref(u8rng));
 
   qnnp_status status = qnnp_initialize();
   if (status != qnnp_status_success) {
