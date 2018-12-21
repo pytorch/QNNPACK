@@ -610,13 +610,6 @@ IF(QNNPACK_BUILD_BENCHMARKS)
       "${CONFU_DEPENDENCIES_BINARY_DIR}/googlebenchmark")
   ENDIF()
 
-  ADD_EXECUTABLE(convolution-bench bench/convolution.cc)
-  SET_TARGET_PROPERTIES(convolution-bench PROPERTIES
-    CXX_STANDARD 11
-    CXX_STANDARD_REQUIRED YES
-    CXX_EXTENSIONS NO)
-  TARGET_LINK_LIBRARIES(convolution-bench PRIVATE qnnpack benchmark)
-
   ADD_EXECUTABLE(add-bench bench/add.cc)
   SET_TARGET_PROPERTIES(add-bench PROPERTIES
     CXX_STANDARD 11
@@ -630,6 +623,20 @@ IF(QNNPACK_BUILD_BENCHMARKS)
     CXX_STANDARD_REQUIRED YES
     CXX_EXTENSIONS NO)
   TARGET_LINK_LIBRARIES(channel-shuffle-bench PRIVATE qnnpack benchmark)
+
+  ADD_EXECUTABLE(convolution-bench bench/convolution.cc)
+  SET_TARGET_PROPERTIES(convolution-bench PROPERTIES
+    CXX_STANDARD 11
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO)
+  TARGET_LINK_LIBRARIES(convolution-bench PRIVATE qnnpack benchmark)
+
+  ADD_EXECUTABLE(global-average-pooling-bench bench/global-average-pooling.cc)
+  SET_TARGET_PROPERTIES(global-average-pooling-bench PROPERTIES
+    CXX_STANDARD 11
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO)
+  TARGET_LINK_LIBRARIES(global-average-pooling-bench PRIVATE qnnpack benchmark)
 
   ADD_EXECUTABLE(q8gemm-bench bench/q8gemm.cc)
   SET_TARGET_PROPERTIES(q8gemm-bench PROPERTIES
