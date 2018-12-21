@@ -20,193 +20,89 @@
 
 #include <benchmark/benchmark.h>
 
+static void convolution_q8(benchmark::State& state, const char* net) {
+  const size_t batchSize = state.range(0);
+  const size_t inputHeight = state.range(1);
+  const size_t inputWidth = state.range(2);
+  const size_t kernelHeight = state.range(3);
+  const size_t kernelWidth = state.range(4);
+  const size_t subsampling = state.range(5);
+  const size_t dilation = state.range(6);
+  const size_t groups = state.range(7);
+  const size_t groupInputChannels = state.range(8);
+  const size_t groupOutputChannels = state.range(9);
 
-class Q8Convolution : public benchmark::Fixture {
- public:
-  virtual void SetUp(const benchmark::State& state) override
-  {
-    batchSize_ = state.range(0);
-    inputHeight_ = state.range(1);
-    inputWidth_ = state.range(2);
-    kernelHeight_ = state.range(3);
-    kernelWidth_ = state.range(4);
-    subsampling_ = state.range(5);
-    dilation_ = state.range(6);
-    groups_ = state.range(7);
-    groupInputChannels_ = state.range(8);
-    groupOutputChannels_ = state.range(9);
+  std::random_device randomDevice;
+  auto rng = std::mt19937(randomDevice());
+  auto s32rng = std::bind(std::uniform_int_distribution<int32_t>(-10000, 10000), rng);
+  auto u8rng = std::bind(std::uniform_int_distribution<uint8_t>(), rng);
 
-    std::random_device randomDevice;
-    auto rng = std::mt19937(randomDevice());
-    auto s32rng = std::bind(std::uniform_int_distribution<int32_t>(-10000, 10000), rng);
-    auto u8rng = std::bind(std::uniform_int_distribution<uint8_t>(), rng);
+  const size_t outputPixelStride = groups * groupOutputChannels;
+  const size_t inputPixelStride = groups * groupInputChannels;
+  const size_t effectiveKernelHeight = (kernelHeight - 1) * dilation + 1;
+  const size_t effectiveKernelWidth = (kernelWidth - 1) * dilation + 1;
+  const size_t paddingLeft = effectiveKernelWidth / 2;
+  const size_t paddingTop = effectiveKernelHeight / 2;
+  const size_t paddingRight = effectiveKernelWidth - 1 - paddingLeft;
+  const size_t paddingBottom = effectiveKernelHeight - 1 - paddingTop;
+  const size_t outputHeight = (paddingTop + inputHeight + paddingBottom - effectiveKernelHeight) / subsampling + 1;
+  const size_t outputWidth = (paddingLeft + inputWidth + paddingRight - effectiveKernelWidth) / subsampling + 1;
 
-    input_.resize(batchSize() * inputHeight() * inputWidth() * inputPixelStride());
-    std::generate(input_.begin(), input_.end(), std::ref(u8rng));
-    kernel_.resize(groups() * groupOutputChannels() * kernelHeight() * kernelWidth() * groupInputChannels());
-    std::generate(kernel_.begin(), kernel_.end(), std::ref(u8rng));
-    bias_.resize(groups() * groupOutputChannels());
-    std::generate(bias_.begin(), bias_.end(), std::ref(s32rng));
-    output_.resize(batchSize() * outputHeight() * outputWidth() * outputPixelStride());
+  std::vector<uint8_t> input(batchSize * inputHeight * inputWidth * inputPixelStride);
+  std::generate(input.begin(), input.end(), std::ref(u8rng));
+  std::vector<uint8_t> kernel(groups * groupOutputChannels * kernelHeight * kernelWidth * groupInputChannels);
+  std::generate(kernel.begin(), kernel.end(), std::ref(u8rng));
+  std::vector<int32_t> bias(groups * groupOutputChannels);
+  std::generate(bias.begin(), bias.end(), std::ref(s32rng));
+  std::vector<uint8_t> output(batchSize * outputHeight * outputWidth * outputPixelStride);
 
-    qnnp_status status = qnnp_initialize();
-    assert(status == qnnp_status_success);
-
-    status = qnnp_create_convolution2d_nhwc_q8(
-      paddingTop(), paddingRight(), paddingBottom(), paddingLeft(),
-      kernelHeight(), kernelWidth(),
-      /* subsampling */ subsampling(), subsampling(),
-      /* dilation */ dilation(), dilation(),
-      groups(), groupInputChannels(), groupOutputChannels(),
-      127, 0.5f,
-      127, 0.5f,
-      kernel(), bias(),
-      127, 0.5f, 0, 255,
-      &convolutionObject_);
-    assert(status == qnnp_status_success);
-
-    status = qnnp_setup_convolution2d_nhwc_q8(
-      convolutionObject_,
-      batchSize(), inputHeight(), inputWidth(),
-      input(), inputPixelStride(),
-      output(), outputPixelStride(),
-      nullptr /* thread pool */);
-    assert(status == qnnp_status_success);
+  qnnp_status status = qnnp_initialize();
+  if (status != qnnp_status_success) {
+    state.SkipWithError("failed to initialize QNNPACK");
   }
 
-  virtual void TearDown(benchmark::State& state) override
-  {
-    qnnp_delete_operator(convolutionObject_);
-    convolutionObject_ = nullptr;
-
-    state.SetItemsProcessed(
-      uint64_t(state.iterations()) * 2 *
-        batchSize() * outputHeight() * outputWidth() *
-        groups() * groupInputChannels() * groupOutputChannels() *
-        kernelHeight() * kernelWidth());
-    input_.clear();
-    kernel_.clear();
-    bias_.clear();
-    output_.clear();
+  qnnp_operator_t convolutionObject = nullptr;
+  status = qnnp_create_convolution2d_nhwc_q8(
+    paddingTop, paddingRight, paddingBottom, paddingLeft,
+    kernelHeight, kernelWidth,
+    subsampling, subsampling,
+    dilation, dilation,
+    groups, groupInputChannels, groupOutputChannels,
+    127, 0.5f,
+    127, 0.5f,
+    kernel.data(), bias.data(),
+    127, 0.5f, 0, 255,
+    &convolutionObject);
+  if (status != qnnp_status_success) {
+    state.SkipWithError("failed to create Convolution operator");
   }
 
-  inline const uint8_t* input() const {
-    return input_.data();
+  status = qnnp_setup_convolution2d_nhwc_q8(
+    convolutionObject,
+    batchSize, inputHeight, inputWidth,
+    input.data(), inputPixelStride,
+    output.data(), outputPixelStride,
+    nullptr /* thread pool */);
+  if (status != qnnp_status_success) {
+    state.SkipWithError("failed to setup Convolution operator");
   }
 
-  inline const uint8_t* kernel() const {
-    return kernel_.data();
+  for (auto _ : state) {
+    qnnp_run_operator(convolutionObject, nullptr /* thread pool */);
   }
 
-  inline const int32_t* bias() const {
-    return bias_.data();
+  status = qnnp_delete_operator(convolutionObject);
+  if (status != qnnp_status_success) {
+    state.SkipWithError("failed to delete Convolution operator");
   }
+  convolutionObject = nullptr;
 
-  inline uint8_t* output() {
-    return output_.data();
-  }
-
-  inline size_t batchSize() const {
-    return batchSize_;
-  }
-
-  inline size_t inputHeight() const {
-    return inputHeight_;
-  }
-
-  inline size_t inputWidth() const {
-    return inputWidth_;
-  }
-
-  inline uint32_t kernelHeight() const {
-    return kernelHeight_;
-  }
-
-  inline uint32_t kernelWidth() const {
-    return kernelWidth_;
-  }
-
-  inline uint32_t effectiveKernelHeight() const {
-    return (kernelHeight() - 1) * dilation() + 1;
-  }
-
-  inline uint32_t effectiveKernelWidth() const {
-    return (kernelWidth() - 1) * dilation() + 1;
-  }
-
-  inline uint32_t subsampling() const {
-    return subsampling_;
-  }
-
-  inline uint32_t dilation() const {
-    return dilation_;
-  }
-
-  inline uint32_t paddingLeft() const {
-    return effectiveKernelWidth() / 2;
-  }
-
-  inline uint32_t paddingRight() const {
-    return effectiveKernelWidth() - 1 - paddingLeft();
-  }
-
-  inline uint32_t paddingTop() const {
-    return effectiveKernelHeight() / 2;
-  }
-
-  inline uint32_t paddingBottom() const {
-    return effectiveKernelHeight() - 1 - paddingTop();
-  }
-
-  inline uint32_t outputHeight() const {
-    return (paddingTop() + inputHeight() + paddingBottom() - effectiveKernelHeight()) / subsampling() + 1;
-  }
-
-  inline uint32_t outputWidth() const {
-    return (paddingLeft() + inputWidth() + paddingRight() - effectiveKernelWidth()) / subsampling() + 1;
-  }
-
-  inline uint32_t groups() const {
-    return groups_;
-  }
-
-  inline uint32_t groupInputChannels() const {
-    return groupInputChannels_;
-  }
-
-  inline uint32_t groupOutputChannels() const {
-    return groupOutputChannels_;
-  }
-
-  inline qnnp_operator_t convolutionObject() const {
-    return convolutionObject_;
-  }
-
-  inline size_t inputPixelStride() const {
-    return groups() * groupInputChannels();
-  }
-
-  inline size_t outputPixelStride() const {
-    return groups() * groupOutputChannels();
-  }
-
- private:
-  qnnp_operator_t convolutionObject_;
-  std::vector<uint8_t> input_;
-  std::vector<uint8_t> kernel_;
-  std::vector<int32_t> bias_;
-  std::vector<uint8_t> output_;
-  size_t batchSize_{1};
-  size_t inputHeight_{1};
-  size_t inputWidth_{1};
-  uint32_t kernelHeight_{1};
-  uint32_t kernelWidth_{1};
-  uint32_t subsampling_{1};
-  uint32_t dilation_{1};
-  uint32_t groups_{1};
-  uint32_t groupInputChannels_{1};
-  uint32_t groupOutputChannels_{1};
-};
+  state.SetItemsProcessed(
+    uint64_t(state.iterations()) * 2 *
+      batchSize * outputHeight * outputWidth *
+      groups * groupInputChannels * groupOutputChannels *
+      kernelHeight * kernelWidth);
+}
 
 /* ShuffleNet v1 with 1 group */
 static void ShuffleNetV1G1(benchmark::internal::Benchmark* b) {
@@ -734,25 +630,19 @@ static void DWConv5x5(benchmark::internal::Benchmark* b) {
   b->Args({1,  7,  7,  5,  5, 1, 1,   16,    1,    1});
 }
 
-BENCHMARK_DEFINE_F(Q8Convolution, run)(benchmark::State& state)
-{
-  for (auto _ : state) {
-    qnnp_run_operator(convolutionObject(), nullptr /* thread pool */);
-  }
-}
-BENCHMARK_REGISTER_F(Q8Convolution, run)->Apply(MobileNetV1);
-BENCHMARK_REGISTER_F(Q8Convolution, run)->Apply(MobileNetV2);
-BENCHMARK_REGISTER_F(Q8Convolution, run)->Apply(ShuffleNetV1G1);
-BENCHMARK_REGISTER_F(Q8Convolution, run)->Apply(ShuffleNetV1G2);
-BENCHMARK_REGISTER_F(Q8Convolution, run)->Apply(ShuffleNetV1G3);
-BENCHMARK_REGISTER_F(Q8Convolution, run)->Apply(ShuffleNetV1G4);
-BENCHMARK_REGISTER_F(Q8Convolution, run)->Apply(ShuffleNetV1G8);
-BENCHMARK_REGISTER_F(Q8Convolution, run)->Apply(SqueezeNetV10);
-BENCHMARK_REGISTER_F(Q8Convolution, run)->Apply(SqueezeNetV11);
-BENCHMARK_REGISTER_F(Q8Convolution, run)->Apply(VGG);
-BENCHMARK_REGISTER_F(Q8Convolution, run)->Apply(DWConv3x3);
-BENCHMARK_REGISTER_F(Q8Convolution, run)->Apply(DWConv3x3d2);
-BENCHMARK_REGISTER_F(Q8Convolution, run)->Apply(DWConv5x5);
+BENCHMARK_CAPTURE(convolution_q8, mobilenet_v1, "MobileNet v1")->Apply(MobileNetV1);
+BENCHMARK_CAPTURE(convolution_q8, mobilenet_v2, "MobileNet v2")->Apply(MobileNetV2);
+BENCHMARK_CAPTURE(convolution_q8, shufflenet_v1_g1, "ShuffleNet v1 (1 group)")->Apply(ShuffleNetV1G1);
+BENCHMARK_CAPTURE(convolution_q8, shufflenet_v1_g2, "ShuffleNet v1 (2 groups)")->Apply(ShuffleNetV1G2);
+BENCHMARK_CAPTURE(convolution_q8, shufflenet_v1_g3, "ShuffleNet v1 (3 groups)")->Apply(ShuffleNetV1G3);
+BENCHMARK_CAPTURE(convolution_q8, shufflenet_v1_g4, "ShuffleNet v1 (4 groups)")->Apply(ShuffleNetV1G4);
+BENCHMARK_CAPTURE(convolution_q8, shufflenet_v1_g8, "ShuffleNet v1 (8 groups)")->Apply(ShuffleNetV1G8);
+BENCHMARK_CAPTURE(convolution_q8, squeezenet_v10, "SqueezeNet 1.0")->Apply(SqueezeNetV10);
+BENCHMARK_CAPTURE(convolution_q8, squeezenet_v11, "SqueezeNet 1.1")->Apply(SqueezeNetV11);
+BENCHMARK_CAPTURE(convolution_q8, vgg, "VGG")->Apply(VGG);
+BENCHMARK_CAPTURE(convolution_q8, dwconv3x3, "3x3 DW Convolutions")->Apply(DWConv3x3);
+BENCHMARK_CAPTURE(convolution_q8, dwconv3x3d2, "3x3 DW Convolutions (dilation 2)")->Apply(DWConv3x3d2);
+BENCHMARK_CAPTURE(convolution_q8, dwconv5x5, "5x5 DW Convolutions")->Apply(DWConv5x5);
 
 #ifndef QNNPACK_BENCHMARK_NO_MAIN
 BENCHMARK_MAIN();
