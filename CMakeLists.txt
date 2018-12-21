@@ -617,6 +617,13 @@ IF(QNNPACK_BUILD_BENCHMARKS)
     CXX_EXTENSIONS NO)
   TARGET_LINK_LIBRARIES(add-bench PRIVATE qnnpack benchmark)
 
+  ADD_EXECUTABLE(average-pooling-bench bench/average-pooling.cc)
+  SET_TARGET_PROPERTIES(average-pooling-bench PROPERTIES
+    CXX_STANDARD 11
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO)
+  TARGET_LINK_LIBRARIES(average-pooling-bench PRIVATE qnnpack benchmark)
+
   ADD_EXECUTABLE(channel-shuffle-bench bench/channel-shuffle.cc)
   SET_TARGET_PROPERTIES(channel-shuffle-bench PROPERTIES
     CXX_STANDARD 11

@@ -208,6 +208,7 @@ def main(args):
             extra_include_dirs="src"):
 
         build.benchmark("add-bench", build.cxx("add.cc"))
+        build.benchmark("average-pooling-bench", build.cxx("average-pooling.cc"))
         build.benchmark("channel-shuffle-bench", build.cxx("channel-shuffle.cc"))
         build.benchmark("convolution-bench", build.cxx("convolution.cc"))
         build.benchmark("global-average-pooling-bench", build.cxx("global-average-pooling.cc"))
