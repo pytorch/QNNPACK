@@ -17,7 +17,7 @@
 #include <benchmark/benchmark.h>
 
 
-static void channel_shuffle_nc_x8(benchmark::State& state) {
+static void channel_shuffle_x8(benchmark::State& state, const char* net) {
   const size_t batchSize = static_cast<size_t>(state.range(0));
   const size_t groups = static_cast<size_t>(state.range(1));
   const size_t groupChannels = static_cast<size_t>(state.range(2));
@@ -220,14 +220,14 @@ static void ShuffleNetV2x2_0Arguments(benchmark::internal::Benchmark* b)
   b->Args({ 7 *  7, 2, 488});
 }
 
-BENCHMARK(channel_shuffle_nc_x8)->Apply(ShuffleNetV1G2Arguments);
-BENCHMARK(channel_shuffle_nc_x8)->Apply(ShuffleNetV1G3Arguments);
-BENCHMARK(channel_shuffle_nc_x8)->Apply(ShuffleNetV1G4Arguments);
-BENCHMARK(channel_shuffle_nc_x8)->Apply(ShuffleNetV1G8Arguments);
-BENCHMARK(channel_shuffle_nc_x8)->Apply(ShuffleNetV2x0_5Arguments);
-BENCHMARK(channel_shuffle_nc_x8)->Apply(ShuffleNetV2x1_0Arguments);
-BENCHMARK(channel_shuffle_nc_x8)->Apply(ShuffleNetV2x1_5Arguments);
-BENCHMARK(channel_shuffle_nc_x8)->Apply(ShuffleNetV2x2_0Arguments);
+BENCHMARK_CAPTURE(channel_shuffle_x8, shufflenet_v1_g2, "ShuffleNet v1 (2 groups)")->Apply(ShuffleNetV1G2Arguments);
+BENCHMARK_CAPTURE(channel_shuffle_x8, shufflenet_v1_g3, "ShuffleNet v1 (3 groups)")->Apply(ShuffleNetV1G3Arguments);
+BENCHMARK_CAPTURE(channel_shuffle_x8, shufflenet_v1_g4, "ShuffleNet v1 (4 groups)")->Apply(ShuffleNetV1G4Arguments);
+BENCHMARK_CAPTURE(channel_shuffle_x8, shufflenet_v1_g8, "ShuffleNet v1 (8 groups)")->Apply(ShuffleNetV1G8Arguments);
+BENCHMARK_CAPTURE(channel_shuffle_x8, shufflenet_v2_x05, "ShuffleNet v2 x0.5")->Apply(ShuffleNetV2x0_5Arguments);
+BENCHMARK_CAPTURE(channel_shuffle_x8, shufflenet_v2_x10, "ShuffleNet v2 x1.0")->Apply(ShuffleNetV2x1_0Arguments);
+BENCHMARK_CAPTURE(channel_shuffle_x8, shufflenet_v2_x15, "ShuffleNet v2 x1.5")->Apply(ShuffleNetV2x1_5Arguments);
+BENCHMARK_CAPTURE(channel_shuffle_x8, shufflenet_v2_x20, "ShuffleNet v2 x2.0")->Apply(ShuffleNetV2x2_0Arguments);
 
 #ifndef QNNPACK_BENCHMARK_NO_MAIN
 BENCHMARK_MAIN();
