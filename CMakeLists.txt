@@ -645,6 +645,13 @@ IF(QNNPACK_BUILD_BENCHMARKS)
     CXX_EXTENSIONS NO)
   TARGET_LINK_LIBRARIES(global-average-pooling-bench PRIVATE qnnpack benchmark)
 
+  ADD_EXECUTABLE(max-pooling-bench bench/max-pooling.cc)
+  SET_TARGET_PROPERTIES(max-pooling-bench PROPERTIES
+    CXX_STANDARD 11
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO)
+  TARGET_LINK_LIBRARIES(max-pooling-bench PRIVATE qnnpack benchmark)
+
   ADD_EXECUTABLE(q8gemm-bench bench/q8gemm.cc)
   SET_TARGET_PROPERTIES(q8gemm-bench PROPERTIES
     CXX_STANDARD 11
