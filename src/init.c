@@ -67,6 +67,9 @@ static void init(void) {
     case cpuinfo_uarch_cortex_a75:
       qnnp_params.q8conv_xzp.kthreshold = 32;
       break;
+    case cpuinfo_uarch_cortex_a76:
+      qnnp_params.q8conv_xzp.kthreshold = 16;
+      break;
     default:
       break;
   }
