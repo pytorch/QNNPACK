@@ -35,28 +35,28 @@ static void softargmax_q8(benchmark::State& state) {
     state.SkipWithError("failed to initialize QNNPACK");
   }
 
-  qnnp_operator_t argSoftMaxOperator = nullptr;
+  qnnp_operator_t softArgMaxOperator = nullptr;
   status = qnnp_create_softargmax_nc_q8(
     channels, 1.0f /* input scale */,
     0 /* output zero point */, 1.0f / 256.0f /* output scale */,
-    &argSoftMaxOperator);
-  if (status != qnnp_status_success || argSoftMaxOperator == nullptr) {
-    state.SkipWithError("failed to create ArgSoftMax operator");
+    &softArgMaxOperator);
+  if (status != qnnp_status_success || softArgMaxOperator == nullptr) {
+    state.SkipWithError("failed to create SoftArgMax operator");
   }
 
   status = qnnp_setup_softargmax_nc_q8(
-    argSoftMaxOperator,
+    softArgMaxOperator,
     batchSize,
     input.data(), channels /* input:stride */,
     output.data(), channels /* output:stride */);
   if (status != qnnp_status_success) {
-    state.SkipWithError("failed to setup ArgSoftMax operator");
+    state.SkipWithError("failed to setup SoftArgMax operator");
   }
 
   for (auto _ : state) {
-    status = qnnp_run_operator(argSoftMaxOperator, nullptr /* thread pool */);
+    status = qnnp_run_operator(softArgMaxOperator, nullptr /* thread pool */);
     if (status != qnnp_status_success) {
-      state.SkipWithError("failed to run ArgSoftMax operator");
+      state.SkipWithError("failed to run SoftArgMax operator");
     }
   }
 
@@ -66,9 +66,9 @@ static void softargmax_q8(benchmark::State& state) {
   const size_t bytesPerIteration = 2 * itemsPerIteration * sizeof(uint8_t);
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(bytesPerIteration));
 
-  status = qnnp_delete_operator(argSoftMaxOperator);
+  status = qnnp_delete_operator(softArgMaxOperator);
   if (status != qnnp_status_success) {
-    state.SkipWithError("failed to delete ArgSoftMax operator");
+    state.SkipWithError("failed to delete SoftArgMax operator");
   }
 }
 
