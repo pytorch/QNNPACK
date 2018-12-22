@@ -652,6 +652,13 @@ IF(QNNPACK_BUILD_BENCHMARKS)
     CXX_EXTENSIONS NO)
   TARGET_LINK_LIBRARIES(max-pooling-bench PRIVATE qnnpack benchmark)
 
+  ADD_EXECUTABLE(sigmoid-bench bench/sigmoid.cc)
+  SET_TARGET_PROPERTIES(sigmoid-bench PROPERTIES
+    CXX_STANDARD 11
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO)
+  TARGET_LINK_LIBRARIES(sigmoid-bench PRIVATE qnnpack benchmark)
+
   ADD_EXECUTABLE(softargmax-bench bench/softargmax.cc)
   SET_TARGET_PROPERTIES(softargmax-bench PROPERTIES
     CXX_STANDARD 11

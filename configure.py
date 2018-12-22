@@ -213,6 +213,7 @@ def main(args):
         build.benchmark("convolution-bench", build.cxx("convolution.cc"))
         build.benchmark("global-average-pooling-bench", build.cxx("global-average-pooling.cc"))
         build.benchmark("max-pooling-bench", build.cxx("max-pooling.cc"))
+        build.benchmark("sigmoid-bench", build.cxx("sigmoid.cc"))
         build.benchmark("softargmax-bench", build.cxx("softargmax.cc"))
 
         build.benchmark("q8gemm-bench", build.cxx("q8gemm.cc"))
