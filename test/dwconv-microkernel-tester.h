@@ -169,7 +169,7 @@ class DWConvMicrokernelTester {
     return this->iterations_;
   }
 
-  void test(q8updw_ukernel_function q8updw) const {
+  void test(q8dwconv_up_ukernel_function q8dwconv) const {
     std::random_device randomDevice;
     auto rng = std::mt19937(randomDevice());
     auto s32rng = std::bind(std::uniform_int_distribution<int32_t>(-10000, 10000), rng);
@@ -237,7 +237,7 @@ class DWConvMicrokernelTester {
           inputZeroPoint(), kernelZeroPoint(),
           requantizationScale, outputZeroPoint, qmin(), qmax());
 
-      q8updw(
+      q8dwconv(
         channels(), width(),
         indirectInput.data(), packedWeights.data(), output.data(),
         kernelHeight() * subsampling() * sizeof(void*),
@@ -259,7 +259,7 @@ class DWConvMicrokernelTester {
     }
   }
 
-  void test(q8mpdw_ukernel_function q8mpdw) const {
+  void test(q8dwconv_mp_ukernel_function q8dwconv) const {
     ASSERT_EQ(25, kernelSize()) << "only 5x5 microkernel is currently supported";
 
     std::random_device randomDevice;
@@ -341,7 +341,7 @@ class DWConvMicrokernelTester {
         qnnp_compute_scalar_requantization_params(
           requantizationScale, outputZeroPoint, qmin(), qmax());
 
-      q8mpdw(
+      q8dwconv(
         channels(), width(),
         indirectInput.data(), packedWeights.data(), outacc32.data(), output.data(),
         kernelHeight() * subsampling() * sizeof(void*),

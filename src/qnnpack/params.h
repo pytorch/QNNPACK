@@ -345,7 +345,7 @@ typedef void (*hgemm_ukernel_function)(
     size_t c_stride,
     const struct qnnp_fp16_clamping_params* clamping_params);
 
-typedef void (*q8updw_ukernel_function)(
+typedef void (*q8dwconv_up_ukernel_function)(
     size_t channels,
     size_t output_width,
     const uint8_t** input,
@@ -355,12 +355,12 @@ typedef void (*q8updw_ukernel_function)(
     size_t output_increment,
     const union qnnp_conv_quantization_params* quantization_params);
 
-typedef void (*q8mpdw_ukernel_function)(
+typedef void (*q8dwconv_mp_ukernel_function)(
     size_t channels,
     size_t output_width,
     const uint8_t** input,
     const void* weights,
-    int32_t* multipass_acc,
+    int32_t* buffer,
     uint8_t* output,
     size_t input_stride,
     size_t output_increment,
@@ -459,13 +459,13 @@ struct q8conv_xzp_parameters {
   size_t kthreshold;
 };
 
-struct q8updw_parameters {
-  q8updw_ukernel_function updw;
+struct q8dwconv_up_parameters {
+  q8dwconv_up_ukernel_function updw;
   uint8_t cr;
 };
 
-struct q8mpdw_parameters {
-  q8mpdw_ukernel_function mpdw;
+struct q8dwconv_mp_parameters {
+  q8dwconv_mp_ukernel_function mpdw;
   uint8_t cr;
 };
 
@@ -509,8 +509,8 @@ struct x8zip_parameters {
 struct qnnp_parameters {
   struct q8conv_parameters q8conv;
   struct q8conv_xzp_parameters q8conv_xzp;
-  struct q8updw_parameters q8dw9;
-  struct q8mpdw_parameters q8dw25;
+  struct q8dwconv_up_parameters q8dw9;
+  struct q8dwconv_mp_parameters q8dw25;
   struct q8sum_rows_parameters q8sum_rows;
   q8vadd_ukernel_function q8vadd;
   struct q8gavgpool_parameters q8gavgpool;

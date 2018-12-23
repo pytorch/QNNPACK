@@ -8,10 +8,10 @@
 
 #include <arm_neon.h>
 
-#include <qnnpack/q8dw.h>
+#include <qnnpack/q8dwconv.h>
 
 
-void q8updw_ukernel_9c8__neon(
+void q8dwconv_ukernel_up8x9__neon(
     size_t channels,
     size_t output_width,
     const uint8_t** input,

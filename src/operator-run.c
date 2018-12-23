@@ -213,7 +213,7 @@ static void compute_q8conv(
       &context->quantization_params);
 }
 
-struct q8dw_context {
+struct q8dwconv_context {
   size_t groups;
   size_t group_stride;
   const uint8_t** indirection_buffer;
@@ -227,13 +227,13 @@ struct q8dw_context {
   size_t output_col_increment;
   union qnnp_conv_quantization_params quantization_params;
   union {
-    const q8updw_ukernel_function unipass_ukernel;
-    const q8mpdw_ukernel_function multipass_ukernel;
+    const q8dwconv_up_ukernel_function unipass_ukernel;
+    const q8dwconv_mp_ukernel_function multipass_ukernel;
   };
 };
 
-static void compute_q8updw(
-    const struct q8dw_context context[restrict static 1],
+static void compute_dwconv_unipass(
+    const struct q8dwconv_context context[restrict static 1],
     size_t image,
     size_t output_y)
 {
@@ -250,8 +250,8 @@ static void compute_q8updw(
     &context->quantization_params);
 }
 
-static void compute_q8mpdw(
-    const struct q8dw_context context[restrict static 1],
+static void compute_dwconv_multiipass(
+    const struct q8dwconv_context context[restrict static 1],
     size_t image,
     size_t output_y)
 {
@@ -621,7 +621,7 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
       switch (kernel_size) {
         case 9:
         {
-          struct q8dw_context q8dw_context = {
+          struct q8dwconv_context context = {
               .groups = groups,
               .indirection_buffer = (const uint8_t**) op->indirection_buffer,
               .indirection_buffer_row_stride = kernel_size + (output_width * width_step - 1) * kernel_height,
@@ -637,14 +637,14 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
           };
           pthreadpool_compute_2d(
               threadpool,
-              (pthreadpool_function_2d_t) compute_q8updw,
-              &q8dw_context,
+              (pthreadpool_function_2d_t) compute_dwconv_unipass,
+              &context,
               batch_size, output_height);
           break;
         }
         case 25:
         {
-          struct q8dw_context q8dw_context = {
+          struct q8dwconv_context context = {
               .groups = groups,
               .group_stride = op->group_stride,
               .indirection_buffer = (const uint8_t**) op->indirection_buffer,
@@ -661,8 +661,8 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
           };
           pthreadpool_compute_2d(
               threadpool,
-              (pthreadpool_function_2d_t) compute_q8mpdw,
-              &q8dw_context,
+              (pthreadpool_function_2d_t) compute_dwconv_multiipass,
+              &context,
               batch_size, output_height);
           break;
         }

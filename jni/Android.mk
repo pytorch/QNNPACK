@@ -14,20 +14,20 @@ LOCAL_SRC_FILES += \
 	src/q8avgpool/up8x9-neon.c \
 	src/q8avgpool/up8xm-neon.c \
 	src/q8conv/4x8-aarch32-neon.S \
-	src/q8gavgpool/mp8x7-neon.c \
+	src/q8dwconv/mp8x25-neon.c \
+	src/q8dwconv/up8x9-aarch32-neon.S \
+	src/q8gavgpool/mp8x7p7q-neon.c \
 	src/q8gavgpool/up8x7-neon.c \
 	src/q8gavgpool/up8xm-neon.c \
 	src/q8gemm/4x-sumrows-neon.c \
 	src/q8gemm/4x8-aarch32-neon.S \
 	src/q8gemm/4x8c2-xzp-aarch32-neon.S \
-	src/q8mpdw/25c8-neon.c \
-	src/q8updw/9c8-aarch32-neon.S \
 	src/q8vadd/neon.c \
 	src/u8clamp/neon.c \
+	src/u8lut32norm/scalar.c \
 	src/u8maxpool/16x9p8q-neon.c \
 	src/u8maxpool/sub16-neon.c \
 	src/u8rmax/neon.c \
-	src/u8lut32norm/scalar.c \
 	src/x8lut/scalar.c \
 	src/x8zip/x2-neon.c \
 	src/x8zip/x3-neon.c \
@@ -47,12 +47,12 @@ LOCAL_SRC_FILES += \
 	src/q8avgpool/up8x9-neon.c \
 	src/q8avgpool/up8xm-neon.c \
 	src/q8conv/8x8-aarch64-neon.S \
-	src/q8gavgpool/mp8x7-neon.c \
+	src/q8dwconv/mp8x25-neon.c \
+	src/q8dwconv/up8x9-neon.c \
+	src/q8gavgpool/mp8x7p7q-neon.c \
 	src/q8gavgpool/up8x7-neon.c \
 	src/q8gavgpool/up8xm-neon.c \
 	src/q8gemm/8x8-aarch64-neon.S \
-	src/q8mpdw/25c8-neon.c \
-	src/q8updw/9c8-neon.c \
 	src/q8vadd/neon.c \
 	src/u8clamp/neon.c \
 	src/u8lut32norm/scalar.c \
@@ -78,12 +78,12 @@ LOCAL_SRC_FILES += \
 	src/q8avgpool/up8x9-sse2.c \
 	src/q8avgpool/up8xm-sse2.c \
 	src/q8conv/4x4c2-sse2.c \
-	src/q8gavgpool/mp8x7-sse2.c \
+	src/q8dwconv/mp8x25-sse2.c \
+	src/q8dwconv/up8x9-sse2.c \
+	src/q8gavgpool/mp8x7p7q-sse2.c \
 	src/q8gavgpool/up8x7-sse2.c \
 	src/q8gavgpool/up8xm-sse2.c \
 	src/q8gemm/4x4c2-sse2.c \
-	src/q8mpdw/25c8-sse2.c \
-	src/q8updw/9c8-sse2.c \
 	src/q8vadd/sse2.c \
 	src/u8clamp/sse2.c \
 	src/u8lut32norm/scalar.c \

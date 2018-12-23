@@ -8,10 +8,10 @@
 
 #include <immintrin.h>
 
-#include <qnnpack/q8dw.h>
+#include <qnnpack/q8dwconv.h>
 
 
-void q8mpdw_ukernel_25c8__sse2(
+void q8dwconv_ukernel_mp8x25__sse2(
     size_t channels,
     size_t output_width,
     const uint8_t** input,

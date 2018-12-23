@@ -18,7 +18,7 @@
 #include <qnnpack/params.h>
 #include <qnnpack/q8avgpool.h>
 #include <qnnpack/q8conv.h>
-#include <qnnpack/q8dw.h>
+#include <qnnpack/q8dwconv.h>
 #include <qnnpack/q8gavgpool.h>
 #include <qnnpack/q8gemm.h>
 #include <qnnpack/q8vadd.h>
@@ -73,12 +73,12 @@ static void init(void) {
     default:
       break;
   }
-  qnnp_params.q8dw9 = (struct q8updw_parameters) {
-      .updw = q8updw_ukernel_9c8__aarch32_neon,
+  qnnp_params.q8dw9 = (struct q8dwconv_up_parameters) {
+      .updw = q8dwconv_ukernel_up8x9__aarch32_neon,
       .cr = 8,
   };
-  qnnp_params.q8dw25 = (struct q8mpdw_parameters) {
-      .mpdw = q8mpdw_ukernel_25c8__neon,
+  qnnp_params.q8dw25 = (struct q8dwconv_mp_parameters) {
+      .mpdw = q8dwconv_ukernel_mp8x25__neon,
       .cr = 8,
   };
   qnnp_params.q8sum_rows = (struct q8sum_rows_parameters) {
@@ -129,12 +129,12 @@ static void init(void) {
   qnnp_params.q8conv_xzp = (struct q8conv_xzp_parameters) {
       .kthreshold = SIZE_MAX,
   };
-  qnnp_params.q8dw9 = (struct q8updw_parameters) {
-      .updw = q8updw_ukernel_9c8__neon,
+  qnnp_params.q8dw9 = (struct q8dwconv_up_parameters) {
+      .updw = q8dwconv_ukernel_up8x9__neon,
       .cr = 8,
   };
-  qnnp_params.q8dw25 = (struct q8mpdw_parameters) {
-      .mpdw = q8mpdw_ukernel_25c8__neon,
+  qnnp_params.q8dw25 = (struct q8dwconv_mp_parameters) {
+      .mpdw = q8dwconv_ukernel_mp8x25__neon,
       .cr = 8,
   };
   qnnp_params.q8vadd = q8vadd_ukernel__neon;
@@ -185,12 +185,12 @@ static void init(void) {
   qnnp_params.q8conv_xzp = (struct q8conv_xzp_parameters) {
       .kthreshold = SIZE_MAX,
   };
-  qnnp_params.q8dw9 = (struct q8updw_parameters) {
-      .updw = q8updw_ukernel_9c8__sse2,
+  qnnp_params.q8dw9 = (struct q8dwconv_up_parameters) {
+      .updw = q8dwconv_ukernel_up8x9__sse2,
       .cr = 8,
   };
-  qnnp_params.q8dw25 = (struct q8mpdw_parameters) {
-      .mpdw = q8mpdw_ukernel_25c8__sse2,
+  qnnp_params.q8dw25 = (struct q8dwconv_mp_parameters) {
+      .mpdw = q8dwconv_ukernel_mp8x25__sse2,
       .cr = 8,
   };
   qnnp_params.q8vadd = q8vadd_ukernel__sse2;

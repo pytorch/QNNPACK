@@ -18,7 +18,7 @@
 extern "C" {
 #endif
 
-#define DECLARE_Q8UPDW_FUNCTION(fn_name)                             \
+#define DECLARE_Q8UPDWCONV_UKERNEL_FUNCTION(fn_name)                 \
   QNNP_INTERNAL void fn_name(                                        \
     size_t channels,                                                 \
     size_t output_width,                                             \
@@ -29,24 +29,24 @@ extern "C" {
     size_t output_increment,                                         \
     const union qnnp_conv_quantization_params* quantization_params);
 
-DECLARE_Q8UPDW_FUNCTION(q8updw_ukernel_9c8__neon)
-DECLARE_Q8UPDW_FUNCTION(q8updw_ukernel_9c8__aarch32_neon)
-DECLARE_Q8UPDW_FUNCTION(q8updw_ukernel_9c8__sse2)
+DECLARE_Q8UPDWCONV_UKERNEL_FUNCTION(q8dwconv_ukernel_up8x9__neon)
+DECLARE_Q8UPDWCONV_UKERNEL_FUNCTION(q8dwconv_ukernel_up8x9__aarch32_neon)
+DECLARE_Q8UPDWCONV_UKERNEL_FUNCTION(q8dwconv_ukernel_up8x9__sse2)
 
-#define DECLARE_Q8MPDW_FUNCTION(fn_name)                             \
+#define DECLARE_Q8MPDWCONV_UKERNEL_FUNCTION(fn_name)                 \
   QNNP_INTERNAL void fn_name(                                        \
     size_t channels,                                                 \
     size_t output_width,                                             \
     const uint8_t** input,                                           \
     const void* weights,                                             \
-    int32_t* outacc32,                                               \
+    int32_t* buffer,                                                 \
     uint8_t* output,                                                 \
     size_t input_stride,                                             \
     size_t output_increment,                                         \
     const union qnnp_conv_quantization_params* quantization_params);
 
-DECLARE_Q8MPDW_FUNCTION(q8mpdw_ukernel_25c8__neon)
-DECLARE_Q8MPDW_FUNCTION(q8mpdw_ukernel_25c8__sse2)
+DECLARE_Q8MPDWCONV_UKERNEL_FUNCTION(q8dwconv_ukernel_mp8x25__neon)
+DECLARE_Q8MPDWCONV_UKERNEL_FUNCTION(q8dwconv_ukernel_mp8x25__sse2)
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -98,6 +98,8 @@ def main(args):
                     build.cc("q8avgpool/up8xm-neon.c"),
                     build.cc("q8conv/4x8-neon.c"),
                     build.cc("q8conv/8x8-neon.c"),
+                    build.cc("q8dwconv/mp8x25-neon.c"),
+                    build.cc("q8dwconv/up8x9-neon.c"),
                     build.cc("q8gavgpool/mp8x7p7q-neon.c"),
                     build.cc("q8gavgpool/up8x7-neon.c"),
                     build.cc("q8gavgpool/up8xm-neon.c"),
@@ -106,8 +108,6 @@ def main(args):
                     build.cc("q8gemm/4x8c2-xzp-neon.c"),
                     build.cc("q8gemm/6x4-neon.c"),
                     build.cc("q8gemm/8x8-neon.c"),
-                    build.cc("q8mpdw/25c8-neon.c"),
-                    build.cc("q8updw/9c8-neon.c"),
                     build.cc("q8vadd/neon.c"),
                     build.cc("sgemm/5x8-neon.c"),
                     build.cc("sgemm/6x8-neon.c"),
@@ -122,11 +122,11 @@ def main(args):
                 ]
             if build.target.is_arm:
                 qnnpack_objects += [
+                    build.cc("hgemm/8x8-aarch32-neonfp16arith.S"),
+                    build.cc("q8conv/4x8-aarch32-neon.S"),
+                    build.cc("q8dwconv/up8x9-aarch32-neon.S"),
                     build.cc("q8gemm/4x8-aarch32-neon.S"),
                     build.cc("q8gemm/4x8c2-xzp-aarch32-neon.S"),
-                    build.cc("q8conv/4x8-aarch32-neon.S"),
-                    build.cc("q8updw/9c8-aarch32-neon.S"),
-                    build.cc("hgemm/8x8-aarch32-neonfp16arith.S"),
                 ]
             if build.target.is_arm64:
                 qnnpack_objects += [
@@ -140,13 +140,13 @@ def main(args):
                         build.cc("q8avgpool/up8x9-sse2.c"),
                         build.cc("q8avgpool/up8xm-sse2.c"),
                         build.cc("q8conv/4x4c2-sse2.c"),
+                        build.cc("q8dwconv/mp8x25-sse2.c"),
+                        build.cc("q8dwconv/up8x9-sse2.c"),
                         build.cc("q8gavgpool/mp8x7p7q-sse2.c"),
                         build.cc("q8gavgpool/up8x7-sse2.c"),
                         build.cc("q8gavgpool/up8xm-sse2.c"),
                         build.cc("q8gemm/2x4c8-sse2.c"),
                         build.cc("q8gemm/4x4c2-sse2.c"),
-                        build.cc("q8mpdw/25c8-sse2.c"),
-                        build.cc("q8updw/9c8-sse2.c"),
                         build.cc("q8vadd/sse2.c"),
                         build.cc("u8clamp/sse2.c"),
                         build.cc("u8maxpool/16x9p8q-sse2.c"),
@@ -165,21 +165,20 @@ def main(args):
                 "log": build.target.is_android},
             extra_include_dirs=["src", "test"]):
 
-        build.unittest("q8gemm-test", build.cxx("q8gemm.cc"))
-        build.unittest("q8conv-test", build.cxx("q8conv.cc"))
-        build.unittest("q8updw-test", build.cxx("q8updw.cc"))
-        build.unittest("q8mpdw-test", build.cxx("q8mpdw.cc"))
-        build.unittest("q8avgpool-test", build.cxx("q8avgpool.cc"))
-        build.unittest("q8gavgpool-test", build.cxx("q8gavgpool.cc"))
-        build.unittest("q8vadd-test", build.cxx("q8vadd.cc"))
-        build.unittest("u8maxpool-test", build.cxx("u8maxpool.cc"))
-        build.unittest("u8clamp-test", build.cxx("u8clamp.cc"))
-        build.unittest("u8rmax-test", build.cxx("u8rmax.cc"))
-        build.unittest("u8lut32norm-test", build.cxx("u8lut32norm.cc"))
         build.unittest("hgemm-test", build.cxx("hgemm.cc"))
+        build.unittest("q8avgpool-test", build.cxx("q8avgpool.cc"))
+        build.unittest("q8conv-test", build.cxx("q8conv.cc"))
+        build.unittest("q8dwconv-test", build.cxx("q8dwconv.cc"))
+        build.unittest("q8gavgpool-test", build.cxx("q8gavgpool.cc"))
+        build.unittest("q8gemm-test", build.cxx("q8gemm.cc"))
+        build.unittest("q8vadd-test", build.cxx("q8vadd.cc"))
         build.unittest("sgemm-test", build.cxx("sgemm.cc"))
-        build.unittest("x8zip-test", build.cxx("x8zip.cc"))
+        build.unittest("u8clamp-test", build.cxx("u8clamp.cc"))
+        build.unittest("u8lut32norm-test", build.cxx("u8lut32norm.cc"))
+        build.unittest("u8maxpool-test", build.cxx("u8maxpool.cc"))
+        build.unittest("u8rmax-test", build.cxx("u8rmax.cc"))
         build.unittest("x8lut-test", build.cxx("x8lut.cc"))
+        build.unittest("x8zip-test", build.cxx("x8zip.cc"))
 
         build.unittest("add-test", build.cxx("add.cc"))
         build.unittest("average-pooling-test", build.cxx("average-pooling.cc"))
