@@ -434,7 +434,7 @@ typedef void (*u8lut32norm_ukernel_function)(
     const uint32_t* t,
     uint8_t* y);
 
-typedef void (*q8uvadd_ukernel_function)(
+typedef void (*q8vadd_ukernel_function)(
     size_t n,
     const uint8_t* a,
     const uint8_t* b,
@@ -472,10 +472,6 @@ struct q8mpdw_parameters {
 struct q8sum_rows_parameters {
   q8sum_rows_ukernel_function sum_rows;
   uint32_t m;
-};
-
-struct q8add_parameters {
-  q8uvadd_ukernel_function uvadd;
 };
 
 struct q8gavgpool_parameters {
@@ -516,7 +512,7 @@ struct qnnp_parameters {
   struct q8updw_parameters q8dw9;
   struct q8mpdw_parameters q8dw25;
   struct q8sum_rows_parameters q8sum_rows;
-  struct q8add_parameters q8add;
+  q8vadd_ukernel_function q8vadd;
   struct q8gavgpool_parameters q8gavgpool;
   struct q8avgpool_parameters q8avgpool;
   struct u8maxpool_parameters u8maxpool;

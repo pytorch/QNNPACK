@@ -10,7 +10,7 @@
 #include <cpuinfo.h>
 
 #include <qnnpack/isa-checks.h>
-#include <qnnpack/q8add.h>
+#include <qnnpack/q8vadd.h>
 
 #include "vadd-microkernel-tester.h"
 
@@ -20,7 +20,7 @@
     TEST_REQUIRES_X86_SSE2;
     VAddMicrokernelTester()
       .n(8)
-      .test(q8uvadd_ukernel__sse2);
+      .test(q8vadd_ukernel__sse2);
   }
 
   TEST(Q8VADD__SSE2, n_div_8) {
@@ -28,7 +28,7 @@
     for (size_t n = 8; n < 128; n += 24) {
       VAddMicrokernelTester()
         .n(n)
-        .test(q8uvadd_ukernel__sse2);
+        .test(q8vadd_ukernel__sse2);
     }
   }
 
@@ -37,7 +37,7 @@
     for (size_t n = 9; n < 16; n++) {
       VAddMicrokernelTester()
         .n(n)
-        .test(q8uvadd_ukernel__sse2);
+        .test(q8vadd_ukernel__sse2);
     }
   }
 
@@ -46,7 +46,7 @@
     for (size_t n = 1; n < 8; n++) {
       VAddMicrokernelTester()
         .n(n)
-        .test(q8uvadd_ukernel__sse2);
+        .test(q8vadd_ukernel__sse2);
     }
   }
 
@@ -57,7 +57,7 @@
         .iterations(1)
         .n(n)
         .inplaceA(true)
-        .test(q8uvadd_ukernel__sse2);
+        .test(q8vadd_ukernel__sse2);
     }
   }
 
@@ -68,7 +68,7 @@
         .iterations(1)
         .n(n)
         .inplaceB(true)
-        .test(q8uvadd_ukernel__sse2);
+        .test(q8vadd_ukernel__sse2);
     }
   }
 
@@ -80,7 +80,7 @@
         .n(n)
         .inplaceA(true)
         .inplaceB(true)
-        .test(q8uvadd_ukernel__sse2);
+        .test(q8vadd_ukernel__sse2);
     }
   }
 
@@ -92,7 +92,7 @@
           .iterations(1)
           .n(n)
           .aScale(aScale)
-          .test(q8uvadd_ukernel__sse2);
+          .test(q8vadd_ukernel__sse2);
       }
     }
   }
@@ -105,7 +105,7 @@
           .iterations(1)
           .n(n)
           .bScale(bScale)
-          .test(q8uvadd_ukernel__sse2);
+          .test(q8vadd_ukernel__sse2);
       }
     }
   }
@@ -118,7 +118,7 @@
           .iterations(1)
           .n(n)
           .yScale(yScale)
-          .test(q8uvadd_ukernel__sse2);
+          .test(q8vadd_ukernel__sse2);
       }
     }
   }
@@ -131,7 +131,7 @@
           .iterations(1)
           .n(n)
           .aZeroPoint(uint8_t(aZeroPoint))
-          .test(q8uvadd_ukernel__sse2);
+          .test(q8vadd_ukernel__sse2);
       }
     }
   }
@@ -144,7 +144,7 @@
           .iterations(1)
           .n(n)
           .bZeroPoint(uint8_t(bZeroPoint))
-          .test(q8uvadd_ukernel__sse2);
+          .test(q8vadd_ukernel__sse2);
       }
     }
   }
@@ -157,7 +157,7 @@
           .iterations(1)
           .n(n)
           .yZeroPoint(uint8_t(yZeroPoint))
-          .test(q8uvadd_ukernel__sse2);
+          .test(q8vadd_ukernel__sse2);
       }
     }
   }
@@ -169,7 +169,7 @@
         .iterations(1)
         .n(n)
         .qmin(128)
-        .test(q8uvadd_ukernel__sse2);
+        .test(q8vadd_ukernel__sse2);
     }
   }
 
@@ -180,7 +180,7 @@
         .iterations(1)
         .n(n)
         .qmax(128)
-        .test(q8uvadd_ukernel__sse2);
+        .test(q8vadd_ukernel__sse2);
     }
   }
 #endif /* CPUINFO_ARCH_X86 || CPUINFO_ARCH_X86_64 */
@@ -190,7 +190,7 @@
     TEST_REQUIRES_ARM_NEON;
     VAddMicrokernelTester()
       .n(8)
-      .test(q8uvadd_ukernel__neon);
+      .test(q8vadd_ukernel__neon);
   }
 
   TEST(Q8VADD__NEON, n_div_8) {
@@ -198,7 +198,7 @@
     for (size_t n = 8; n < 128; n += 24) {
       VAddMicrokernelTester()
         .n(n)
-        .test(q8uvadd_ukernel__neon);
+        .test(q8vadd_ukernel__neon);
     }
   }
 
@@ -207,7 +207,7 @@
     for (size_t n = 9; n < 16; n++) {
       VAddMicrokernelTester()
         .n(n)
-        .test(q8uvadd_ukernel__neon);
+        .test(q8vadd_ukernel__neon);
     }
   }
 
@@ -216,7 +216,7 @@
     for (size_t n = 1; n < 8; n++) {
       VAddMicrokernelTester()
         .n(n)
-        .test(q8uvadd_ukernel__neon);
+        .test(q8vadd_ukernel__neon);
     }
   }
 
@@ -227,7 +227,7 @@
         .iterations(1)
         .n(n)
         .inplaceA(true)
-        .test(q8uvadd_ukernel__neon);
+        .test(q8vadd_ukernel__neon);
     }
   }
 
@@ -238,7 +238,7 @@
         .iterations(1)
         .n(n)
         .inplaceB(true)
-        .test(q8uvadd_ukernel__neon);
+        .test(q8vadd_ukernel__neon);
     }
   }
 
@@ -250,7 +250,7 @@
         .n(n)
         .inplaceA(true)
         .inplaceB(true)
-        .test(q8uvadd_ukernel__neon);
+        .test(q8vadd_ukernel__neon);
     }
   }
 
@@ -262,7 +262,7 @@
           .iterations(1)
           .n(n)
           .aScale(aScale)
-          .test(q8uvadd_ukernel__neon);
+          .test(q8vadd_ukernel__neon);
       }
     }
   }
@@ -275,7 +275,7 @@
           .iterations(1)
           .n(n)
           .bScale(bScale)
-          .test(q8uvadd_ukernel__neon);
+          .test(q8vadd_ukernel__neon);
       }
     }
   }
@@ -288,7 +288,7 @@
           .iterations(1)
           .n(n)
           .yScale(yScale)
-          .test(q8uvadd_ukernel__neon);
+          .test(q8vadd_ukernel__neon);
       }
     }
   }
@@ -301,7 +301,7 @@
           .iterations(1)
           .n(n)
           .aZeroPoint(uint8_t(aZeroPoint))
-          .test(q8uvadd_ukernel__neon);
+          .test(q8vadd_ukernel__neon);
       }
     }
   }
@@ -314,7 +314,7 @@
           .iterations(1)
           .n(n)
           .bZeroPoint(uint8_t(bZeroPoint))
-          .test(q8uvadd_ukernel__neon);
+          .test(q8vadd_ukernel__neon);
       }
     }
   }
@@ -327,7 +327,7 @@
           .iterations(1)
           .n(n)
           .yZeroPoint(uint8_t(yZeroPoint))
-          .test(q8uvadd_ukernel__neon);
+          .test(q8vadd_ukernel__neon);
       }
     }
   }
@@ -339,7 +339,7 @@
         .iterations(1)
         .n(n)
         .qmin(128)
-        .test(q8uvadd_ukernel__neon);
+        .test(q8vadd_ukernel__neon);
     }
   }
 
@@ -350,7 +350,7 @@
         .iterations(1)
         .n(n)
         .qmax(128)
-        .test(q8uvadd_ukernel__neon);
+        .test(q8vadd_ukernel__neon);
     }
   }
 #endif /* CPUINFO_ARCH_ARM || CPUINFO_ARCH_ARM64 */

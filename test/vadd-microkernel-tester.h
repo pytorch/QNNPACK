@@ -137,7 +137,7 @@ class VAddMicrokernelTester {
     return this->iterations_;
   }
 
-  void test(q8uvadd_ukernel_function q8uvadd) const {
+  void test(q8vadd_ukernel_function q8vadd) const {
     std::random_device randomDevice;
     auto rng = std::mt19937(randomDevice());
     auto u8rng = std::bind(std::uniform_int_distribution<uint8_t>(), rng);
@@ -157,11 +157,6 @@ class VAddMicrokernelTester {
       }
       const uint8_t* aData = inplaceA() ? y.data() : a.data();
       const uint8_t* bData = inplaceB() ? y.data() : b.data();
-
-      if (n() > 3) {
-        ASSERT_NE(*std::max_element(a.cbegin(), a.cend()), *std::min_element(a.cbegin(), a.cend()));
-        ASSERT_NE(*std::max_element(b.cbegin(), b.cend()), *std::min_element(b.cbegin(), b.cend()));
-      }
 
       /* Prepare quantization parameters */
       const union qnnp_add_quantization_params quantizationParams =
@@ -186,7 +181,7 @@ class VAddMicrokernelTester {
       }
 
       /* Call optimized micro-kernel */
-      q8uvadd(n(), aData, bData, y.data(), &quantizationParams);
+      q8vadd(n(), aData, bData, y.data(), &quantizationParams);
 
       /* Verify results */
       for (size_t i = 0; i < n(); i++) {

@@ -8,10 +8,11 @@
 
 #include <arm_neon.h>
 
-#include <qnnpack/q8add.h>
+#include <qnnpack/common.h>
+#include <qnnpack/q8vadd.h>
 
 
-void q8uvadd_ukernel__neon(
+void q8vadd_ukernel__neon(
     size_t n,
     const uint8_t* a,
     const uint8_t* b,

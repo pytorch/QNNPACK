@@ -10,22 +10,22 @@ ifeq ($(TARGET_ARCH_ABI),$(filter $(TARGET_ARCH_ABI),armeabi armeabi-v7a))
 include $(CLEAR_VARS)
 LOCAL_MODULE := qnnpack_aarch32_neon_ukernels
 LOCAL_SRC_FILES += \
-	src/q8add/neon.c \
-	src/q8gavgpool/mp8x7-neon.c \
-	src/q8gavgpool/up8x7-neon.c \
-	src/q8gavgpool/up8xm-neon.c \
 	src/q8avgpool/mp8x9p8q-neon.c \
 	src/q8avgpool/up8x9-neon.c \
 	src/q8avgpool/up8xm-neon.c \
 	src/q8conv/4x8-aarch32-neon.S \
+	src/q8gavgpool/mp8x7-neon.c \
+	src/q8gavgpool/up8x7-neon.c \
+	src/q8gavgpool/up8xm-neon.c \
+	src/q8gemm/4x-sumrows-neon.c \
 	src/q8gemm/4x8-aarch32-neon.S \
 	src/q8gemm/4x8c2-xzp-aarch32-neon.S \
-	src/q8gemm/4x-sumrows-neon.c \
-	src/q8updw/9c8-aarch32-neon.S \
 	src/q8mpdw/25c8-neon.c \
-	src/u8maxpool/sub16-neon.c \
-	src/u8maxpool/16x9p8q-neon.c \
+	src/q8updw/9c8-aarch32-neon.S \
+	src/q8vadd/neon.c \
 	src/u8clamp/neon.c \
+	src/u8maxpool/16x9p8q-neon.c \
+	src/u8maxpool/sub16-neon.c \
 	src/u8rmax/neon.c \
 	src/u8lut32norm/scalar.c \
 	src/x8lut/scalar.c \
@@ -43,22 +43,22 @@ ifeq ($(TARGET_ARCH_ABI),$(filter $(TARGET_ARCH_ABI),arm64-v8a))
 include $(CLEAR_VARS)
 LOCAL_MODULE := qnnpack_aarch64_neon_ukernels
 LOCAL_SRC_FILES += \
-	src/q8add/neon.c \
-	src/q8gavgpool/mp8x7-neon.c \
-	src/q8gavgpool/up8x7-neon.c \
-	src/q8gavgpool/up8xm-neon.c \
 	src/q8avgpool/mp8x9p8q-neon.c \
 	src/q8avgpool/up8x9-neon.c \
 	src/q8avgpool/up8xm-neon.c \
 	src/q8conv/8x8-aarch64-neon.S \
+	src/q8gavgpool/mp8x7-neon.c \
+	src/q8gavgpool/up8x7-neon.c \
+	src/q8gavgpool/up8xm-neon.c \
 	src/q8gemm/8x8-aarch64-neon.S \
-	src/q8updw/9c8-neon.c \
 	src/q8mpdw/25c8-neon.c \
-	src/u8maxpool/sub16-neon.c \
-	src/u8maxpool/16x9p8q-neon.c \
+	src/q8updw/9c8-neon.c \
+	src/q8vadd/neon.c \
 	src/u8clamp/neon.c \
-	src/u8rmax/neon.c \
 	src/u8lut32norm/scalar.c \
+	src/u8maxpool/16x9p8q-neon.c \
+	src/u8maxpool/sub16-neon.c \
+	src/u8rmax/neon.c \
 	src/x8lut/scalar.c \
 	src/x8zip/x2-neon.c \
 	src/x8zip/x3-neon.c \
@@ -74,22 +74,22 @@ ifeq ($(TARGET_ARCH_ABI),$(filter $(TARGET_ARCH_ABI),x86 x86_64))
 include $(CLEAR_VARS)
 LOCAL_MODULE := qnnpack_sse2_ukernels
 LOCAL_SRC_FILES += \
-	src/q8add/sse2.c \
-	src/q8gavgpool/mp8x7-sse2.c \
-	src/q8gavgpool/up8x7-sse2.c \
-	src/q8gavgpool/up8xm-sse2.c \
 	src/q8avgpool/mp8x9p8q-sse2.c \
 	src/q8avgpool/up8x9-sse2.c \
 	src/q8avgpool/up8xm-sse2.c \
 	src/q8conv/4x4c2-sse2.c \
+	src/q8gavgpool/mp8x7-sse2.c \
+	src/q8gavgpool/up8x7-sse2.c \
+	src/q8gavgpool/up8xm-sse2.c \
 	src/q8gemm/4x4c2-sse2.c \
 	src/q8mpdw/25c8-sse2.c \
 	src/q8updw/9c8-sse2.c \
-	src/u8maxpool/sub16-sse2.c \
-	src/u8maxpool/16x9p8q-sse2.c \
+	src/q8vadd/sse2.c \
 	src/u8clamp/sse2.c \
-	src/u8rmax/sse2.c \
 	src/u8lut32norm/scalar.c \
+	src/u8maxpool/16x9p8q-sse2.c \
+	src/u8maxpool/sub16-sse2.c \
+	src/u8rmax/sse2.c \
 	src/x8lut/scalar.c \
 	src/x8zip/x2-sse2.c \
 	src/x8zip/x3-sse2.c \

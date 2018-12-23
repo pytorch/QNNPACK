@@ -428,7 +428,7 @@ struct q8add_strided_context {
   const uint8_t* y;
   size_t y_stride;
   union qnnp_add_quantization_params quantization_params;
-  q8uvadd_ukernel_function ukernel;
+  q8vadd_ukernel_function ukernel;
 };
 
 static void compute_q8add_strided(
@@ -454,7 +454,7 @@ struct q8add_contiguous_context {
   const uint8_t* b;
   uint8_t* y;
   union qnnp_add_quantization_params quantization_params;
-  q8uvadd_ukernel_function ukernel;
+  q8vadd_ukernel_function ukernel;
 };
 
 static void compute_q8add_contiguous(
@@ -914,7 +914,7 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
           .b = op->input2,
           .y = op->output,
           .quantization_params = op->add_quantization_params,
-          .ukernel = qnnp_params.q8add.uvadd,
+          .ukernel = qnnp_params.q8vadd,
         };
         pthreadpool_compute_1d_tiled(
           threadpool,
@@ -931,7 +931,7 @@ enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
           .y_stride = y_stride * sizeof(uint8_t),
           .n = channels,
           .quantization_params = op->add_quantization_params,
-          .ukernel = qnnp_params.q8add.uvadd,
+          .ukernel = qnnp_params.q8vadd,
         };
         pthreadpool_compute_1d_tiled(
           threadpool,

@@ -10,10 +10,10 @@
 
 #include <qnnpack/common.h>
 #include <qnnpack/scalar-utils.h>
-#include <qnnpack/q8add.h>
+#include <qnnpack/q8vadd.h>
 
 
-void q8uvadd_ukernel__sse2(
+void q8vadd_ukernel__sse2(
     size_t n,
     const uint8_t* a,
     const uint8_t* b,

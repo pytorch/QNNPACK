@@ -18,7 +18,7 @@
 extern "C" {
 #endif
 
-#define DECLARE_Q8UVADD_UKERNEL_FUNCTION(fn_name)                     \
+#define DECLARE_Q8VADD_UKERNEL_FUNCTION(fn_name)                      \
   QNNP_INTERNAL void fn_name(                                         \
       size_t n,                                                       \
       const uint8_t* a,                                               \
@@ -27,8 +27,8 @@ extern "C" {
       const union qnnp_add_quantization_params* quantization_params);
 
 
-DECLARE_Q8UVADD_UKERNEL_FUNCTION(q8uvadd_ukernel__neon)
-DECLARE_Q8UVADD_UKERNEL_FUNCTION(q8uvadd_ukernel__sse2)
+DECLARE_Q8VADD_UKERNEL_FUNCTION(q8vadd_ukernel__neon)
+DECLARE_Q8VADD_UKERNEL_FUNCTION(q8vadd_ukernel__sse2)
 
 #ifdef __cplusplus
 } /* extern "C" */

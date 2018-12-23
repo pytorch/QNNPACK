@@ -16,16 +16,16 @@
 #include <qnnpack.h>
 #include <qnnpack/log.h>
 #include <qnnpack/params.h>
-#include <qnnpack/q8add.h>
+#include <qnnpack/q8avgpool.h>
 #include <qnnpack/q8conv.h>
 #include <qnnpack/q8dw.h>
-#include <qnnpack/q8avgpool.h>
 #include <qnnpack/q8gavgpool.h>
 #include <qnnpack/q8gemm.h>
-#include <qnnpack/u8maxpool.h>
+#include <qnnpack/q8vadd.h>
 #include <qnnpack/u8clamp.h>
-#include <qnnpack/u8rmax.h>
 #include <qnnpack/u8lut32norm.h>
+#include <qnnpack/u8maxpool.h>
+#include <qnnpack/u8rmax.h>
 #include <qnnpack/x8lut.h>
 #include <qnnpack/x8zip.h>
 
@@ -85,9 +85,7 @@ static void init(void) {
       .sum_rows = q8sumrows_ukernel_4x__neon,
       .m = 4,
   };
-  qnnp_params.q8add = (struct q8add_parameters) {
-      .uvadd = q8uvadd_ukernel__neon,
-  };
+  qnnp_params.q8vadd = q8vadd_ukernel__neon;
   qnnp_params.q8gavgpool = (struct q8gavgpool_parameters) {
       .ltnr = q8gavgpool_ukernel_up8xm__neon,
       .genr_lemr = q8gavgpool_ukernel_up8x7__neon,
@@ -139,9 +137,7 @@ static void init(void) {
       .mpdw = q8mpdw_ukernel_25c8__neon,
       .cr = 8,
   };
-  qnnp_params.q8add = (struct q8add_parameters) {
-      .uvadd = q8uvadd_ukernel__neon,
-  };
+  qnnp_params.q8vadd = q8vadd_ukernel__neon;
   qnnp_params.q8gavgpool = (struct q8gavgpool_parameters) {
       .ltnr = q8gavgpool_ukernel_up8xm__neon,
       .genr_lemr = q8gavgpool_ukernel_up8x7__neon,
@@ -197,9 +193,7 @@ static void init(void) {
       .mpdw = q8mpdw_ukernel_25c8__sse2,
       .cr = 8,
   };
-  qnnp_params.q8add = (struct q8add_parameters) {
-      .uvadd = q8uvadd_ukernel__sse2,
-  };
+  qnnp_params.q8vadd = q8vadd_ukernel__sse2;
   qnnp_params.q8gavgpool = (struct q8gavgpool_parameters) {
       .ltnr = q8gavgpool_ukernel_up8xm__sse2,
       .genr_lemr = q8gavgpool_ukernel_up8x7__sse2,
