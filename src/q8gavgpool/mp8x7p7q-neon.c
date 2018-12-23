@@ -13,7 +13,7 @@
 #include <qnnpack/q8gavgpool.h>
 
 
-void q8gavgpool_ukernel_mp8x7__neon(
+void q8gavgpool_ukernel_mp8x7p7q__neon(
     size_t m,
     size_t n,
     const uint8_t* input,

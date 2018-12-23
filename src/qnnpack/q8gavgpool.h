@@ -29,8 +29,8 @@ extern "C" {
       uint8_t* y,                                                         \
       const union qnnp_avgpool_quantization_params* quantization_params);
 
-DECLARE_Q8MPGAVGPOOL_UKERNEL_FUNCTION(q8gavgpool_ukernel_mp8x7__neon)
-DECLARE_Q8MPGAVGPOOL_UKERNEL_FUNCTION(q8gavgpool_ukernel_mp8x7__sse2)
+DECLARE_Q8MPGAVGPOOL_UKERNEL_FUNCTION(q8gavgpool_ukernel_mp8x7p7q__neon)
+DECLARE_Q8MPGAVGPOOL_UKERNEL_FUNCTION(q8gavgpool_ukernel_mp8x7p7q__sse2)
 
 #define DECLARE_Q8UPGAVGPOOL_UKERNEL_FUNCTION(fn_name)                    \
   QNNP_INTERNAL void fn_name(                                             \

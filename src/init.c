@@ -89,7 +89,7 @@ static void init(void) {
   qnnp_params.q8gavgpool = (struct q8gavgpool_parameters) {
       .ltnr = q8gavgpool_ukernel_up8xm__neon,
       .genr_lemr = q8gavgpool_ukernel_up8x7__neon,
-      .genr_gtmr = q8gavgpool_ukernel_mp8x7__neon,
+      .genr_gtmr = q8gavgpool_ukernel_mp8x7p7q__neon,
       .mr = 7,
       .nr = 8,
   };
@@ -141,7 +141,7 @@ static void init(void) {
   qnnp_params.q8gavgpool = (struct q8gavgpool_parameters) {
       .ltnr = q8gavgpool_ukernel_up8xm__neon,
       .genr_lemr = q8gavgpool_ukernel_up8x7__neon,
-      .genr_gtmr = q8gavgpool_ukernel_mp8x7__neon,
+      .genr_gtmr = q8gavgpool_ukernel_mp8x7p7q__neon,
       .mr = 7,
       .nr = 8,
   };
@@ -197,7 +197,7 @@ static void init(void) {
   qnnp_params.q8gavgpool = (struct q8gavgpool_parameters) {
       .ltnr = q8gavgpool_ukernel_up8xm__sse2,
       .genr_lemr = q8gavgpool_ukernel_up8x7__sse2,
-      .genr_gtmr = q8gavgpool_ukernel_mp8x7__sse2,
+      .genr_gtmr = q8gavgpool_ukernel_mp8x7p7q__sse2,
       .mr = 7,
       .nr = 8,
   };
