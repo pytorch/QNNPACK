@@ -173,8 +173,7 @@ class FullyConnectedOperatorTester {
           inputPtr,
           inputStride(),
           output.data(),
-          outputStride(),
-          nullptr /* thread pool */));
+          outputStride()));
 
       ASSERT_EQ(qnnp_status_success,
         qnnp_run_operator(convolution, nullptr /* thread pool */));

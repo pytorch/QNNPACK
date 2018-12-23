@@ -134,8 +134,7 @@ enum qnnp_status qnnp_setup_fully_connected_nc_q8(
     const uint8_t* input,
     size_t input_stride,
     uint8_t* output,
-    size_t output_stride,
-    pthreadpool_t threadpool);
+    size_t output_stride);
 
 enum qnnp_status qnnp_create_global_average_pooling_nwc_q8(
     size_t channels,

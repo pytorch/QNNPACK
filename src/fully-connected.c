@@ -133,8 +133,7 @@ enum qnnp_status qnnp_setup_fully_connected_nc_q8(
     const uint8_t* input,
     size_t input_stride,
     uint8_t* output,
-    size_t output_stride,
-    pthreadpool_t threadpool)
+    size_t output_stride)
 {
   if (!qnnp_params.initialized) {
     qnnp_log_error("qnnp_setup_fully_connected_nc_q8 failed because QNNPACK is not properly initialized");
