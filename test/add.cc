@@ -10,8 +10,6 @@
 
 #include "add-operator-tester.h"
 
-#include <qnnpack/params.h>
-
 
 TEST(ADD_OP, unit_batch) {
   for (size_t channels = 1; channels < 100; channels += 15) {
@@ -19,7 +17,7 @@ TEST(ADD_OP, unit_batch) {
       .batchSize(1)
       .channels(channels)
       .iterations(3)
-      .testQ8Add();
+      .testQ8();
   }
 }
 
@@ -30,7 +28,7 @@ TEST(ADD_OP, unit_batch_with_qmin) {
       .channels(channels)
       .qmin(128)
       .iterations(3)
-      .testQ8Add();
+      .testQ8();
   }
 }
 
@@ -41,7 +39,7 @@ TEST(ADD_OP, unit_batch_with_qmax) {
       .channels(channels)
       .qmax(128)
       .iterations(3)
-      .testQ8Add();
+      .testQ8();
   }
 }
 
@@ -53,7 +51,7 @@ TEST(ADD_OP, unit_batch_with_a_scale) {
         .channels(channels)
         .aScale(aScale)
         .iterations(1)
-        .testQ8Add();
+        .testQ8();
     }
   }
 }
@@ -66,7 +64,7 @@ TEST(ADD_OP, unit_batch_with_b_scale) {
         .channels(channels)
         .bScale(bScale)
         .iterations(1)
-        .testQ8Add();
+        .testQ8();
     }
   }
 }
@@ -79,7 +77,7 @@ TEST(ADD_OP, unit_batch_with_y_scale) {
         .channels(channels)
         .yScale(yScale)
         .iterations(1)
-        .testQ8Add();
+        .testQ8();
     }
   }
 }
@@ -92,7 +90,7 @@ TEST(ADD_OP, unit_batch_with_a_zero_point) {
         .channels(channels)
         .aZeroPoint(uint8_t(aZeroPoint))
         .iterations(1)
-        .testQ8Add();
+        .testQ8();
     }
   }
 }
@@ -105,7 +103,7 @@ TEST(ADD_OP, unit_batch_with_b_zero_point) {
         .channels(channels)
         .bZeroPoint(uint8_t(bZeroPoint))
         .iterations(1)
-        .testQ8Add();
+        .testQ8();
     }
   }
 }
@@ -118,7 +116,7 @@ TEST(ADD_OP, unit_batch_with_y_zero_point) {
         .channels(channels)
         .yZeroPoint(uint8_t(yZeroPoint))
         .iterations(1)
-        .testQ8Add();
+        .testQ8();
     }
   }
 }
@@ -129,7 +127,7 @@ TEST(ADD_OP, small_batch) {
       .batchSize(3)
       .channels(channels)
       .iterations(3)
-      .testQ8Add();
+      .testQ8();
   }
 }
 
@@ -140,7 +138,7 @@ TEST(ADD_OP, small_batch_with_a_stride) {
       .channels(channels)
       .aStride(129)
       .iterations(3)
-      .testQ8Add();
+      .testQ8();
   }
 }
 
@@ -151,7 +149,7 @@ TEST(ADD_OP, small_batch_with_b_stride) {
       .channels(channels)
       .bStride(123)
       .iterations(3)
-      .testQ8Add();
+      .testQ8();
   }
 }
 
@@ -162,7 +160,7 @@ TEST(ADD_OP, small_batch_with_y_stride) {
       .channels(channels)
       .yStride(117)
       .iterations(3)
-      .testQ8Add();
+      .testQ8();
   }
 }
 
@@ -173,7 +171,7 @@ TEST(ADD_OP, small_batch_with_qmin) {
       .channels(channels)
       .qmin(128)
       .iterations(3)
-      .testQ8Add();
+      .testQ8();
   }
 }
 
@@ -184,7 +182,7 @@ TEST(ADD_OP, small_batch_with_qmax) {
       .channels(channels)
       .qmax(128)
       .iterations(3)
-      .testQ8Add();
+      .testQ8();
   }
 }
 
@@ -196,7 +194,7 @@ TEST(ADD_OP, small_batch_with_a_scale) {
         .channels(channels)
         .aScale(aScale)
         .iterations(1)
-        .testQ8Add();
+        .testQ8();
     }
   }
 }
@@ -209,7 +207,7 @@ TEST(ADD_OP, small_batch_with_b_scale) {
         .channels(channels)
         .bScale(bScale)
         .iterations(1)
-        .testQ8Add();
+        .testQ8();
     }
   }
 }
@@ -222,7 +220,7 @@ TEST(ADD_OP, small_batch_with_y_scale) {
         .channels(channels)
         .yScale(yScale)
         .iterations(1)
-        .testQ8Add();
+        .testQ8();
     }
   }
 }
@@ -235,7 +233,7 @@ TEST(ADD_OP, small_batch_with_a_zero_point) {
         .channels(channels)
         .aZeroPoint(uint8_t(aZeroPoint))
         .iterations(1)
-        .testQ8Add();
+        .testQ8();
     }
   }
 }
@@ -248,7 +246,7 @@ TEST(ADD_OP, small_batch_with_b_zero_point) {
         .channels(channels)
         .bZeroPoint(uint8_t(bZeroPoint))
         .iterations(1)
-        .testQ8Add();
+        .testQ8();
     }
   }
 }
@@ -261,7 +259,7 @@ TEST(ADD_OP, small_batch_with_y_zero_point) {
         .channels(channels)
         .yZeroPoint(uint8_t(yZeroPoint))
         .iterations(1)
-        .testQ8Add();
+        .testQ8();
     }
   }
 }
@@ -275,7 +273,7 @@ TEST(ADD_OP, strided_batch) {
       .bStride(123)
       .yStride(117)
       .iterations(3)
-      .testQ8Add();
+      .testQ8();
   }
 }
 
@@ -289,7 +287,7 @@ TEST(ADD_OP, strided_batch_with_qmin) {
       .yStride(117)
       .qmin(128)
       .iterations(3)
-      .testQ8Add();
+      .testQ8();
   }
 }
 
@@ -303,7 +301,7 @@ TEST(ADD_OP, strided_batch_with_qmax) {
       .yStride(117)
       .qmax(128)
       .iterations(3)
-      .testQ8Add();
+      .testQ8();
   }
 }
 
@@ -318,7 +316,7 @@ TEST(ADD_OP, strided_batch_with_a_scale) {
         .yStride(117)
         .aScale(aScale)
         .iterations(1)
-        .testQ8Add();
+        .testQ8();
     }
   }
 }
@@ -334,7 +332,7 @@ TEST(ADD_OP, strided_batch_with_b_scale) {
         .yStride(117)
         .bScale(bScale)
         .iterations(1)
-        .testQ8Add();
+        .testQ8();
     }
   }
 }
@@ -350,7 +348,7 @@ TEST(ADD_OP, strided_batch_with_y_scale) {
         .yStride(117)
         .yScale(yScale)
         .iterations(1)
-        .testQ8Add();
+        .testQ8();
     }
   }
 }
@@ -366,7 +364,7 @@ TEST(ADD_OP, strided_batch_with_a_zero_point) {
         .yStride(117)
         .aZeroPoint(uint8_t(aZeroPoint))
         .iterations(1)
-        .testQ8Add();
+        .testQ8();
     }
   }
 }
@@ -382,7 +380,7 @@ TEST(ADD_OP, strided_batch_with_b_zero_point) {
         .yStride(117)
         .bZeroPoint(uint8_t(bZeroPoint))
         .iterations(1)
-        .testQ8Add();
+        .testQ8();
     }
   }
 }
@@ -398,7 +396,7 @@ TEST(ADD_OP, strided_batch_with_y_zero_point) {
         .yStride(117)
         .yZeroPoint(uint8_t(yZeroPoint))
         .iterations(1)
-        .testQ8Add();
+        .testQ8();
     }
   }
 }

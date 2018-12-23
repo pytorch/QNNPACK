@@ -8,24 +8,24 @@
 
 #pragma once
 
+#include <algorithm>
+#include <cassert>
+#include <cmath>
 #include <cstddef>
 #include <cstdlib>
-#include <algorithm>
-#include <cmath>
 #include <functional>
 #include <random>
 #include <vector>
 
-#include <cpuinfo.h>
 #include <qnnpack/AlignedAllocator.h>
 #include <qnnpack/pack.h>
 #include <qnnpack/params.h>
 #include <qnnpack/requantization.h>
-#include <qnnpack/q8dw.h>
 
-class DepthwiseMicrokernelTester {
+
+class DWConvMicrokernelTester {
  public:
-  inline DepthwiseMicrokernelTester& width(uint32_t width) {
+  inline DWConvMicrokernelTester& width(uint32_t width) {
     assert(width >= 1);
     this->width_ = width;
     return *this;
@@ -35,7 +35,7 @@ class DepthwiseMicrokernelTester {
     return this->width_;
   }
 
-  inline DepthwiseMicrokernelTester& subsampling(uint32_t subsampling) {
+  inline DWConvMicrokernelTester& subsampling(uint32_t subsampling) {
     assert(subsampling >= 1);
     this->subsampling_ = subsampling;
     return *this;
@@ -45,7 +45,7 @@ class DepthwiseMicrokernelTester {
     return this->subsampling_;
   }
 
-  inline DepthwiseMicrokernelTester& channels(uint32_t channels) {
+  inline DWConvMicrokernelTester& channels(uint32_t channels) {
     assert(channels >= 1);
     this->channels_ = channels;
     return *this;
@@ -55,7 +55,7 @@ class DepthwiseMicrokernelTester {
     return this->channels_;
   }
 
-  inline DepthwiseMicrokernelTester& cr(uint32_t cr) {
+  inline DWConvMicrokernelTester& cr(uint32_t cr) {
     assert(cr != 0);
     assert((cr & (cr - 1)) == 0);
     this->cr_ = cr;
@@ -70,7 +70,7 @@ class DepthwiseMicrokernelTester {
     return (channels() | (cr() - 1)) + 1;
   }
 
-  inline DepthwiseMicrokernelTester& kernelHeight(uint32_t kernelHeight) {
+  inline DWConvMicrokernelTester& kernelHeight(uint32_t kernelHeight) {
     assert(kernelHeight != 0);
     this->kernelHeight_ = kernelHeight;
     return *this;
@@ -80,7 +80,7 @@ class DepthwiseMicrokernelTester {
     return this->kernelHeight_;
   }
 
-  inline DepthwiseMicrokernelTester& kernelWidth(uint32_t kernelWidth) {
+  inline DWConvMicrokernelTester& kernelWidth(uint32_t kernelWidth) {
     assert(kernelWidth != 0);
     this->kernelWidth_ = kernelWidth;
     return *this;
@@ -94,7 +94,7 @@ class DepthwiseMicrokernelTester {
     return kernelHeight() * kernelWidth();
   }
 
-  inline DepthwiseMicrokernelTester& inputStride(uint32_t inputStride) {
+  inline DWConvMicrokernelTester& inputStride(uint32_t inputStride) {
     assert(inputStride != 0);
     this->inputStride_ = inputStride;
     return *this;
@@ -109,7 +109,7 @@ class DepthwiseMicrokernelTester {
     }
   }
 
-  inline DepthwiseMicrokernelTester& outputStride(uint32_t outputStride) {
+  inline DWConvMicrokernelTester& outputStride(uint32_t outputStride) {
     assert(outputStride != 0);
     this->outputStride_ = outputStride;
     return *this;
@@ -124,7 +124,7 @@ class DepthwiseMicrokernelTester {
     }
   }
 
-  inline DepthwiseMicrokernelTester& inputZeroPoint(uint8_t inputZeroPoint) {
+  inline DWConvMicrokernelTester& inputZeroPoint(uint8_t inputZeroPoint) {
     this->inputZeroPoint_ = inputZeroPoint;
     return *this;
   }
@@ -133,7 +133,7 @@ class DepthwiseMicrokernelTester {
     return this->inputZeroPoint_;
   }
 
-  inline DepthwiseMicrokernelTester& kernelZeroPoint(uint8_t kernelZeroPoint) {
+  inline DWConvMicrokernelTester& kernelZeroPoint(uint8_t kernelZeroPoint) {
     this->kernelZeroPoint_ = kernelZeroPoint;
     return *this;
   }
@@ -142,7 +142,7 @@ class DepthwiseMicrokernelTester {
     return this->kernelZeroPoint_;
   }
 
-  inline DepthwiseMicrokernelTester& qmin(uint8_t qmin) {
+  inline DWConvMicrokernelTester& qmin(uint8_t qmin) {
     this->qmin_ = qmin;
     return *this;
   }
@@ -151,7 +151,7 @@ class DepthwiseMicrokernelTester {
     return this->qmin_;
   }
 
-  inline DepthwiseMicrokernelTester& qmax(uint8_t qmax) {
+  inline DWConvMicrokernelTester& qmax(uint8_t qmax) {
     this->qmax_ = qmax;
     return *this;
   }
@@ -160,7 +160,7 @@ class DepthwiseMicrokernelTester {
     return this->qmax_;
   }
 
-  inline DepthwiseMicrokernelTester& iterations(size_t iterations) {
+  inline DWConvMicrokernelTester& iterations(size_t iterations) {
     this->iterations_ = iterations;
     return *this;
   }

@@ -8,9 +8,9 @@
 
 #include <gtest/gtest.h>
 
-#include "average-pooling-operator-tester.h"
-
 #include <qnnpack/params.h>
+
+#include "average-pooling-operator-tester.h"
 
 
 TEST(AVERAGE_POOLING_OP, unit_batch_many_channels_small_1xM_pool) {

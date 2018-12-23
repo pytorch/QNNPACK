@@ -10,8 +10,6 @@
 
 #include "clamp-operator-tester.h"
 
-#include <qnnpack.h>
-
 
 TEST(CLAMP_OP, unit_batch) {
   for (size_t channels = 1; channels < 100; channels++) {

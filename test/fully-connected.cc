@@ -8,105 +8,103 @@
 
 #include <gtest/gtest.h>
 
-#include "fully-connected-tester.h"
-
-#include <qnnpack/params.h>
+#include "fully-connected-operator-tester.h"
 
 
-TEST(FULLY_CONNECTED, unit_batch) {
-  FullyConnectedTester()
+TEST(FULLY_CONNECTED_OP, unit_batch) {
+  FullyConnectedOperatorTester()
     .batchSize(1)
     .inputChannels(23)
     .outputChannels(19)
     .iterations(3)
-    .test();
+    .testQ8();
 }
 
-TEST(FULLY_CONNECTED, unit_batch_with_qmin) {
-  FullyConnectedTester()
+TEST(FULLY_CONNECTED_OP, unit_batch_with_qmin) {
+  FullyConnectedOperatorTester()
     .batchSize(1)
     .inputChannels(23)
     .outputChannels(19)
     .qmin(128)
     .iterations(3)
-    .test();
+    .testQ8();
 }
 
-TEST(FULLY_CONNECTED, unit_batch_with_qmax) {
-  FullyConnectedTester()
+TEST(FULLY_CONNECTED_OP, unit_batch_with_qmax) {
+  FullyConnectedOperatorTester()
     .batchSize(1)
     .inputChannels(23)
     .outputChannels(19)
     .qmax(128)
     .iterations(3)
-    .test();
+    .testQ8();
 }
 
-TEST(FULLY_CONNECTED, unit_batch_with_input_stride) {
-  FullyConnectedTester()
+TEST(FULLY_CONNECTED_OP, unit_batch_with_input_stride) {
+  FullyConnectedOperatorTester()
     .batchSize(1)
     .inputChannels(23)
     .inputStride(28)
     .outputChannels(19)
     .iterations(3)
-    .test();
+    .testQ8();
 }
 
-TEST(FULLY_CONNECTED, unit_batch_with_output_stride) {
-  FullyConnectedTester()
+TEST(FULLY_CONNECTED_OP, unit_batch_with_output_stride) {
+  FullyConnectedOperatorTester()
     .batchSize(1)
     .inputChannels(23)
     .outputChannels(19)
     .outputStride(29)
     .iterations(3)
-    .test();
+    .testQ8();
 }
 
-TEST(FULLY_CONNECTED, small_batch) {
-  FullyConnectedTester()
+TEST(FULLY_CONNECTED_OP, small_batch) {
+  FullyConnectedOperatorTester()
     .batchSize(12)
     .inputChannels(23)
     .outputChannels(19)
     .iterations(3)
-    .test();
+    .testQ8();
 }
 
-TEST(FULLY_CONNECTED, small_batch_with_qmin) {
-  FullyConnectedTester()
+TEST(FULLY_CONNECTED_OP, small_batch_with_qmin) {
+  FullyConnectedOperatorTester()
     .batchSize(12)
     .inputChannels(23)
     .outputChannels(19)
     .qmin(128)
     .iterations(3)
-    .test();
+    .testQ8();
 }
 
-TEST(FULLY_CONNECTED, small_batch_with_qmax) {
-  FullyConnectedTester()
+TEST(FULLY_CONNECTED_OP, small_batch_with_qmax) {
+  FullyConnectedOperatorTester()
     .batchSize(12)
     .inputChannels(23)
     .outputChannels(19)
     .qmax(128)
     .iterations(3)
-    .test();
+    .testQ8();
 }
 
-TEST(FULLY_CONNECTED, small_batch_with_input_stride) {
-  FullyConnectedTester()
+TEST(FULLY_CONNECTED_OP, small_batch_with_input_stride) {
+  FullyConnectedOperatorTester()
     .batchSize(12)
     .inputChannels(23)
     .inputStride(28)
     .outputChannels(19)
     .iterations(3)
-    .test();
+    .testQ8();
 }
 
-TEST(FULLY_CONNECTED, small_batch_with_output_stride) {
-  FullyConnectedTester()
+TEST(FULLY_CONNECTED_OP, small_batch_with_output_stride) {
+  FullyConnectedOperatorTester()
     .batchSize(12)
     .inputChannels(23)
     .outputChannels(19)
     .outputStride(29)
     .iterations(3)
-    .test();
+    .testQ8();
 }

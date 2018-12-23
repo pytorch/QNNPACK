@@ -8,8 +8,9 @@
 
 #include <gtest/gtest.h>
 
-#include <lut-norm-microkernel-tester.h>
 #include <qnnpack/u8lut32norm.h>
+
+#include "lut-norm-microkernel-tester.h"
 
 
 TEST(U8LUT32NORM__SCALAR, n_eq_1) {

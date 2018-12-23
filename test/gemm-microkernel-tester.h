@@ -8,32 +8,26 @@
 
 #pragma once
 
+#include <algorithm>
+#include <cassert>
+#include <cmath>
 #include <cstddef>
 #include <cstdlib>
-
-#include <algorithm>
-#include <cfloat>
-#include <cmath>
 #include <functional>
 #include <random>
 #include <vector>
 
-#include <cpuinfo.h>
+#include <fp16.h>
+
 #include <qnnpack/AlignedAllocator.h>
 #include <qnnpack/params.h>
 #include <qnnpack/pack.h>
-#include <qnnpack/q8gemm.h>
-#include <qnnpack/q8conv.h>
-#include <qnnpack/scalar-utils.h>
 #include <qnnpack/requantization.h>
-#include <qnnpack/sgemm.h>
-
-#include <fp16.h>
 
 
-class GemmTester {
+class GemmMicrokernelTester {
  public:
-  inline GemmTester& mr(size_t mr) {
+  inline GemmMicrokernelTester& mr(size_t mr) {
     this->mr_ = mr;
     return *this;
   }
@@ -42,7 +36,7 @@ class GemmTester {
     return this->mr_;
   }
 
-  inline GemmTester& nr(size_t nr) {
+  inline GemmMicrokernelTester& nr(size_t nr) {
     this->nr_ = nr;
     return *this;
   }
@@ -51,7 +45,7 @@ class GemmTester {
     return this->nr_;
   }
 
-  inline GemmTester& np(size_t np) {
+  inline GemmMicrokernelTester& np(size_t np) {
     this->np_ = np;
     return *this;
   }
@@ -60,7 +54,7 @@ class GemmTester {
     return this->np_;
   }
 
-  inline GemmTester& kr(size_t kr) {
+  inline GemmMicrokernelTester& kr(size_t kr) {
     this->kr_ = kr;
     return *this;
   }
@@ -69,7 +63,7 @@ class GemmTester {
     return this->kr_;
   }
 
-  inline GemmTester& m(size_t m) {
+  inline GemmMicrokernelTester& m(size_t m) {
     this->m_ = m;
     return *this;
   }
@@ -78,7 +72,7 @@ class GemmTester {
     return this->m_;
   }
 
-  inline GemmTester& n(size_t n) {
+  inline GemmMicrokernelTester& n(size_t n) {
     this->n_ = n;
     return *this;
   }
@@ -87,7 +81,7 @@ class GemmTester {
     return this->n_;
   }
 
-  inline GemmTester& k(size_t k) {
+  inline GemmMicrokernelTester& k(size_t k) {
     this->k_ = k;
     return *this;
   }
@@ -96,7 +90,7 @@ class GemmTester {
     return this->k_;
   }
 
-  inline GemmTester& ks(size_t ks) {
+  inline GemmMicrokernelTester& ks(size_t ks) {
     this->ks_ = ks;
     return *this;
   }
@@ -117,7 +111,7 @@ class GemmTester {
     return n() % nr() == 0 ? n() : (n() / nr() + 1) * nr();
   }
 
-  inline GemmTester& aStride(size_t aStride) {
+  inline GemmMicrokernelTester& aStride(size_t aStride) {
     this->aStride_ = aStride;
     return *this;
   }
@@ -126,7 +120,7 @@ class GemmTester {
     return this->aStride_ == 0 ? k() : this->aStride_;
   }
 
-  inline GemmTester& cStride(size_t cStride) {
+  inline GemmMicrokernelTester& cStride(size_t cStride) {
     this->cStride_ = cStride;
     return *this;
   }
@@ -135,7 +129,7 @@ class GemmTester {
     return this->cStride_ == 0 ? n() : this->cStride_;
   }
 
-  inline GemmTester& aZeroPoint(uint8_t aZeroPoint) {
+  inline GemmMicrokernelTester& aZeroPoint(uint8_t aZeroPoint) {
     this->aZeroPoint_ = aZeroPoint;
     return *this;
   }
@@ -144,7 +138,7 @@ class GemmTester {
     return this->aZeroPoint_;
   }
 
-  inline GemmTester& bZeroPoint(uint8_t bZeroPoint) {
+  inline GemmMicrokernelTester& bZeroPoint(uint8_t bZeroPoint) {
     this->bZeroPoint_ = bZeroPoint;
     return *this;
   }
@@ -153,7 +147,7 @@ class GemmTester {
     return this->bZeroPoint_;
   }
 
-  inline GemmTester& qmin(uint8_t qmin) {
+  inline GemmMicrokernelTester& qmin(uint8_t qmin) {
     this->qmin_ = qmin;
     return *this;
   }
@@ -162,7 +156,7 @@ class GemmTester {
     return this->qmin_;
   }
 
-  inline GemmTester& qmax(uint8_t qmax) {
+  inline GemmMicrokernelTester& qmax(uint8_t qmax) {
     this->qmax_ = qmax;
     return *this;
   }
@@ -171,7 +165,7 @@ class GemmTester {
     return this->qmax_;
   }
 
-  inline GemmTester& iterations(size_t iterations) {
+  inline GemmMicrokernelTester& iterations(size_t iterations) {
     this->iterations_ = iterations;
     return *this;
   }
@@ -180,7 +174,7 @@ class GemmTester {
     return this->iterations_;
   }
 
-  void testMicroKernel(q8gemm_ukernel_function qgemm) const {
+  void test(q8gemm_ukernel_function qgemm) const {
     ASSERT_LE(m(), mr());
     ASSERT_LE(n(), nr());
     ASSERT_GE(k(), kr());
@@ -281,7 +275,7 @@ class GemmTester {
     }
   }
 
-  void testMicroKernel(q8conv_ukernel_function qconv) const {
+  void test(q8conv_ukernel_function qconv) const {
     ASSERT_LE(m(), mr());
     ASSERT_LE(n(), nr());
     ASSERT_GE(k(), kr());
@@ -418,7 +412,7 @@ class GemmTester {
     }
   }
 
-  void testMicroKernel(q8gemm_xzp_ukernel_function qgemm) const
+  void test(q8gemm_xzp_ukernel_function qgemm) const
   {
     ASSERT_LE(m(), mr());
     ASSERT_LE(n(), nr());
@@ -525,12 +519,8 @@ class GemmTester {
     }
   }
 
-  void testMicroKernel(hgemm_ukernel_function hgemm) const
+  void test(hgemm_ukernel_function hgemm) const
   {
-    if(!cpuinfo_initialize() || !cpuinfo_has_arm_neon_fp16_arith()) {
-      return;
-    }
-
     ASSERT_LE(m(), mr());
     ASSERT_LE(n(), nr());
     ASSERT_GE(k(), kr());
@@ -627,7 +617,7 @@ class GemmTester {
     }
   }
 
-  void testMicroKernel(sgemm_ukernel_function sgemm) const {
+  void test(sgemm_ukernel_function sgemm) const {
     ASSERT_LE(m(), mr());
     ASSERT_LE(n(), nr());
     ASSERT_GE(k(), kr());

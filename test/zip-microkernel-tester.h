@@ -18,7 +18,6 @@
 #include <random>
 #include <vector>
 
-#include <qnnpack/AlignedAllocator.h>
 #include <qnnpack/params.h>
 
 

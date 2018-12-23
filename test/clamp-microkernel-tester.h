@@ -8,27 +8,16 @@
 
 #pragma once
 
+#include <algorithm>
+#include <cassert>
 #include <cstddef>
 #include <cstdlib>
-
-#include <algorithm>
-#include <cfloat>
-#include <cmath>
 #include <functional>
 #include <random>
 #include <vector>
 
-#include <cpuinfo.h>
-#include <qnnpack/AlignedAllocator.h>
 #include <qnnpack/params.h>
-#include <qnnpack/pack.h>
-#include <qnnpack/q8gemm.h>
-#include <qnnpack/q8conv.h>
-#include <qnnpack/scalar-utils.h>
 #include <qnnpack/requantization.h>
-#include <qnnpack/sgemm.h>
-
-#include <fp16.h>
 
 
 class ClampMicrokernelTester {

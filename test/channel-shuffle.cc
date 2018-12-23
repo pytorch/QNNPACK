@@ -18,7 +18,7 @@ TEST(CHANNEL_SHUFFLE_OP, two_groups_unit_batch) {
       .groups(2)
       .groupChannels(groupChannels)
       .iterations(3)
-      .testX8ChannelShuffle();
+      .testX8();
   }
 }
 
@@ -29,7 +29,7 @@ TEST(CHANNEL_SHUFFLE_OP, three_groups_unit_batch) {
       .groups(3)
       .groupChannels(groupChannels)
       .iterations(3)
-      .testX8ChannelShuffle();
+      .testX8();
   }
 }
 
@@ -40,7 +40,7 @@ TEST(CHANNEL_SHUFFLE_OP, four_groups_unit_batch) {
       .groups(4)
       .groupChannels(groupChannels)
       .iterations(3)
-      .testX8ChannelShuffle();
+      .testX8();
   }
 }
 
@@ -52,7 +52,7 @@ TEST(CHANNEL_SHUFFLE_OP, many_groups_unit_batch) {
         .groups(groups)
         .groupChannels(groupChannels)
         .iterations(3)
-        .testX8ChannelShuffle();
+        .testX8();
     }
   }
 }
@@ -64,7 +64,7 @@ TEST(CHANNEL_SHUFFLE_OP, two_groups_small_batch) {
       .groups(2)
       .groupChannels(groupChannels)
       .iterations(3)
-      .testX8ChannelShuffle();
+      .testX8();
   }
 }
 
@@ -75,7 +75,7 @@ TEST(CHANNEL_SHUFFLE_OP, three_groups_small_batch) {
       .groups(3)
       .groupChannels(groupChannels)
       .iterations(3)
-      .testX8ChannelShuffle();
+      .testX8();
   }
 }
 
@@ -86,7 +86,7 @@ TEST(CHANNEL_SHUFFLE_OP, four_groups_small_batch) {
       .groups(4)
       .groupChannels(groupChannels)
       .iterations(3)
-      .testX8ChannelShuffle();
+      .testX8();
   }
 }
 
@@ -98,7 +98,7 @@ TEST(CHANNEL_SHUFFLE_OP, many_groups_small_batch) {
         .groups(groups)
         .groupChannels(groupChannels)
         .iterations(3)
-        .testX8ChannelShuffle();
+        .testX8();
     }
   }
 }
@@ -111,7 +111,7 @@ TEST(CHANNEL_SHUFFLE_OP, two_groups_small_batch_with_input_stride) {
       .groupChannels(groupChannels)
       .inputStride(511)
       .iterations(3)
-      .testX8ChannelShuffle();
+      .testX8();
   }
 }
 
@@ -123,7 +123,7 @@ TEST(CHANNEL_SHUFFLE_OP, three_groups_small_batch_with_input_stride) {
       .groupChannels(groupChannels)
       .inputStride(511)
       .iterations(3)
-      .testX8ChannelShuffle();
+      .testX8();
   }
 }
 
@@ -135,7 +135,7 @@ TEST(CHANNEL_SHUFFLE_OP, four_groups_small_batch_with_input_stride) {
       .groupChannels(groupChannels)
       .inputStride(511)
       .iterations(3)
-      .testX8ChannelShuffle();
+      .testX8();
   }
 }
 
@@ -148,7 +148,7 @@ TEST(CHANNEL_SHUFFLE_OP, many_groups_small_batch_with_input_stride) {
         .groupChannels(groupChannels)
         .inputStride(1007)
         .iterations(3)
-        .testX8ChannelShuffle();
+        .testX8();
     }
   }
 }
@@ -161,7 +161,7 @@ TEST(CHANNEL_SHUFFLE_OP, two_groups_small_batch_with_output_stride) {
       .groupChannels(groupChannels)
       .outputStride(513)
       .iterations(3)
-      .testX8ChannelShuffle();
+      .testX8();
   }
 }
 
@@ -173,7 +173,7 @@ TEST(CHANNEL_SHUFFLE_OP, three_groups_small_batch_with_output_stride) {
       .groupChannels(groupChannels)
       .outputStride(513)
       .iterations(3)
-      .testX8ChannelShuffle();
+      .testX8();
   }
 }
 
@@ -185,7 +185,7 @@ TEST(CHANNEL_SHUFFLE_OP, four_groups_small_batch_with_output_stride) {
       .groupChannels(groupChannels)
       .outputStride(513)
       .iterations(3)
-      .testX8ChannelShuffle();
+      .testX8();
   }
 }
 
@@ -198,7 +198,7 @@ TEST(CHANNEL_SHUFFLE_OP, many_groups_small_batch_with_output_stride) {
         .groupChannels(groupChannels)
         .outputStride(1111)
         .iterations(3)
-        .testX8ChannelShuffle();
+        .testX8();
     }
   }
 }
@@ -212,7 +212,7 @@ TEST(CHANNEL_SHUFFLE_OP, two_groups_small_batch_with_input_and_output_stride) {
       .inputStride(511)
       .outputStride(513)
       .iterations(3)
-      .testX8ChannelShuffle();
+      .testX8();
   }
 }
 
@@ -225,7 +225,7 @@ TEST(CHANNEL_SHUFFLE_OP, three_groups_small_batch_with_input_and_output_stride) 
       .inputStride(511)
       .outputStride(513)
       .iterations(3)
-      .testX8ChannelShuffle();
+      .testX8();
   }
 }
 
@@ -238,7 +238,7 @@ TEST(CHANNEL_SHUFFLE_OP, four_groups_small_batch_with_input_and_output_stride) {
       .inputStride(511)
       .outputStride(513)
       .iterations(3)
-      .testX8ChannelShuffle();
+      .testX8();
   }
 }
 
@@ -252,7 +252,7 @@ TEST(CHANNEL_SHUFFLE_OP, many_groups_small_batch_with_input_and_output_stride) {
         .inputStride(1007)
         .outputStride(1111)
         .iterations(3)
-        .testX8ChannelShuffle();
+        .testX8();
     }
   }
 }

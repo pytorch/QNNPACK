@@ -8,32 +8,21 @@
 
 #pragma once
 
+#include <algorithm>
+#include <cassert>
 #include <cstddef>
 #include <cstdlib>
-
-#include <algorithm>
-#include <cfloat>
-#include <cmath>
 #include <functional>
 #include <random>
 #include <vector>
 
-#include <cpuinfo.h>
-#include <qnnpack/AlignedAllocator.h>
 #include <qnnpack/params.h>
-#include <qnnpack/pack.h>
-#include <qnnpack/q8gemm.h>
-#include <qnnpack/q8conv.h>
-#include <qnnpack/scalar-utils.h>
 #include <qnnpack/requantization.h>
-#include <qnnpack/sgemm.h>
-
-#include <fp16.h>
 
 
-class UVAddMicrokernelTester {
+class VAddMicrokernelTester {
  public:
-  inline UVAddMicrokernelTester& n(size_t n) {
+  inline VAddMicrokernelTester& n(size_t n) {
     assert(n != 0);
     this->n_ = n;
     return *this;
@@ -43,7 +32,7 @@ class UVAddMicrokernelTester {
     return this->n_;
   }
 
-  inline UVAddMicrokernelTester& inplaceA(bool inplaceA) {
+  inline VAddMicrokernelTester& inplaceA(bool inplaceA) {
     this->inplaceA_ = inplaceA;
     return *this;
   }
@@ -52,7 +41,7 @@ class UVAddMicrokernelTester {
     return this->inplaceA_;
   }
 
-  inline UVAddMicrokernelTester& inplaceB(bool inplaceB) {
+  inline VAddMicrokernelTester& inplaceB(bool inplaceB) {
     this->inplaceB_ = inplaceB;
     return *this;
   }
@@ -61,7 +50,7 @@ class UVAddMicrokernelTester {
     return this->inplaceB_;
   }
 
-  inline UVAddMicrokernelTester& aScale(float aScale) {
+  inline VAddMicrokernelTester& aScale(float aScale) {
     assert(aScale > 0.0f);
     assert(std::isnormal(aScale));
     this->aScale_ = aScale;
@@ -72,7 +61,7 @@ class UVAddMicrokernelTester {
     return this->aScale_;
   }
 
-  inline UVAddMicrokernelTester& aZeroPoint(uint8_t aZeroPoint) {
+  inline VAddMicrokernelTester& aZeroPoint(uint8_t aZeroPoint) {
     this->aZeroPoint_ = aZeroPoint;
     return *this;
   }
@@ -81,7 +70,7 @@ class UVAddMicrokernelTester {
     return this->aZeroPoint_;
   }
 
-  inline UVAddMicrokernelTester& bScale(float bScale) {
+  inline VAddMicrokernelTester& bScale(float bScale) {
     assert(bScale > 0.0f);
     assert(std::isnormal(bScale));
     this->bScale_ = bScale;
@@ -92,7 +81,7 @@ class UVAddMicrokernelTester {
     return this->bScale_;
   }
 
-  inline UVAddMicrokernelTester& bZeroPoint(uint8_t bZeroPoint) {
+  inline VAddMicrokernelTester& bZeroPoint(uint8_t bZeroPoint) {
     this->bZeroPoint_ = bZeroPoint;
     return *this;
   }
@@ -101,7 +90,7 @@ class UVAddMicrokernelTester {
     return this->bZeroPoint_;
   }
 
-  inline UVAddMicrokernelTester& yScale(float yScale) {
+  inline VAddMicrokernelTester& yScale(float yScale) {
     assert(yScale > 0.0f);
     assert(std::isnormal(yScale));
     this->yScale_ = yScale;
@@ -112,7 +101,7 @@ class UVAddMicrokernelTester {
     return this->yScale_;
   }
 
-  inline UVAddMicrokernelTester& yZeroPoint(uint8_t yZeroPoint) {
+  inline VAddMicrokernelTester& yZeroPoint(uint8_t yZeroPoint) {
     this->yZeroPoint_ = yZeroPoint;
     return *this;
   }
@@ -121,7 +110,7 @@ class UVAddMicrokernelTester {
     return this->yZeroPoint_;
   }
 
-  inline UVAddMicrokernelTester& qmin(uint8_t qmin) {
+  inline VAddMicrokernelTester& qmin(uint8_t qmin) {
     this->qmin_ = qmin;
     return *this;
   }
@@ -130,7 +119,7 @@ class UVAddMicrokernelTester {
     return this->qmin_;
   }
 
-  inline UVAddMicrokernelTester& qmax(uint8_t qmax) {
+  inline VAddMicrokernelTester& qmax(uint8_t qmax) {
     this->qmax_ = qmax;
     return *this;
   }
@@ -139,7 +128,7 @@ class UVAddMicrokernelTester {
     return this->qmax_;
   }
 
-  inline UVAddMicrokernelTester& iterations(size_t iterations) {
+  inline VAddMicrokernelTester& iterations(size_t iterations) {
     this->iterations_ = iterations;
     return *this;
   }

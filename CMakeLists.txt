@@ -500,14 +500,14 @@ IF(QNNPACK_BUILD_TESTS)
   TARGET_LINK_LIBRARIES(q8mpdw-test PRIVATE qnnpack cpuinfo fp16 gtest gtest_main)
   ADD_TEST(q8mpdw-test q8mpdw-test)
 
-  ADD_EXECUTABLE(q8uvadd-test test/q8uvadd.cc)
+  ADD_EXECUTABLE(q8vadd-test test/q8vadd.cc)
   SET_TARGET_PROPERTIES(q8uvadd-test PROPERTIES
     CXX_STANDARD 11
     CXX_STANDARD_REQUIRED YES
     CXX_EXTENSIONS NO)
-  TARGET_INCLUDE_DIRECTORIES(q8uvadd-test PRIVATE src test)
-  TARGET_LINK_LIBRARIES(q8uvadd-test PRIVATE qnnpack cpuinfo fp16 gtest gtest_main)
-  ADD_TEST(q8uvadd-test q8uvadd-test)
+  TARGET_INCLUDE_DIRECTORIES(q8vadd-test PRIVATE src test)
+  TARGET_LINK_LIBRARIES(q8vadd-test PRIVATE qnnpack cpuinfo fp16 gtest gtest_main)
+  ADD_TEST(q8vadd-test q8vadd-test)
 
   ADD_EXECUTABLE(q8avgpool-test test/q8avgpool.cc)
   SET_TARGET_PROPERTIES(q8avgpool-test PROPERTIES

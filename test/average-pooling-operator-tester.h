@@ -8,10 +8,11 @@
 
 #pragma once
 
-#include <cstddef>
-#include <cstdlib>
 #include <algorithm>
 #include <cmath>
+#include <cassert>
+#include <cstddef>
+#include <cstdlib>
 #include <functional>
 #include <random>
 #include <vector>

@@ -8,16 +8,15 @@
 
 #pragma once
 
+#include <algorithm>
+#include <cassert>
+#include <cmath>
 #include <cstddef>
 #include <cstdlib>
-#include <algorithm>
-#include <cmath>
 #include <functional>
 #include <random>
 #include <vector>
 
-#include <qnnpack.h>
-#include <qnnpack/AlignedAllocator.h>
 #include <qnnpack/params.h>
 #include <qnnpack/requantization.h>
 

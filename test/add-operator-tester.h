@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include <cstddef>
-#include <cstdlib>
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
+#include <cstdlib>
 #include <functional>
 #include <random>
 #include <vector>
@@ -173,7 +173,7 @@ class AddOperatorTester {
     return this->iterations_;
   }
 
-  void testQ8Add() const {
+  void testQ8() const {
     std::random_device randomDevice;
     auto rng = std::mt19937(randomDevice());
     auto u8rng = std::bind(std::uniform_int_distribution<uint8_t>(), rng);

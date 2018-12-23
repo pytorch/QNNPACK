@@ -8,10 +8,11 @@
 
 #pragma once
 
+#include <algorithm>
+#include <cassert>
+#include <cmath>
 #include <cstddef>
 #include <cstdlib>
-#include <algorithm>
-#include <cmath>
 #include <functional>
 #include <random>
 #include <vector>
@@ -19,9 +20,9 @@
 #include <qnnpack.h>
 
 
-class ConvolutionTester {
+class ConvolutionOperatorTester {
  public:
-  inline ConvolutionTester& padding(uint32_t padding) {
+  inline ConvolutionOperatorTester& padding(uint32_t padding) {
     this->paddingTop_ = padding;
     this->paddingRight_ = padding;
     this->paddingBottom_ = padding;
@@ -29,7 +30,7 @@ class ConvolutionTester {
     return *this;
   }
 
-  inline ConvolutionTester& padding(uint32_t paddingHeight, uint32_t paddingWidth) {
+  inline ConvolutionOperatorTester& padding(uint32_t paddingHeight, uint32_t paddingWidth) {
     this->paddingTop_ = paddingHeight;
     this->paddingRight_ = paddingWidth;
     this->paddingBottom_ = paddingHeight;
@@ -37,19 +38,19 @@ class ConvolutionTester {
     return *this;
   }
 
-  inline ConvolutionTester& paddingHeight(uint32_t paddingHeight) {
+  inline ConvolutionOperatorTester& paddingHeight(uint32_t paddingHeight) {
     this->paddingTop_ = paddingHeight;
     this->paddingBottom_ = paddingHeight;
     return *this;
   }
 
-  inline ConvolutionTester& paddingWidth(uint32_t paddingWidth) {
+  inline ConvolutionOperatorTester& paddingWidth(uint32_t paddingWidth) {
     this->paddingRight_ = paddingWidth;
     this->paddingLeft_ = paddingWidth;
     return *this;
   }
 
-  inline ConvolutionTester& paddingTop(uint32_t paddingTop) {
+  inline ConvolutionOperatorTester& paddingTop(uint32_t paddingTop) {
     this->paddingTop_ = paddingTop;
     return *this;
   }
@@ -58,7 +59,7 @@ class ConvolutionTester {
     return this->paddingTop_;
   }
 
-  inline ConvolutionTester& paddingRight(uint32_t paddingRight) {
+  inline ConvolutionOperatorTester& paddingRight(uint32_t paddingRight) {
     this->paddingRight_ = paddingRight;
     return *this;
   }
@@ -67,7 +68,7 @@ class ConvolutionTester {
     return this->paddingRight_;
   }
 
-  inline ConvolutionTester& paddingBottom(uint32_t paddingBottom) {
+  inline ConvolutionOperatorTester& paddingBottom(uint32_t paddingBottom) {
     this->paddingBottom_ = paddingBottom;
     return *this;
   }
@@ -76,7 +77,7 @@ class ConvolutionTester {
     return this->paddingBottom_;
   }
 
-  inline ConvolutionTester& paddingLeft(uint32_t paddingLeft) {
+  inline ConvolutionOperatorTester& paddingLeft(uint32_t paddingLeft) {
     this->paddingLeft_ = paddingLeft;
     return *this;
   }
@@ -85,7 +86,7 @@ class ConvolutionTester {
     return this->paddingLeft_;
   }
 
-  inline ConvolutionTester& inputSize(uint32_t inputHeight, uint32_t inputWidth) {
+  inline ConvolutionOperatorTester& inputSize(uint32_t inputHeight, uint32_t inputWidth) {
     assert(inputHeight >= 1);
     assert(inputWidth >= 1);
     this->inputHeight_ = inputHeight;
@@ -93,7 +94,7 @@ class ConvolutionTester {
     return *this;
   }
 
-  inline ConvolutionTester& inputHeight(uint32_t inputHeight) {
+  inline ConvolutionOperatorTester& inputHeight(uint32_t inputHeight) {
     assert(inputHeight >= 1);
     this->inputHeight_ = inputHeight;
     return *this;
@@ -103,7 +104,7 @@ class ConvolutionTester {
     return this->inputHeight_;
   }
 
-  inline ConvolutionTester& inputWidth(uint32_t inputWidth) {
+  inline ConvolutionOperatorTester& inputWidth(uint32_t inputWidth) {
     assert(inputWidth >= 1);
     this->inputWidth_ = inputWidth;
     return *this;
@@ -113,7 +114,7 @@ class ConvolutionTester {
     return this->inputWidth_;
   }
 
-  inline ConvolutionTester& groups(uint32_t groups) {
+  inline ConvolutionOperatorTester& groups(uint32_t groups) {
     assert(groups >= 1);
     this->groups_ = groups;
     return *this;
@@ -123,7 +124,7 @@ class ConvolutionTester {
     return this->groups_;
   }
 
-  inline ConvolutionTester& groupInputChannels(size_t groupInputChannels) {
+  inline ConvolutionOperatorTester& groupInputChannels(size_t groupInputChannels) {
     assert(groupInputChannels >= 1);
     this->groupInputChannels_ = groupInputChannels;
     return *this;
@@ -133,7 +134,7 @@ class ConvolutionTester {
     return this->groupInputChannels_;
   }
 
-  inline ConvolutionTester& groupOutputChannels(size_t groupOutputChannels) {
+  inline ConvolutionOperatorTester& groupOutputChannels(size_t groupOutputChannels) {
     assert(groupOutputChannels >= 1);
     this->groupOutputChannels_ = groupOutputChannels;
     return *this;
@@ -143,7 +144,7 @@ class ConvolutionTester {
     return this->groupOutputChannels_;
   }
 
-  inline ConvolutionTester& batchSize(size_t batchSize) {
+  inline ConvolutionOperatorTester& batchSize(size_t batchSize) {
     assert(batchSize >= 1);
     this->batchSize_ = batchSize;
     return *this;
@@ -153,14 +154,14 @@ class ConvolutionTester {
     return this->batchSize_;
   }
 
-  inline ConvolutionTester& kernelSize(uint32_t kernelSize) {
+  inline ConvolutionOperatorTester& kernelSize(uint32_t kernelSize) {
     assert(kernelSize >= 1);
     this->kernelHeight_ = kernelSize;
     this->kernelWidth_ = kernelSize;
     return *this;
   }
 
-  inline ConvolutionTester& kernelSize(uint32_t kernelHeight, uint32_t kernelWidth) {
+  inline ConvolutionOperatorTester& kernelSize(uint32_t kernelHeight, uint32_t kernelWidth) {
     assert(kernelHeight >= 1);
     assert(kernelWidth >= 1);
     this->kernelHeight_ = kernelHeight;
@@ -168,7 +169,7 @@ class ConvolutionTester {
     return *this;
   }
 
-  inline ConvolutionTester& kernelHeight(uint32_t kernelHeight) {
+  inline ConvolutionOperatorTester& kernelHeight(uint32_t kernelHeight) {
     assert(kernelHeight >= 1);
     this->kernelHeight_ = kernelHeight;
     return *this;
@@ -178,7 +179,7 @@ class ConvolutionTester {
     return this->kernelHeight_;
   }
 
-  inline ConvolutionTester& kernelWidth(uint32_t kernelWidth) {
+  inline ConvolutionOperatorTester& kernelWidth(uint32_t kernelWidth) {
     assert(kernelWidth >= 1);
     this->kernelWidth_ = kernelWidth;
     return *this;
@@ -188,14 +189,14 @@ class ConvolutionTester {
     return this->kernelWidth_;
   }
 
-  inline ConvolutionTester& dilation(uint32_t dilation) {
+  inline ConvolutionOperatorTester& dilation(uint32_t dilation) {
     assert(dilation >= 1);
     this->dilationHeight_ = dilation;
     this->dilationWidth_ = dilation;
     return *this;
   }
 
-  inline ConvolutionTester& dilation(uint32_t dilationHeight, uint32_t dilationWidth) {
+  inline ConvolutionOperatorTester& dilation(uint32_t dilationHeight, uint32_t dilationWidth) {
     assert(dilationHeight >= 1);
     assert(dilationWidth >= 1);
     this->dilationHeight_ = dilationHeight;
@@ -203,7 +204,7 @@ class ConvolutionTester {
     return *this;
   }
 
-  inline ConvolutionTester& dilationHeight(uint32_t dilationHeight) {
+  inline ConvolutionOperatorTester& dilationHeight(uint32_t dilationHeight) {
     assert(dilationHeight >= 1);
     this->dilationHeight_ = dilationHeight;
     return *this;
@@ -213,7 +214,7 @@ class ConvolutionTester {
     return this->dilationHeight_;
   }
 
-  inline ConvolutionTester& dilationWidth(uint32_t dilationWidth) {
+  inline ConvolutionOperatorTester& dilationWidth(uint32_t dilationWidth) {
     assert(dilationWidth >= 1);
     this->dilationWidth_ = dilationWidth;
     return *this;
@@ -223,14 +224,14 @@ class ConvolutionTester {
     return this->dilationWidth_;
   }
 
-  inline ConvolutionTester& subsampling(uint32_t subsampling) {
+  inline ConvolutionOperatorTester& subsampling(uint32_t subsampling) {
     assert(subsampling >= 1);
     this->subsamplingHeight_ = subsampling;
     this->subsamplingWidth_ = subsampling;
     return *this;
   }
 
-  inline ConvolutionTester& subsampling(uint32_t subsamplingHeight, uint32_t subsamplingWidth) {
+  inline ConvolutionOperatorTester& subsampling(uint32_t subsamplingHeight, uint32_t subsamplingWidth) {
     assert(subsamplingHeight >= 1);
     assert(subsamplingWidth >= 1);
     this->subsamplingHeight_ = subsamplingHeight;
@@ -238,7 +239,7 @@ class ConvolutionTester {
     return *this;
   }
 
-  inline ConvolutionTester& subsamplingHeight(uint32_t subsamplingHeight) {
+  inline ConvolutionOperatorTester& subsamplingHeight(uint32_t subsamplingHeight) {
     assert(subsamplingHeight >= 1);
     this->subsamplingHeight_ = subsamplingHeight;
     return *this;
@@ -248,7 +249,7 @@ class ConvolutionTester {
     return this->subsamplingHeight_;
   }
 
-  inline ConvolutionTester& subsamplingWidth(uint32_t subsamplingWidth) {
+  inline ConvolutionOperatorTester& subsamplingWidth(uint32_t subsamplingWidth) {
     assert(subsamplingWidth >= 1);
     this->subsamplingWidth_ = subsamplingWidth;
     return *this;
@@ -258,7 +259,7 @@ class ConvolutionTester {
     return this->subsamplingWidth_;
   }
 
-  inline ConvolutionTester& inputPixelStride(size_t inputPixelStride) {
+  inline ConvolutionOperatorTester& inputPixelStride(size_t inputPixelStride) {
     assert(inputPixelStride >= 1);
     this->inputPixelStride_ = inputPixelStride;
     return *this;
@@ -273,7 +274,7 @@ class ConvolutionTester {
     }
   }
 
-  inline ConvolutionTester& outputPixelStride(size_t outputPixelStride) {
+  inline ConvolutionOperatorTester& outputPixelStride(size_t outputPixelStride) {
     assert(outputPixelStride >= 1);
     this->outputPixelStride_ = outputPixelStride;
     return *this;
@@ -314,7 +315,7 @@ class ConvolutionTester {
     }
   }
 
-  inline ConvolutionTester& qmin(uint8_t qmin) {
+  inline ConvolutionOperatorTester& qmin(uint8_t qmin) {
     this->qmin_ = qmin;
     return *this;
   }
@@ -323,7 +324,7 @@ class ConvolutionTester {
     return this->qmin_;
   }
 
-  inline ConvolutionTester& qmax(uint8_t qmax) {
+  inline ConvolutionOperatorTester& qmax(uint8_t qmax) {
     this->qmax_ = qmax;
     return *this;
   }
@@ -332,7 +333,7 @@ class ConvolutionTester {
     return this->qmax_;
   }
 
-  inline ConvolutionTester& iterations(size_t iterations) {
+  inline ConvolutionOperatorTester& iterations(size_t iterations) {
     this->iterations_ = iterations;
     return *this;
   }
@@ -341,7 +342,7 @@ class ConvolutionTester {
     return this->iterations_;
   }
 
-  void test() const {
+  void testQ8() const {
     std::random_device randomDevice;
     auto rng = std::mt19937(randomDevice());
     auto s32rng = std::bind(std::uniform_int_distribution<int32_t>(-10000, 10000), rng);

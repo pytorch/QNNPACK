@@ -8,8 +8,9 @@
 
 #include <gtest/gtest.h>
 
-#include <lut-microkernel-tester.h>
 #include <qnnpack/x8lut.h>
+
+#include "lut-microkernel-tester.h"
 
 
 TEST(X8LUT__SCALAR, n_eq_1) {

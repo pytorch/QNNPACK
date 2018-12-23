@@ -8,10 +8,10 @@
 
 #pragma once
 
+#include <algorithm>
+#include <cassert>
 #include <cstddef>
 #include <cstdlib>
-#include <algorithm>
-#include <cmath>
 #include <functional>
 #include <random>
 #include <vector>
@@ -94,7 +94,7 @@ class ChannelShuffleOperatorTester {
     return this->iterations_;
   }
 
-  void testX8ChannelShuffle() const {
+  void testX8() const {
     std::random_device randomDevice;
     auto rng = std::mt19937(randomDevice());
     auto u8rng = std::bind(std::uniform_int_distribution<uint8_t>(), rng);

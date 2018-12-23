@@ -19,9 +19,9 @@
 #include <qnnpack.h>
 
 
-class FullyConnectedTester {
+class FullyConnectedOperatorTester {
  public:
-  inline FullyConnectedTester& inputChannels(size_t inputChannels) {
+  inline FullyConnectedOperatorTester& inputChannels(size_t inputChannels) {
     assert(inputChannels >= 1);
     this->inputChannels_ = inputChannels;
     return *this;
@@ -31,7 +31,7 @@ class FullyConnectedTester {
     return this->inputChannels_;
   }
 
-  inline FullyConnectedTester& outputChannels(size_t outputChannels) {
+  inline FullyConnectedOperatorTester& outputChannels(size_t outputChannels) {
     assert(outputChannels >= 1);
     this->outputChannels_ = outputChannels;
     return *this;
@@ -41,7 +41,7 @@ class FullyConnectedTester {
     return this->outputChannels_;
   }
 
-  inline FullyConnectedTester& batchSize(size_t batchSize) {
+  inline FullyConnectedOperatorTester& batchSize(size_t batchSize) {
     assert(batchSize >= 1);
     this->batchSize_ = batchSize;
     return *this;
@@ -51,7 +51,7 @@ class FullyConnectedTester {
     return this->batchSize_;
   }
 
-  inline FullyConnectedTester& inputStride(size_t inputStride) {
+  inline FullyConnectedOperatorTester& inputStride(size_t inputStride) {
     assert(inputStride >= 1);
     this->inputStride_ = inputStride;
     return *this;
@@ -66,7 +66,7 @@ class FullyConnectedTester {
     }
   }
 
-  inline FullyConnectedTester& outputStride(size_t outputStride) {
+  inline FullyConnectedOperatorTester& outputStride(size_t outputStride) {
     assert(outputStride >= 1);
     this->outputStride_ = outputStride;
     return *this;
@@ -81,7 +81,7 @@ class FullyConnectedTester {
     }
   }
 
-  inline FullyConnectedTester& qmin(uint8_t qmin) {
+  inline FullyConnectedOperatorTester& qmin(uint8_t qmin) {
     this->qmin_ = qmin;
     return *this;
   }
@@ -90,7 +90,7 @@ class FullyConnectedTester {
     return this->qmin_;
   }
 
-  inline FullyConnectedTester& qmax(uint8_t qmax) {
+  inline FullyConnectedOperatorTester& qmax(uint8_t qmax) {
     this->qmax_ = qmax;
     return *this;
   }
@@ -99,7 +99,7 @@ class FullyConnectedTester {
     return this->qmax_;
   }
 
-  inline FullyConnectedTester& iterations(size_t iterations) {
+  inline FullyConnectedOperatorTester& iterations(size_t iterations) {
     this->iterations_ = iterations;
     return *this;
   }
@@ -108,7 +108,7 @@ class FullyConnectedTester {
     return this->iterations_;
   }
 
-  void test() const {
+  void testQ8() const {
     std::random_device randomDevice;
     auto rng = std::mt19937(randomDevice());
     auto s32rng = std::bind(std::uniform_int_distribution<int32_t>(-10000, 10000), rng);

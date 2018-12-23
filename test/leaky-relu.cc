@@ -10,8 +10,6 @@
 
 #include "leaky-relu-operator-tester.h"
 
-#include <qnnpack/params.h>
-
 
 TEST(LEAKY_RELU_OP, unit_batch) {
   for (size_t channels = 1; channels < 100; channels++) {

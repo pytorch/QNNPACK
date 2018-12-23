@@ -171,7 +171,7 @@ def main(args):
         build.unittest("q8mpdw-test", build.cxx("q8mpdw.cc"))
         build.unittest("q8avgpool-test", build.cxx("q8avgpool.cc"))
         build.unittest("q8gavgpool-test", build.cxx("q8gavgpool.cc"))
-        build.unittest("q8uvadd-test", build.cxx("q8uvadd.cc"))
+        build.unittest("q8vadd-test", build.cxx("q8vadd.cc"))
         build.unittest("u8maxpool-test", build.cxx("u8maxpool.cc"))
         build.unittest("u8clamp-test", build.cxx("u8clamp.cc"))
         build.unittest("u8rmax-test", build.cxx("u8rmax.cc"))
