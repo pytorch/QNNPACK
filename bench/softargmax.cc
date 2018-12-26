@@ -39,7 +39,7 @@ static void softargmax_q8(benchmark::State& state) {
   status = qnnp_create_softargmax_nc_q8(
     channels, 1.0f /* input scale */,
     0 /* output zero point */, 1.0f / 256.0f /* output scale */,
-    &softArgMaxOperator);
+    0 /* flags */, &softArgMaxOperator);
   if (status != qnnp_status_success || softArgMaxOperator == nullptr) {
     state.SkipWithError("failed to create SoftArgMax operator");
   }

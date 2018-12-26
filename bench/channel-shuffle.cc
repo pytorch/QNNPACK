@@ -39,7 +39,7 @@ static void channel_shuffle_x8(benchmark::State& state, const char* net) {
   status = qnnp_create_channel_shuffle_nc_x8(
     groups,
     groupChannels,
-    &channelShuffleOperator);
+    0 /* flags */, &channelShuffleOperator);
   if (status != qnnp_status_success || channelShuffleOperator == nullptr) {
     state.SkipWithError("failed to create X8 Channel Shuffle operator");
   }

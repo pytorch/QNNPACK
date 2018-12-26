@@ -437,7 +437,7 @@ class MaxPoolingOperatorTester {
           dilationHeight(), dilationWidth(),
           channels(),
           qmin(), qmax(),
-          &maxPoolingOp));
+          0, &maxPoolingOp));
       ASSERT_NE(nullptr, maxPoolingOp);
 
       ASSERT_EQ(qnnp_status_success,
@@ -525,7 +525,7 @@ class MaxPoolingOperatorTester {
           dilationHeight(), dilationWidth(),
           channels(),
           qmin(), qmax(),
-          &maxPoolingOp));
+          0, &maxPoolingOp));
       ASSERT_NE(nullptr, maxPoolingOp);
 
       ASSERT_EQ(qnnp_status_success,

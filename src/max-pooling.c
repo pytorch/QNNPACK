@@ -47,6 +47,7 @@ enum qnnp_status qnnp_create_max_pooling2d_nhwc_u8(
     size_t channels,
     uint8_t output_min,
     uint8_t output_max,
+    uint32_t flags,
     qnnp_operator_t* max_pooling_out)
 {
   qnnp_operator_t max_pooling = NULL;

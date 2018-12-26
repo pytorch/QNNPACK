@@ -163,7 +163,7 @@ class SigmoidOperatorTester {
           inputZeroPoint(), inputScale(),
           outputZeroPoint(), outputScale(),
           qmin(), qmax(),
-          &sigmoidOp));
+          0, &sigmoidOp));
       ASSERT_NE(nullptr, sigmoidOp);
 
       ASSERT_EQ(qnnp_status_success,

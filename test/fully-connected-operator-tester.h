@@ -164,7 +164,7 @@ class FullyConnectedOperatorTester {
           kernelZeroPoint, 1.0f /* kernel scale */,
           kernel.data(), bias.data(),
           outputZeroPoint, outputScale, qmin(), qmax(),
-          &convolution));
+          0, &convolution));
 
       ASSERT_EQ(qnnp_status_success,
         qnnp_setup_fully_connected_nc_q8(

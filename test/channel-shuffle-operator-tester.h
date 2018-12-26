@@ -113,7 +113,7 @@ class ChannelShuffleOperatorTester {
         qnnp_create_channel_shuffle_nc_x8(
           groups(),
           groupChannels(),
-          &channel_shuffle_op));
+          0, &channel_shuffle_op));
       ASSERT_NE(nullptr, channel_shuffle_op);
 
       ASSERT_EQ(qnnp_status_success,

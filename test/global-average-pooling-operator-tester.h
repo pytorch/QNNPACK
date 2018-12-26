@@ -184,7 +184,7 @@ class GlobalAveragePoolingOperatorTester {
           inputZeroPoint(), inputScale(),
           outputZeroPoint(), outputScale(),
           outputMin(), outputMax(),
-          &globalAveragePoolingOp));
+          0, &globalAveragePoolingOp));
       ASSERT_NE(nullptr, globalAveragePoolingOp);
 
       ASSERT_EQ(qnnp_status_success,

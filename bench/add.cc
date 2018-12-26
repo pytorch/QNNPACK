@@ -43,7 +43,7 @@ static void add_nc_q8(benchmark::State& state) {
     127 /* b:zero point */, 1.0f /* b:scale */,
     127 /* y:zero point */, 1.0f /* y:scale */,
     1 /* y:min */, 254 /* y:max */,
-    &addOperator);
+    0 /* flags */, &addOperator);
   if (status != qnnp_status_success || addOperator == nullptr) {
     state.SkipWithError("failed to create Q8 Add operator");
   }
@@ -101,7 +101,7 @@ static void add_nc_q8_inplace(benchmark::State& state) {
     127 /* b:zero point */, 1.0f /* b:scale */,
     127 /* y:zero point */, 1.0f /* y:scale */,
     1 /* y:min */, 254 /* y:max */,
-    &addOperator);
+    0 /* flags */, &addOperator);
   if (status != qnnp_status_success || addOperator == nullptr) {
     state.SkipWithError("failed to create Q8 Add operator");
   }

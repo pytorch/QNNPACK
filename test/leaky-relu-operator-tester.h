@@ -184,7 +184,7 @@ class LeakyReLUOperatorTester {
           inputZeroPoint(), inputScale(),
           outputZeroPoint(), outputScale(),
           qmin(), qmax(),
-          &leakyReLUOp));
+          0, &leakyReLUOp));
       ASSERT_NE(nullptr, leakyReLUOp);
 
       ASSERT_EQ(qnnp_status_success,

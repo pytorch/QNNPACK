@@ -146,7 +146,7 @@ class SoftArgMaxOperatorTester {
           channels(),
           inputScale(),
           outputZeroPoint(), outputScale(),
-          &softArgMaxOp));
+          0, &softArgMaxOp));
       ASSERT_NE(nullptr, softArgMaxOp);
 
       ASSERT_EQ(qnnp_status_success,

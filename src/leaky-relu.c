@@ -26,6 +26,7 @@ enum qnnp_status qnnp_create_leaky_relu_nc_q8(
     float output_scale,
     uint8_t output_min,
     uint8_t output_max,
+    uint32_t flags,
     qnnp_operator_t* leaky_relu_out)
 {
   qnnp_operator_t leaky_relu_op = NULL;

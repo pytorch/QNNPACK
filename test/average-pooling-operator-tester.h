@@ -438,7 +438,7 @@ class AveragePoolingOperatorTester {
           inputZeroPoint(), inputScale(),
           outputZeroPoint(), outputScale(),
           qmin(), qmax(),
-          &averagePoolingOp));
+          0, &averagePoolingOp));
       ASSERT_NE(nullptr, averagePoolingOp);
 
       ASSERT_EQ(qnnp_status_success,
@@ -529,7 +529,7 @@ class AveragePoolingOperatorTester {
           inputZeroPoint(), inputScale(),
           outputZeroPoint(), outputScale(),
           qmin(), qmax(),
-          &averagePoolingOp));
+          0, &averagePoolingOp));
       ASSERT_NE(nullptr, averagePoolingOp);
 
       ASSERT_EQ(qnnp_status_success,

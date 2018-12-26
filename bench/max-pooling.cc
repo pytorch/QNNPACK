@@ -56,7 +56,7 @@ static void max_pooling_u8(benchmark::State& state, const char* net) {
     1 /* dilation height */, 1 /* dilation width */,
     channels,
     0, 255,
-    &poolingOperator);
+    0 /* flags */, &poolingOperator);
   if (status != qnnp_status_success) {
     state.SkipWithError("failed to create Max Pooling operator");
   }

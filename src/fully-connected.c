@@ -35,6 +35,7 @@ enum qnnp_status qnnp_create_fully_connected_nc_q8(
     float output_scale,
     uint8_t output_min,
     uint8_t output_max,
+    uint32_t flags,
     qnnp_operator_t* fully_connected_out)
 {
   qnnp_operator_t fully_connected = NULL;

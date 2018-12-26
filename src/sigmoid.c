@@ -25,6 +25,7 @@ enum qnnp_status qnnp_create_sigmoid_nc_q8(
     float output_scale,
     uint8_t output_min,
     uint8_t output_max,
+    uint32_t flags,
     qnnp_operator_t* sigmoid_out)
 {
   qnnp_operator_t sigmoid_op = NULL;

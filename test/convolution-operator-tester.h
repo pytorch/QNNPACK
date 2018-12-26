@@ -425,7 +425,7 @@ class ConvolutionOperatorTester {
           kernelZeroPoint, 1.0f /* kernel scale */,
           kernel.data(), bias.data(),
           outputZeroPoint, outputScale, qmin(), qmax(),
-          &convolution));
+          0, &convolution));
 
       ASSERT_EQ(qnnp_status_success,
         qnnp_setup_convolution2d_nhwc_q8(

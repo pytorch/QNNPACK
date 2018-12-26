@@ -41,7 +41,7 @@ static void sigmoid_q8(benchmark::State& state) {
     127 /* input zero point */, 1.0f /* input scale */,
     0 /* output zero point */, 1.0f / 256.0f /* output scale */,
     0 /* output min */, 255 /* output max */,
-    &sigmoidOperator);
+    0 /* flags */, &sigmoidOperator);
   if (status != qnnp_status_success || sigmoidOperator == nullptr) {
     state.SkipWithError("failed to create Sigmoid operator");
   }

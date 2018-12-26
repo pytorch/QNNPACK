@@ -48,7 +48,7 @@ static void global_average_pooling_q8(benchmark::State& state) {
     127 /* input zero point */, 0.75f /* input scale */,
     127 /* output zero point */, 1.25f /* output scale */,
     0, 255,
-    &globalPoolingOperator);
+    0 /* flags */, &globalPoolingOperator);
   if (status != qnnp_status_success) {
     state.SkipWithError("failed to create Global Average Pooling operator");
   }

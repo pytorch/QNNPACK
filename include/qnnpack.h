@@ -61,6 +61,7 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
     float output_scale,
     uint8_t output_min,
     uint8_t output_max,
+    uint32_t flags,
     qnnp_operator_t* convolution);
 
 enum qnnp_status qnnp_setup_convolution2d_nhwc_q8(
@@ -100,6 +101,7 @@ enum qnnp_status qnnp_create_deconvolution2d_nhwc_q8(
     float output_scale,
     uint8_t output_min,
     uint8_t output_max,
+    uint32_t flags,
     qnnp_operator_t* deconvolution);
 
 enum qnnp_status qnnp_setup_deconvolution2d_nhwc_q8(
@@ -126,6 +128,7 @@ enum qnnp_status qnnp_create_fully_connected_nc_q8(
     float output_scale,
     uint8_t output_min,
     uint8_t output_max,
+    uint32_t flags,
     qnnp_operator_t* fully_connected);
 
 enum qnnp_status qnnp_setup_fully_connected_nc_q8(
@@ -144,6 +147,7 @@ enum qnnp_status qnnp_create_global_average_pooling_nwc_q8(
     float output_scale,
     uint8_t output_min,
     uint8_t output_max,
+    uint32_t flags,
     qnnp_operator_t* global_average_pooling);
 
 enum qnnp_status qnnp_setup_global_average_pooling_nwc_q8(
@@ -171,6 +175,7 @@ enum qnnp_status qnnp_create_average_pooling2d_nhwc_q8(
     float output_scale,
     uint8_t output_min,
     uint8_t output_max,
+    uint32_t flags,
     qnnp_operator_t* average_pooling);
 
 enum qnnp_status qnnp_setup_average_pooling2d_nhwc_q8(
@@ -198,6 +203,7 @@ enum qnnp_status qnnp_create_max_pooling2d_nhwc_u8(
     size_t channels,
     uint8_t output_min,
     uint8_t output_max,
+    uint32_t flags,
     qnnp_operator_t* max_pooling);
 
 enum qnnp_status qnnp_setup_max_pooling2d_nhwc_u8(
@@ -214,6 +220,7 @@ enum qnnp_status qnnp_setup_max_pooling2d_nhwc_u8(
 enum qnnp_status qnnp_create_channel_shuffle_nc_x8(
     size_t groups,
     size_t group_channels,
+    uint32_t flags,
     qnnp_operator_t* channel_shuffle);
 
 enum qnnp_status qnnp_setup_channel_shuffle_nc_x8(
@@ -234,6 +241,7 @@ enum qnnp_status qnnp_create_add_nc_q8(
     float sum_scale,
     uint8_t sum_min,
     uint8_t sum_max,
+    uint32_t flags,
     qnnp_operator_t* add);
 
 enum qnnp_status qnnp_setup_add_nc_q8(
@@ -250,6 +258,7 @@ enum qnnp_status qnnp_create_clamp_nc_u8(
     size_t channels,
     uint8_t output_min,
     uint8_t output_max,
+    uint32_t flags,
     qnnp_operator_t* clamp);
 
 enum qnnp_status qnnp_setup_clamp_nc_u8(
@@ -268,6 +277,7 @@ enum qnnp_status qnnp_create_sigmoid_nc_q8(
     float output_scale,
     uint8_t output_min,
     uint8_t output_max,
+    uint32_t flags,
     qnnp_operator_t* sigmoid);
 
 enum qnnp_status qnnp_setup_sigmoid_nc_q8(
@@ -287,6 +297,7 @@ enum qnnp_status qnnp_create_leaky_relu_nc_q8(
     float output_scale,
     uint8_t output_min,
     uint8_t output_max,
+    uint32_t flags,
     qnnp_operator_t* leaky_relu);
 
 enum qnnp_status qnnp_setup_leaky_relu_nc_q8(
@@ -302,6 +313,7 @@ enum qnnp_status qnnp_create_softargmax_nc_q8(
     float input_scale,
     uint8_t output_zero_point,
     float output_scale,
+    uint32_t flags,
     qnnp_operator_t* softargmax);
 
 enum qnnp_status qnnp_setup_softargmax_nc_q8(

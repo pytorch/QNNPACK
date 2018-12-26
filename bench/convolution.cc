@@ -72,7 +72,7 @@ static void convolution_q8(benchmark::State& state, const char* net) {
     127, 0.5f,
     kernel.data(), bias.data(),
     127, 0.5f, 0, 255,
-    &convolutionObject);
+    0 /* flags */, &convolutionObject);
   if (status != qnnp_status_success) {
     state.SkipWithError("failed to create Convolution operator");
   }

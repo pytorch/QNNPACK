@@ -29,6 +29,7 @@ enum qnnp_status qnnp_create_add_nc_q8(
     float sum_scale,
     uint8_t sum_min,
     uint8_t sum_max,
+    uint32_t flags,
     qnnp_operator_t* add_out)
 {
   qnnp_operator_t add_op = NULL;

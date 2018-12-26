@@ -214,7 +214,7 @@ class AddOperatorTester {
           bZeroPoint(), bScale(),
           yZeroPoint(), yScale(),
           qmin(), qmax(),
-          &add_op));
+          0, &add_op));
       ASSERT_NE(nullptr, add_op);
 
       ASSERT_EQ(qnnp_status_success,

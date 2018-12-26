@@ -22,6 +22,7 @@ enum qnnp_status qnnp_create_softargmax_nc_q8(
     float input_scale,
     uint8_t output_zero_point,
     float output_scale,
+    uint32_t flags,
     qnnp_operator_t* softargmax_out)
 {
   qnnp_operator_t softargmax_op = NULL;

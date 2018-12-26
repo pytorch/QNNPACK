@@ -444,7 +444,7 @@ class DeconvolutionOperatorTester {
           kernelZeroPoint, 1.0f /* kernel scale */,
           kernel.data(), bias.data(),
           outputZeroPoint, outputScale, qmin(), qmax(),
-          &deconvolution));
+          0, &deconvolution));
 
       ASSERT_EQ(qnnp_status_success,
         qnnp_setup_deconvolution2d_nhwc_q8(

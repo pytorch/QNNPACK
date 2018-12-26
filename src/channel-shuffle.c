@@ -21,6 +21,7 @@
 enum qnnp_status qnnp_create_channel_shuffle_nc_x8(
     size_t groups,
     size_t group_channels,
+    uint32_t flags,
     qnnp_operator_t* channel_shuffle_out)
 {
   qnnp_operator_t channel_shuffle_op = NULL;

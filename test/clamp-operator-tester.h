@@ -127,7 +127,7 @@ class ClampOperatorTester {
         qnnp_create_clamp_nc_u8(
           channels(),
           qmin(), qmax(),
-          &clampOp));
+          0, &clampOp));
       ASSERT_NE(nullptr, clampOp);
 
       ASSERT_EQ(qnnp_status_success,
