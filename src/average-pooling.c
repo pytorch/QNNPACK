@@ -165,11 +165,9 @@ enum qnnp_status qnnp_create_average_pooling2d_nhwc_q8(
 
   size_t nrows = pooling_height * pooling_width;
   if (channels >= qnnp_params.q8avgpool.kr) {
-    const uint32_t mr = qnnp_params.q8avgpool.mr;
     if (nrows <= mr) {
       nrows = mr;
     } else {
-      const uint32_t qr = qnnp_params.q8avgpool.qr;
       nrows = round_up(nrows - mr, qr) + mr;
     }
   }
