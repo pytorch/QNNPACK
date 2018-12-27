@@ -163,7 +163,7 @@ SET(QNNPACK_ARM_NEON_UKERNELS
   src/q8conv/8x8-neon.c
   src/q8dwconv/mp8x25-neon.c
   src/q8dwconv/up8x9-neon.c
-  src/q8gavgpool/mp8x7-neon.c
+  src/q8gavgpool/mp8x7p7q-neon.c
   src/q8gavgpool/up8x7-neon.c
   src/q8gavgpool/up8xm-neon.c
   src/q8gemm/4x-sumrows-neon.c
