@@ -28,7 +28,7 @@ static void channel_shuffle_x8(benchmark::State& state, const char* net) {
 
   std::vector<uint8_t> input(batchSize * groups * groupChannels);
   std::vector<uint8_t> output(batchSize * groups * groupChannels);
-  std::generate(input.begin(), input.end(), std::ref(rng));
+  std::generate(input.begin(), input.end(), std::ref(u8rng));
 
   qnnp_status status = qnnp_initialize();
   if (status != qnnp_status_success) {
