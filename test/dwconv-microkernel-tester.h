@@ -67,7 +67,7 @@ class DWConvMicrokernelTester {
   }
 
   inline uint32_t packedChannels() const {
-    return (channels() | (cr() - 1)) + 1;
+    return (channels() + (cr() - 1)) & -cr();
   }
 
   inline DWConvMicrokernelTester& kernelHeight(uint32_t kernelHeight) {
@@ -180,8 +180,6 @@ class DWConvMicrokernelTester {
     std::vector<uint8_t, AlignedAllocator<uint8_t, 32>> packedWeights((kernelSize() + sizeof(int32_t) / sizeof(uint8_t)) * packedChannels());
     std::vector<int32_t> bias(packedChannels());
     std::vector<int32_t> accumulators(width() * channels());
-    auto channel_stride = (channels() + (cr() - 1)) & -cr();
-    std::vector<int32_t> outacc32(width() * channel_stride);
     std::vector<uint8_t> output((width() - 1) * outputStride() + channels());
     std::vector<const uint8_t*> indirectInput(kernelSize() + (width() * subsampling() - 1) * kernelHeight());
 
@@ -192,7 +190,6 @@ class DWConvMicrokernelTester {
       std::generate(kernel.begin(), kernel.end(), std::ref(u8rng));
       std::generate(bias.begin(), bias.end(), std::ref(s32rng));
       std::fill(accumulators.begin(), accumulators.end(), 0);
-      std::fill(outacc32.begin(), outacc32.end(), 0);
 
       ASSERT_NE(*std::max_element(input.cbegin(), input.cend()), *std::min_element(input.cbegin(), input.cend()));
       ASSERT_NE(*std::max_element(kernel.cbegin(), kernel.cend()), *std::min_element(kernel.cbegin(), kernel.cend()));
@@ -236,6 +233,9 @@ class DWConvMicrokernelTester {
         qnnp_compute_conv_quantization_params(
           inputZeroPoint(), kernelZeroPoint(),
           requantizationScale, outputZeroPoint, qmin(), qmax());
+      const union qnnp_q31_requantization_params scalarRequantizationParams =
+        qnnp_compute_scalar_requantization_params(
+          requantizationScale, outputZeroPoint, qmin(), qmax());
 
       q8dwconv(
         channels(), width(),
@@ -246,14 +246,15 @@ class DWConvMicrokernelTester {
 
       for (size_t x = 0; x < width(); x++) {
         for (size_t c = 0; c < channels(); c++) {
-          const double scaledAccumulator = accumulators[x * channels() + c] / outputScale;
-          const double clampedAccumulator = std::max(std::min(scaledAccumulator,
-            double(qmax()) - double(outputZeroPoint)),
-            double(qmin()) - double(outputZeroPoint));
+          const uint8_t referenceOutput = qnnp_q31_requantize(accumulators[x * channels() + c], scalarRequantizationParams);
+          const double scaledAccumulator = accumulators[x * channels() + c] / outputScale + double(outputZeroPoint);
+          const double clampedAccumulator = std::max(std::min(scaledAccumulator, double(qmax())), double(qmin()));
           ASSERT_NEAR(
             clampedAccumulator,
-            (int32_t(output[x * outputStride() + c]) - outputZeroPoint),
+            double(output[x * outputStride() + c]),
             0.6) << "x = " << x << ", channel = " << c;
+          ASSERT_EQ(uint32_t(referenceOutput), uint32_t(output[x * outputStride() + c]))
+            << "x = " << x << ", channel = " << c;
         }
       }
     }
@@ -272,8 +273,7 @@ class DWConvMicrokernelTester {
     std::vector<uint8_t, AlignedAllocator<uint8_t, 32>> packedWeights((kernelSize() + sizeof(int32_t) / sizeof(uint8_t)) * packedChannels());
     std::vector<int32_t> bias(packedChannels());
     std::vector<int32_t> accumulators(width() * channels());
-    auto channel_stride = (channels() + (cr() - 1)) & -cr();
-    std::vector<int32_t> outacc32(width() * channel_stride);
+    std::vector<int32_t> mpAcc(width() * packedChannels());
     std::vector<uint8_t> output((width() - 1) * outputStride() + channels());
     std::vector<const uint8_t*> indirectInput(kernelSize() + (width() * subsampling() - 1) * kernelHeight());
 
@@ -284,14 +284,14 @@ class DWConvMicrokernelTester {
       std::generate(kernel.begin(), kernel.end(), std::ref(u8rng));
       std::generate(bias.begin(), bias.end(), std::ref(s32rng));
       std::fill(accumulators.begin(), accumulators.end(), 0);
-      std::fill(outacc32.begin(), outacc32.end(), 0);
+      std::fill(mpAcc.begin(), mpAcc.end(), 0xA5A55A5A);
 
       ASSERT_NE(*std::max_element(input.cbegin(), input.cend()), *std::min_element(input.cbegin(), input.cend()));
       ASSERT_NE(*std::max_element(kernel.cbegin(), kernel.cend()), *std::min_element(kernel.cbegin(), kernel.cend()));
 
       std::fill(packedWeights.begin(), packedWeights.end(), 0xA5);
 
-    ASSERT_EQ(25, kernelSize()) << "only 5x5 microkernel is currently supported";
+      ASSERT_EQ(25, kernelSize()) << "only 5x5 microkernel is currently supported";
       pack_q8dw_w_dilation(
         kernelHeight(), kernelWidth(), channels(), cr(),
         0, kernelHeight(), 0, 2,
@@ -299,11 +299,11 @@ class DWConvMicrokernelTester {
       pack_q8dw_w_dilation(
         kernelHeight(), kernelWidth(), channels(), cr(),
         0, kernelHeight(), 2, 4,
-        kernel.data(), bias.data(), packedWeights.data() + (10 + sizeof(int32_t) / sizeof(uint8_t)) * channel_stride, false);
+        kernel.data(), bias.data(), packedWeights.data() + (10 + sizeof(int32_t) / sizeof(uint8_t)) * packedChannels(), false);
       pack_q8dw_w_dilation(
         kernelHeight(), kernelWidth(), channels(), cr(),
         0, kernelHeight(), 4, 5,
-        kernel.data(), bias.data(), packedWeights.data() + (20 + sizeof(int32_t) / sizeof(uint8_t)) * channel_stride, false);
+        kernel.data(), bias.data(), packedWeights.data() + (20 + sizeof(int32_t) / sizeof(uint8_t)) * packedChannels(), false);
       for (size_t i = 0; i < kernelSize() + (width() * subsampling() - 1) * kernelHeight(); i++) {
         indirectInput[i] = inputPtr + i * inputStride();
       }
@@ -343,21 +343,22 @@ class DWConvMicrokernelTester {
 
       q8dwconv(
         channels(), width(),
-        indirectInput.data(), packedWeights.data(), outacc32.data(), output.data(),
+        indirectInput.data(), packedWeights.data(), mpAcc.data(), output.data(),
         kernelHeight() * subsampling() * sizeof(void*),
         (outputStride() - channels()) * sizeof(uint8_t),
         &quantizationParams);
 
       for (size_t x = 0; x < width(); x++) {
         for (size_t c = 0; c < channels(); c++) {
-          const double scaledAccumulator = accumulators[x * channels() + c] / outputScale;
-          const double clampedAccumulator = std::max(std::min(scaledAccumulator,
-            double(qmax()) - double(outputZeroPoint)),
-            double(qmin()) - double(outputZeroPoint));
+          const uint8_t referenceOutput = qnnp_q31_requantize(accumulators[x * channels() + c], scalarRequantizationParams);
+          const double scaledAccumulator = accumulators[x * channels() + c] / outputScale + double(outputZeroPoint);
+          const double clampedAccumulator = std::max(std::min(scaledAccumulator, double(qmax())), double(qmin()));
           ASSERT_NEAR(
             clampedAccumulator,
-            (int32_t(output[x * outputStride() + c]) - outputZeroPoint),
+            double(output[x * outputStride() + c]),
             0.6) << "x = " << x << ", channel = " << c;
+          ASSERT_EQ(uint32_t(referenceOutput), uint32_t(output[x * outputStride() + c]))
+            << "x = " << x << ", channel = " << c;
         }
       }
     }

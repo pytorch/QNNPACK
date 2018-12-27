@@ -17,6 +17,7 @@
 #include <random>
 #include <vector>
 
+#include <qnnpack/AlignedAllocator.h>
 #include <qnnpack/params.h>
 #include <qnnpack/requantization.h>
 
@@ -206,7 +207,7 @@ class GAvgPoolMicrokernelTester {
     auto u8rng = std::bind(std::uniform_int_distribution<uint8_t>(), rng);
 
     std::vector<uint8_t> x((m() - 1) * xStride() + n());
-    std::vector<int32_t> acc(packedN());
+    std::vector<int32_t, AlignedAllocator<int32_t, 16>> mpAcc(packedN());
     std::vector<uint8_t> zero(n());
     std::vector<uint8_t> y(n());
     std::vector<uint8_t> yRef(n());
@@ -246,7 +247,7 @@ class GAvgPoolMicrokernelTester {
       q8gavgpool(m(), n(),
         x.data(), xStride() * sizeof(uint8_t),
         zero.data(),
-        acc.data(),
+        mpAcc.data(),
         y.data(),
         &quantizationParams);
 

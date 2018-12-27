@@ -17,6 +17,7 @@
 #include <random>
 #include <vector>
 
+#include <qnnpack/AlignedAllocator.h>
 #include <qnnpack/params.h>
 #include <qnnpack/requantization.h>
 
@@ -301,7 +302,7 @@ class AvgPoolMicrokernelTester {
 
     std::vector<const uint8_t*> indirectX(packedKs() + (n() * s() - 1) * kh());
     std::vector<uint8_t> x((indirectX.size() - 1) * xStride() + kc());
-    std::vector<int32_t> mpAcc(packedN());
+    std::vector<int32_t, AlignedAllocator<int32_t, 16>> mpAcc(packedN());
 
     std::vector<uint8_t> zero(kc());
     std::vector<uint8_t> y((n() - 1) * yStride() + kc());
