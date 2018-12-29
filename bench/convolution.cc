@@ -409,6 +409,7 @@ static void MobileNetV2(benchmark::internal::Benchmark* b) {
   b->Args({1,   1,   1,  1,  1, 1, 1,   1, 1280, 1000});
 }
 
+/* SqueezeNet 1.0 */
 static void SqueezeNetV10(benchmark::internal::Benchmark* b) {
   b->ArgNames({"N", "H", "W", "KH", "KW", "S", "D", "G", "GCin", "GCout"});
 
@@ -423,8 +424,8 @@ static void SqueezeNetV10(benchmark::internal::Benchmark* b) {
   /********************** Fire 3 *********************/
   /*       N   H    W   KH  KW  S  D  G  GCin  GCout */
   b->Args({1,  56,  55,  1,  1, 1, 1, 1,  128,   16});
-  b->Args({1,  55,  55,  1,  1, 1, 1, 1,   16,   64});
-  b->Args({1,  55,  55,  3,  3, 1, 1, 1,   16,   64});
+/*b->Args({1,  55,  55,  1,  1, 1, 1, 1,   16,   64});*/
+/*b->Args({1,  55,  55,  3,  3, 1, 1, 1,   16,   64});*/
   /********************** Fire 4 *********************/
   /*       N   H    W   KH  KW  S  D  G  GCin  GCout */
   b->Args({1,  55,  55,  1,  1, 1, 1, 1,  128,   32});
@@ -443,8 +444,8 @@ static void SqueezeNetV10(benchmark::internal::Benchmark* b) {
   /********************** Fire 7 *********************/
   /*       N   H    W   KH  KW  S  D  G  GCin  GCout */
   b->Args({1,  27,  27,  1,  1, 1, 1, 1,  384,   48});
-  b->Args({1,  27,  27,  1,  1, 1, 1, 1,   48,  192});
-  b->Args({1,  27,  27,  3,  3, 1, 1, 1,   48,  192});
+/*b->Args({1,  27,  27,  1,  1, 1, 1, 1,   48,  192});*/
+/*b->Args({1,  27,  27,  3,  3, 1, 1, 1,   48,  192});*/
   /********************** Fire 8 *********************/
   /*       N   H    W   KH  KW  S  D  G  GCin  GCout */
   b->Args({1,  27,  27,  1,  1, 1, 1, 1,  384,   64});
@@ -460,6 +461,7 @@ static void SqueezeNetV10(benchmark::internal::Benchmark* b) {
   b->Args({1,  13,  13,  1,  1, 1, 1, 1,  512, 1000});
 }
 
+/* SqueezeNet 1.1 */
 static void SqueezeNetV11(benchmark::internal::Benchmark* b) {
   b->ArgNames({"N", "H", "W", "KH", "KW", "S", "D", "G", "GCin", "GCout"});
 
@@ -474,8 +476,8 @@ static void SqueezeNetV11(benchmark::internal::Benchmark* b) {
   /********************** Fire 3 *********************/
   /*       N   H    W   KH  KW  S  D  G  GCin  GCout */
   b->Args({1,  55,  55,  1,  1, 1, 1, 1,  128,   16});
-  b->Args({1,  55,  55,  1,  1, 1, 1, 1,   16,   64});
-  b->Args({1,  55,  55,  3,  3, 1, 1, 1,   16,   64});
+/*b->Args({1,  55,  55,  1,  1, 1, 1, 1,   16,   64});*/
+/*b->Args({1,  55,  55,  3,  3, 1, 1, 1,   16,   64});*/
   /********************** Fire 4 *********************/
   /*       N   H    W   KH  KW  S  D  G  GCin  GCout */
   b->Args({1,  27,  27,  1,  1, 1, 1, 1,  128,   32});
@@ -484,8 +486,8 @@ static void SqueezeNetV11(benchmark::internal::Benchmark* b) {
   /********************** Fire 5 *********************/
   /*       N   H    W   KH  KW  S  D  G  GCin  GCout */
   b->Args({1,  27,  27,  1,  1, 1, 1, 1,  256,   32});
-  b->Args({1,  27,  27,  1,  1, 1, 1, 1,   32,  128});
-  b->Args({1,  27,  27,  3,  3, 1, 1, 1,   32,  128});
+/*b->Args({1,  27,  27,  1,  1, 1, 1, 1,   32,  128});*/
+/*b->Args({1,  27,  27,  3,  3, 1, 1, 1,   32,  128});*/
   /********************** Fire 6 *********************/
   /*       N   H    W   KH  KW  S  D  G  GCin  GCout */
   b->Args({1,  13,  13,  1,  1, 1, 1, 1,  256,   48});
@@ -494,8 +496,8 @@ static void SqueezeNetV11(benchmark::internal::Benchmark* b) {
   /********************** Fire 7 *********************/
   /*       N   H    W   KH  KW  S  D  G  GCin  GCout */
   b->Args({1,  13,  13,  1,  1, 1, 1, 1,  384,   48});
-  b->Args({1,  13,  13,  1,  1, 1, 1, 1,   48,  192});
-  b->Args({1,  13,  13,  3,  3, 1, 1, 1,   48,  192});
+/*b->Args({1,  13,  13,  1,  1, 1, 1, 1,   48,  192});*/
+/*b->Args({1,  13,  13,  3,  3, 1, 1, 1,   48,  192});*/
   /********************** Fire 8 *********************/
   /*       N   H    W   KH  KW  S  D  G  GCin  GCout */
   b->Args({1,  13,  13,  1,  1, 1, 1, 1,  384,   64});
@@ -504,8 +506,8 @@ static void SqueezeNetV11(benchmark::internal::Benchmark* b) {
   /********************** Fire 9 *********************/
   /*       N   H    W   KH  KW  S  D  G  GCin  GCout */
   b->Args({1,  13,  13,  1,  1, 1, 1, 1,  512,   64});
-  b->Args({1,  13,  13,  1,  1, 1, 1, 1,   64,  256});
-  b->Args({1,  13,  13,  3,  3, 1, 1, 1,   64,  256});
+/*b->Args({1,  13,  13,  1,  1, 1, 1, 1,   64,  256});*/
+/*b->Args({1,  13,  13,  3,  3, 1, 1, 1,   64,  256});*/
   /********************* Conv 10 *********************/
   /*       N   H    W   KH  KW  S  D  G  GCin  GCout */
   b->Args({1,  13,  13,  1,  1, 1, 1, 1,  512, 1000});
