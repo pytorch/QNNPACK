@@ -299,6 +299,132 @@ static void ShuffleNetV1G8(benchmark::internal::Benchmark* b) {
   b->Args({1,   7,   7,  1,  1, 1, 1,   8,   48,  192});
 }
 
+/* ShuffleNet v2 (0.5X scale) */
+static void ShuffleNetV2X05(benchmark::internal::Benchmark* b) {
+  b->ArgNames({"N", "H", "W", "KH", "KW", "S", "D", "G", "GCin", "GCout"});
+
+  /*********************** Conv 1 **********************/
+  /*       N   H    W   KH  KW  S  D   G   GCin  GCout */
+  b->Args({1, 224, 224,  3,  3, 2, 1,   1,    3,   24});
+  /********************** Stage 2 **********************/
+  /*       N   H    W   KH  KW  S  D   G   GCin  GCout */
+  b->Args({1,  56,  56,  3,  3, 2, 1,  24,    1,    1});
+  b->Args({1,  28,  28,  1,  1, 1, 1,   1,   24,   24});
+  b->Args({1,  56,  56,  1,  1, 1, 1,   1,   24,   24});
+  b->Args({1,  28,  28,  3,  3, 1, 1,  24,    1,    1});
+  /********************** Stage 3 **********************/
+  /*       N   H    W   KH  KW  S  D   G   GCin  GCout */
+  b->Args({1,  28,  28,  3,  3, 2, 1,  48,    1,    1});
+  b->Args({1,  14,  14,  1,  1, 1, 1,   1,   48,   48});
+  b->Args({1,  28,  28,  1,  1, 1, 1,   1,   48,   48});
+  b->Args({1,  14,  14,  3,  3, 1, 1,  48,    1,    1});
+  /********************** Stage 4 **********************/
+  /*       N   H    W   KH  KW  S  D   G   GCin  GCout */
+  b->Args({1,  14,  14,  3,  3, 2, 1,  96,    1,    1});
+  b->Args({1,   7,   7,  1,  1, 1, 1,   1,   96,   96});
+  b->Args({1,  14,  14,  1,  1, 1, 1,   1,   96,   96});
+  b->Args({1,   7,   7,  3,  3, 1, 1,  96,    1,    1});
+  /*********************** Conv 5 **********************/
+  /*       N   H    W   KH  KW  S  D   G   GCin  GCout */
+  b->Args({1,   7,   7,  1,  1, 1, 1,   1,  192, 1024});
+}
+
+/* ShuffleNet v2 (1.0X scale) */
+static void ShuffleNetV2X10(benchmark::internal::Benchmark* b) {
+  b->ArgNames({"N", "H", "W", "KH", "KW", "S", "D", "G", "GCin", "GCout"});
+
+  /*********************** Conv 1 **********************/
+  /*       N   H    W   KH  KW  S  D   G   GCin  GCout */
+  b->Args({1, 224, 224,  3,  3, 2, 1,   1,    3,   24});
+  /********************** Stage 2 **********************/
+  /*       N   H    W   KH  KW  S  D   G   GCin  GCout */
+  b->Args({1,  56,  56,  3,  3, 2, 1,  24,    1,    1});
+  b->Args({1,  28,  28,  1,  1, 1, 1,   1,   24,   58});
+  b->Args({1,  56,  56,  1,  1, 1, 1,   1,   24,   58});
+  b->Args({1,  56,  56,  3,  3, 2, 1,  58,    1,    1});
+  b->Args({1,  28,  28,  1,  1, 1, 1,   1,   58,   58});
+  b->Args({1,  28,  28,  3,  3, 1, 1,  58,    1,    1});
+  /********************** Stage 3 **********************/
+  /*       N   H    W   KH  KW  S  D   G   GCin  GCout */
+  b->Args({1,  28,  28,  3,  3, 2, 1, 116,    1,    1});
+  b->Args({1,  14,  14,  1,  1, 1, 1,   1,  116,  116});
+  b->Args({1,  28,  28,  1,  1, 1, 1,   1,  116,  116});
+  b->Args({1,  14,  14,  3,  3, 1, 1, 116,    1,    1});
+  /********************** Stage 4 **********************/
+  /*       N   H    W   KH  KW  S  D   G   GCin  GCout */
+  b->Args({1,  14,  14,  3,  3, 2, 1, 232,    1,    1});
+  b->Args({1,   7,   7,  1,  1, 1, 1,   1,  232,  232});
+  b->Args({1,  14,  14,  1,  1, 1, 1,   1,  232,  232});
+  b->Args({1,   7,   7,  3,  3, 1, 1, 232,    1,    1});
+  /*********************** Conv 5 **********************/
+  /*       N   H    W   KH  KW  S  D   G   GCin  GCout */
+  b->Args({1,   7,   7,  1,  1, 1, 1,   1,  464, 1024});
+}
+
+/* ShuffleNet v2 (1.5X scale) */
+static void ShuffleNetV2X15(benchmark::internal::Benchmark* b) {
+  b->ArgNames({"N", "H", "W", "KH", "KW", "S", "D", "G", "GCin", "GCout"});
+
+  /*********************** Conv 1 **********************/
+  /*       N   H    W   KH  KW  S  D   G   GCin  GCout */
+  b->Args({1, 224, 224,  3,  3, 2, 1,   1,    3,   24});
+  /********************** Stage 2 **********************/
+  /*       N   H    W   KH  KW  S  D   G   GCin  GCout */
+  b->Args({1,  56,  56,  3,  3, 2, 1,  24,    1,    1});
+  b->Args({1,  28,  28,  1,  1, 1, 1,   1,   24,   88});
+  b->Args({1,  56,  56,  1,  1, 1, 1,   1,   24,   88});
+  b->Args({1,  56,  56,  3,  3, 2, 1,  88,    1,    1});
+  b->Args({1,  28,  28,  1,  1, 1, 1,   1,   88,   88});
+  b->Args({1,  28,  28,  3,  3, 1, 1,  88,    1,    1});
+  /********************** Stage 3 **********************/
+  /*       N   H    W   KH  KW  S  D   G   GCin  GCout */
+  b->Args({1,  28,  28,  3,  3, 2, 1, 176,    1,    1});
+  b->Args({1,  14,  14,  1,  1, 1, 1,   1,  176,  176});
+  b->Args({1,  28,  28,  1,  1, 1, 1,   1,  176,  176});
+  b->Args({1,  14,  14,  3,  3, 1, 1, 176,    1,    1});
+  /********************** Stage 4 **********************/
+  /*       N   H    W   KH  KW  S  D   G   GCin  GCout */
+  b->Args({1,  14,  14,  3,  3, 2, 1, 352,    1,    1});
+  b->Args({1,   7,   7,  1,  1, 1, 1,   1,  352,  352});
+  b->Args({1,  14,  14,  1,  1, 1, 1,   1,  352,  352});
+  b->Args({1,   7,   7,  3,  3, 1, 1, 352,    1,    1});
+  /*********************** Conv 5 **********************/
+  /*       N   H    W   KH  KW  S  D   G   GCin  GCout */
+  b->Args({1,   7,   7,  1,  1, 1, 1,   1,  704, 1024});
+}
+
+/* ShuffleNet v2 (2.0X scale) */
+static void ShuffleNetV2X20(benchmark::internal::Benchmark* b) {
+  b->ArgNames({"N", "H", "W", "KH", "KW", "S", "D", "G", "GCin", "GCout"});
+
+  /*********************** Conv 1 **********************/
+  /*       N   H    W   KH  KW  S  D   G   GCin  GCout */
+  b->Args({1, 224, 224,  3,  3, 2, 1,   1,    3,   24});
+  /********************** Stage 2 **********************/
+  /*       N   H    W   KH  KW  S  D   G   GCin  GCout */
+  b->Args({1,  56,  56,  3,  3, 2, 1,  24,    1,    1});
+  b->Args({1,  28,  28,  1,  1, 1, 1,   1,   24,  122});
+  b->Args({1,  56,  56,  1,  1, 1, 1,   1,   24,  122});
+  b->Args({1,  56,  56,  3,  3, 2, 1, 122,    1,    1});
+  b->Args({1,  28,  28,  1,  1, 1, 1,   1,  122,  122});
+  b->Args({1,  28,  28,  3,  3, 1, 1, 122,    1,    1});
+  /********************** Stage 3 **********************/
+  /*       N   H    W   KH  KW  S  D   G   GCin  GCout */
+  b->Args({1,  28,  28,  3,  3, 2, 1, 244,    1,    1});
+  b->Args({1,  14,  14,  1,  1, 1, 1,   1,  244,  244});
+  b->Args({1,  28,  28,  1,  1, 1, 1,   1,  244,  244});
+  b->Args({1,  14,  14,  3,  3, 1, 1, 244,    1,    1});
+  /********************** Stage 4 **********************/
+  /*       N   H    W   KH  KW  S  D   G   GCin  GCout */
+  b->Args({1,  14,  14,  3,  3, 2, 1, 488,    1,    1});
+  b->Args({1,   7,   7,  1,  1, 1, 1,   1,  488,  488});
+  b->Args({1,  14,  14,  1,  1, 1, 1,   1,  488,  488});
+  b->Args({1,   7,   7,  3,  3, 1, 1, 488,    1,    1});
+  /*********************** Conv 5 **********************/
+  /*       N   H    W   KH  KW  S  D   G   GCin  GCout */
+  b->Args({1,   7,   7,  1,  1, 1, 1,   1,  976, 2048});
+}
+
 static void MobileNetV1(benchmark::internal::Benchmark* b) {
   b->ArgNames({"N", "H", "W", "KH", "KW", "S", "D", "G", "GCin", "GCout"});
 
@@ -822,6 +948,10 @@ BENCHMARK_CAPTURE(convolution_q8, shufflenet_v1_g2, "ShuffleNet v1 (2 groups)")-
 BENCHMARK_CAPTURE(convolution_q8, shufflenet_v1_g3, "ShuffleNet v1 (3 groups)")->Apply(ShuffleNetV1G3);
 BENCHMARK_CAPTURE(convolution_q8, shufflenet_v1_g4, "ShuffleNet v1 (4 groups)")->Apply(ShuffleNetV1G4);
 BENCHMARK_CAPTURE(convolution_q8, shufflenet_v1_g8, "ShuffleNet v1 (8 groups)")->Apply(ShuffleNetV1G8);
+BENCHMARK_CAPTURE(convolution_q8, shufflenet_v2_x05, "ShuffleNet v2 0.5X")->Apply(ShuffleNetV2X05);
+BENCHMARK_CAPTURE(convolution_q8, shufflenet_v2_x10, "ShuffleNet v2 1.0X")->Apply(ShuffleNetV2X10);
+BENCHMARK_CAPTURE(convolution_q8, shufflenet_v2_x15, "ShuffleNet v2 1.5X")->Apply(ShuffleNetV2X15);
+BENCHMARK_CAPTURE(convolution_q8, shufflenet_v2_x20, "ShuffleNet v2 2.0X")->Apply(ShuffleNetV2X20);
 BENCHMARK_CAPTURE(convolution_q8, squeezenet_v10, "SqueezeNet 1.0")->Apply(SqueezeNetV10);
 BENCHMARK_CAPTURE(convolution_q8, squeezenet_v11, "SqueezeNet 1.1")->Apply(SqueezeNetV11);
 BENCHMARK_CAPTURE(convolution_q8, resnet18, "ResNet-18")->Apply(ResNet18);
