@@ -513,6 +513,84 @@ static void SqueezeNetV11(benchmark::internal::Benchmark* b) {
   b->Args({1,  13,  13,  1,  1, 1, 1, 1,  512, 1000});
 }
 
+static void ResNet18(benchmark::internal::Benchmark* b) {
+  b->ArgNames({"N", "H", "W", "KH", "KW", "S", "D", "G", "GCin", "GCout"});
+
+  /********************* Conv 1 *********************/
+  /*       N   H    W   KH  KW  S  D  G GCin  GCout */
+  b->Args({1, 224, 224,  7,  7, 2, 1, 1,    3,   64});
+  /******************** Conv 2.X ********************/
+  /*       N   H    W   KH  KW  S  D  G GCin  GCout */
+  b->Args({1,  56,  56,  3,  3, 1, 1, 1,   64,   64});
+  /******************** Conv 3.X ********************/
+  /*       N   H    W   KH  KW  S  D  G GCin  GCout */
+  b->Args({1,  56,  56,  3,  3, 2, 1, 1,   64,  128});
+  b->Args({1,  28,  28,  3,  3, 1, 1, 1,  128,  128});
+  b->Args({1,  56,  56,  1,  1, 2, 1, 1,   64,  128});
+  /******************** Conv 4.X ********************/
+  /*       N   H    W   KH  KW  S  D  G GCin  GCout */
+  b->Args({1,  28,  28,  3,  3, 2, 1, 1,  128,  256});
+  b->Args({1,  14,  14,  3,  3, 1, 1, 1,  256,  256});
+  b->Args({1,  28,  28,  1,  1, 2, 1, 1,  128,  256});
+  /******************** Conv 5.X ********************/
+  /*       N   H    W   KH  KW  S  D  G GCin  GCout */
+  b->Args({1,  14,  14,  3,  3, 2, 1, 1,  256,  512});
+  b->Args({1,   7,   7,  3,  3, 1, 1, 1,  512,  512});
+  b->Args({1,  14,  14,  1,  1, 2, 1, 1,  256,  512});
+}
+
+static void ResNet50(benchmark::internal::Benchmark* b) {
+  b->ArgNames({"N", "H", "W", "KH", "KW", "S", "D", "G", "GCin", "GCout"});
+
+  /********************* Conv 1 *********************/
+  /*       N   H    W   KH  KW  S  D  G GCin  GCout */
+  b->Args({1, 224, 224,  7,  7, 2, 1, 1,    3,   64});
+  /******************** Conv 2.1 ********************/
+  /*       N   H    W   KH  KW  S  D  G GCin  GCout */
+  b->Args({1,  56,  56,  1,  1, 1, 1, 1,   64,   64});
+  b->Args({1,  56,  56,  3,  3, 1, 1, 1,   64,   64});
+  b->Args({1,  56,  56,  1,  1, 1, 1, 1,   64,  256});
+  b->Args({1,  56,  56,  1,  1, 1, 1, 1,   64,  256});
+  /******************** Conv 2.X ********************/
+  /*       N   H    W   KH  KW  S  D  G GCin  GCout */
+  b->Args({1,  56,  56,  1,  1, 1, 1, 1,  256,   64});
+/*b->Args({1,  56,  56,  3,  3, 1, 1, 1,   64,   64});*/
+/*b->Args({1,  56,  56,  1,  1, 1, 1, 1,   64,  256});*/
+  /******************** Conv 3.1 ********************/
+  /*       N   H    W   KH  KW  S  D  G GCin  GCout */
+  b->Args({1,  56,  56,  1,  1, 1, 1, 1,  256,  128});
+  b->Args({1,  56,  56,  3,  3, 2, 1, 1,  128,  128});
+  b->Args({1,  28,  28,  1,  1, 1, 1, 1,  128,  512});
+  b->Args({1,  56,  56,  1,  1, 2, 1, 1,  256,  512});
+  /******************** Conv 3.X ********************/
+  /*       N   H    W   KH  KW  S  D  G GCin  GCout */
+  b->Args({1,  28,  28,  1,  1, 1, 1, 1,  512,  128});
+  b->Args({1,  28,  28,  3,  3, 1, 1, 1,  128,  128});
+/*b->Args({1,  28,  28,  1,  1, 1, 1, 1,  128,  512});*/
+  /******************** Conv 4.1 ********************/
+  /*       N   H    W   KH  KW  S  D  G GCin  GCout */
+  b->Args({1,  28,  28,  1,  1, 1, 1, 1,  512,  256});
+  b->Args({1,  28,  28,  3,  3, 2, 1, 1,  256,  256});
+  b->Args({1,  14,  14,  1,  1, 1, 1, 1,  256, 1024});
+  b->Args({1,  28,  28,  1,  1, 2, 1, 1,  512, 1024});
+  /******************** Conv 4.X ********************/
+  /*       N   H    W   KH  KW  S  D  G GCin  GCout */
+  b->Args({1,  14,  14,  1,  1, 1, 1, 1, 1024,  256});
+  b->Args({1,  14,  14,  3,  3, 1, 1, 1,  256,  256});
+/*b->Args({1,  14,  14,  1,  1, 1, 1, 1,  256, 1024});*/
+  /******************** Conv 5.1 ********************/
+  /*       N   H    W   KH  KW  S  D  G GCin  GCout */
+  b->Args({1,  14,  14,  1,  1, 1, 1, 1, 1024,  512});
+  b->Args({1,  14,  14,  3,  3, 2, 1, 1,  512,  512});
+  b->Args({1,   7,   7,  1,  1, 1, 1, 1,  512, 2048});
+  b->Args({1,  14,  14,  1,  1, 2, 1, 1, 1024, 2048});
+  /******************** Conv 5.X ********************/
+  /*       N   H    W   KH  KW  S  D  G GCin  GCout */
+  b->Args({1,   7,   7,  1,  1, 1, 1, 1, 2048,  512});
+  b->Args({1,   7,   7,  3,  3, 1, 1, 1,  512,  512});
+/*b->Args({1,   7,   7,  1,  1, 1, 1, 1,  512, 2048});*/
+}
+
 static void VGG(benchmark::internal::Benchmark* b) {
   b->ArgNames({"N", "H", "W", "KH", "KW", "S", "D", "G", "GCin", "GCout"});
 
@@ -746,6 +824,8 @@ BENCHMARK_CAPTURE(convolution_q8, shufflenet_v1_g4, "ShuffleNet v1 (4 groups)")-
 BENCHMARK_CAPTURE(convolution_q8, shufflenet_v1_g8, "ShuffleNet v1 (8 groups)")->Apply(ShuffleNetV1G8);
 BENCHMARK_CAPTURE(convolution_q8, squeezenet_v10, "SqueezeNet 1.0")->Apply(SqueezeNetV10);
 BENCHMARK_CAPTURE(convolution_q8, squeezenet_v11, "SqueezeNet 1.1")->Apply(SqueezeNetV11);
+BENCHMARK_CAPTURE(convolution_q8, resnet18, "ResNet-18")->Apply(ResNet18);
+BENCHMARK_CAPTURE(convolution_q8, resnet50, "ResNet-50")->Apply(ResNet50);
 BENCHMARK_CAPTURE(convolution_q8, vgg, "VGG")->Apply(VGG);
 BENCHMARK_CAPTURE(convolution_q8, dwconv3x3, "3x3 DW Convolutions")->Apply(DWConv3x3);
 BENCHMARK_CAPTURE(convolution_q8, dwconv3x3d2, "3x3 DW Convolutions (dilation 2)")->Apply(DWConv3x3d2);
