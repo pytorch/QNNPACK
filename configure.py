@@ -87,6 +87,7 @@ def main(args):
 
         with build.options(isa=arm.neon if build.target.is_arm else None):
             qnnpack_objects += [
+                build.cc("sconv/6x8-psimd.c"),
                 build.cc("sgemm/6x8-psimd.c"),
             ]
 
@@ -172,6 +173,7 @@ def main(args):
         build.unittest("q8gavgpool-test", build.cxx("q8gavgpool.cc"))
         build.unittest("q8gemm-test", build.cxx("q8gemm.cc"))
         build.unittest("q8vadd-test", build.cxx("q8vadd.cc"))
+        build.unittest("sconv-test", build.cxx("sconv.cc"))
         build.unittest("sgemm-test", build.cxx("sgemm.cc"))
         build.unittest("u8clamp-test", build.cxx("u8clamp.cc"))
         build.unittest("u8lut32norm-test", build.cxx("u8lut32norm.cc"))

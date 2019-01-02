@@ -186,7 +186,7 @@ class GemmMicrokernelTester {
 
     std::vector<uint8_t> a((m() - 1) * aStride() + k() + 8);
     std::vector<uint8_t> b(n() * k());
-    std::vector<int32_t> bias(nr());
+    std::vector<int32_t> bias(n());
     std::vector<uint8_t, AlignedAllocator<uint8_t, 32>> packedW(packedN() * packedK() + biasN() * sizeof(uint32_t) / sizeof(uint8_t));
     std::vector<uint8_t> c((m() - 1) * cStride() + n());
     std::vector<int32_t> acc(m() * n());
@@ -287,8 +287,8 @@ class GemmMicrokernelTester {
 
     std::vector<uint8_t> a((mr() - 1) * aStride() + k() + 8);
     std::vector<uint8_t> b(n() * ks() * k());
-    std::vector<uint8_t, AlignedAllocator<uint8_t, 32>> packedW((ks() * packedK() + sizeof(int32_t) / sizeof(uint8_t)) * packedN());
-    std::vector<int32_t> bias(nr());
+    std::vector<uint8_t, AlignedAllocator<uint8_t, 32>> packedW(ks() * packedN() * packedK() + biasN() * sizeof(uint32_t) / sizeof(uint8_t));
+    std::vector<int32_t> bias(n());
     std::vector<uint8_t> c((m() - 1) * cStride() + n());
     std::vector<int32_t> acc(m() * n());
     std::vector<uint8_t> cRef(m() * n());
@@ -533,7 +533,7 @@ class GemmMicrokernelTester {
     std::vector<uint16_t> a((m() - 1) * aStride() + k() + 4);
     std::vector<uint16_t> b(n() * k());
     std::vector<uint16_t, AlignedAllocator<uint16_t, 32>> packedW(packedN() * packedK() + biasN());
-    std::vector<uint16_t> bias(nr());
+    std::vector<uint16_t> bias(n());
     std::vector<uint16_t> c((mr() - 1) * cStride() + nr());
     std::vector<float> cRef(m() * n());
 
@@ -629,7 +629,7 @@ class GemmMicrokernelTester {
 
     std::vector<float> a((m() - 1) * aStride() + k());
     std::vector<float> b(n() * k());
-    std::vector<float> bias(nr());
+    std::vector<float> bias(n());
     std::vector<float, AlignedAllocator<float, 32>> packedW(packedN() * packedK() + biasN());
     std::vector<float> c((mr() - 1) * cStride() + nr());
     std::vector<float> cRef(m() * n());
@@ -703,6 +703,110 @@ class GemmMicrokernelTester {
         ASSERT_TRUE(std::isnan(c[i]))
           << "at i = " << i << ", Mr x Nr x Kr = " << mr() << " x " << nr()
           << " x " << kr() << ", M x N x K = " << m() << " x " << n() << " x " << k();
+      }
+    }
+  }
+
+  void test(sconv_ukernel_function sconv) const {
+    ASSERT_LE(m(), mr());
+    ASSERT_LE(n(), nr());
+    ASSERT_GE(k(), kr());
+
+    std::random_device randomDevice;
+    auto rng = std::mt19937(randomDevice());
+    auto f32rng = std::bind(std::uniform_real_distribution<float>(), std::mt19937(randomDevice()));
+
+    std::vector<float> a((mr() - 1) * aStride() + k() + 8);
+    std::vector<float> b(n() * ks() * k());
+    std::vector<float, AlignedAllocator<float, 32>> packedW(ks() * packedK() * packedN() + biasN());
+    std::vector<float> bias(n());
+    std::vector<float> c((m() - 1) * cStride() + n());
+    std::vector<float> cRef(m() * n());
+    std::vector<const float*> im2col(mr() * ks());
+
+    for (size_t iteration = 0; iteration < iterations(); iteration++) {
+      std::generate(a.begin(), a.end(), std::ref(f32rng));
+      std::generate(b.begin(), b.end(), std::ref(f32rng));
+      std::generate(bias.begin(), bias.end(), std::ref(f32rng));
+      std::fill(c.begin(), c.end(), nanf(""));
+      std::fill(cRef.begin(), cRef.end(), 0.0f);
+
+      std::fill(packedW.begin(), packedW.end(), 0.0f);
+      pack_sconv_w(n(), ks(), k(), np(), kr(),
+        b.data(), bias.data(), packedW.data());
+
+      ASSERT_NE(*std::max_element(a.cbegin(), a.cend()), *std::min_element(a.cbegin(), a.cend()));
+      ASSERT_NE(*std::max_element(b.cbegin(), b.cend()), *std::min_element(b.cbegin(), b.cend()));
+
+      for (size_t ksIndex = 0; ksIndex < ks(); ksIndex++) {
+        for (size_t mIndex = 0; mIndex < mr(); mIndex++) {
+          im2col[ksIndex * mr() + mIndex] = a.data() + aStride() * mIndex;
+        }
+      }
+      std::shuffle(im2col.begin(), im2col.end(), rng);
+      for (size_t ksIndex = 0; ksIndex < ks(); ksIndex++) {
+        for (size_t mIndex = m(); mIndex < mr(); mIndex++) {
+          im2col[ksIndex * mr() + mIndex] = im2col[ksIndex * mr() + m() - 1];
+        }
+      }
+
+      std::fill(cRef.begin(), cRef.end(), 0.0);
+      for (size_t mIndex = 0; mIndex < m(); mIndex++) {
+        for (size_t nIndex = 0; nIndex < n(); nIndex++) {
+          for (size_t ksIndex = 0; ksIndex < ks(); ksIndex++) {
+            for (size_t kBlockStart = 0; kBlockStart < k(); kBlockStart += kr()) {
+              for (size_t kBlockOffset = 0; kBlockOffset < std::min(k() - kBlockStart, kr()); kBlockOffset++) {
+                ASSERT_LT(ksIndex * mr() + mIndex, im2col.size());
+                ASSERT_LT(kBlockStart + kBlockOffset, k());
+                ASSERT_LT(kBlockStart + kBlockOffset, aStride());
+
+                cRef[mIndex * n() + nIndex] +=
+                  double(im2col[ksIndex * mr() + mIndex][kBlockStart + kBlockOffset]) *
+                  double(b[(nIndex * ks() + ksIndex) * k() + kBlockStart + kBlockOffset]);
+              }
+            }
+          }
+          cRef[mIndex * n() + nIndex] += bias[nIndex];
+        }
+      }
+
+      const float accMin = *std::min_element(cRef.cbegin(), cRef.cend());
+      const float accMax = *std::max_element(cRef.cbegin(), cRef.cend());
+      if (m() * n() >= 3) {
+        ASSERT_NE(accMax, accMin)
+            << "Mr x Nr x Kr = " << mr() << " x " << nr() << " x " << kr() << ", M x N x K = " << m() << " x " << n()
+            << " x " << k();
+      }
+
+      const float cRefMin = accMin + float(qmin()) / 255.0f * (accMax - accMin);
+      const float cRefMax = accMax - float(255 - qmax()) / 255.0f * (accMax - accMin);
+      for (size_t mIndex = 0; mIndex < m(); mIndex++) {
+        for (size_t nIndex = 0; nIndex < n(); nIndex++) {
+          cRef[mIndex * n() + nIndex] = std::min(cRef[mIndex * n() + nIndex], cRefMax);
+          cRef[mIndex * n() + nIndex] = std::max(cRef[mIndex * n() + nIndex], cRefMin);
+        }
+      }
+
+      const struct qnnp_fp32_clamping_params clampingParams{cRefMax, cRefMin};
+
+      sconv(
+        m(), n(), k(), ks(),
+        im2col.data(), packedW.data(),
+        c.data(), cStride() * sizeof(float),
+        &clampingParams);
+
+      for (size_t mIndex = 0; mIndex < m(); mIndex++) {
+        for (size_t nIndex = 0; nIndex < n(); nIndex++) {
+          ASSERT_LE(c[mIndex * cStride() + nIndex], cRefMax);
+          ASSERT_GE(c[mIndex * cStride() + nIndex], cRefMin);
+          ASSERT_NEAR(
+              c[mIndex * cStride() + nIndex],
+              cRef[mIndex * n() + nIndex],
+              std::abs(cRef[mIndex * n() + nIndex]) * 1.0e-6f)
+              << "at " << mIndex << ", " << nIndex << ": reference = " << cRef[mIndex * n() + nIndex]
+              << ", optimized = " << c[mIndex * cStride() + nIndex] << ", Mr x Nr x Kr = " << mr() << " x " << nr()
+              << " x " << kr() << ", M x N x KC x KS = " << m() << " x " << n() << " x " << k() << " x " << ks();
+        }
       }
     }
   }

@@ -334,6 +334,17 @@ typedef void (*sgemm_ukernel_function)(
     size_t c_stride,
     const struct qnnp_fp32_clamping_params* clamping_params);
 
+typedef void (*sconv_ukernel_function)(
+    size_t mr,
+    size_t nr,
+    size_t kc,
+    size_t ks,
+    const float** a,
+    const float* w,
+    float* c,
+    size_t c_stride,
+    const struct qnnp_fp32_clamping_params* clamping_params);
+
 typedef void (*hgemm_ukernel_function)(
     size_t mr,
     size_t nr,

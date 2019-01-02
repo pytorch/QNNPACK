@@ -312,3 +312,35 @@ static inline void pack_sgemm_w(
     }
   }
 }
+
+static inline void pack_sconv_w(
+  size_t n,
+  size_t ks,
+  size_t kc,
+  size_t nr,
+  size_t kr,
+  const float* k,
+  const float* b,
+  float* packed_w)
+{
+  for (size_t nr_block_start = 0; nr_block_start < n; nr_block_start += nr) {
+    const size_t nr_block_size = min(n - nr_block_start, nr);
+    for (size_t nr_block_offset = 0; nr_block_offset < nr_block_size; nr_block_offset++) {
+      *packed_w++ = b[nr_block_start + nr_block_offset];
+    }
+    packed_w += nr - nr_block_size;
+    for (size_t ki = 0; ki < ks; ki++) {
+      for (size_t kr_block_start = 0; kr_block_start < kc; kr_block_start += kr) {
+        const size_t kr_block_size = min(kc - kr_block_start, kr);
+        for (size_t nr_block_offset = 0; nr_block_offset < nr_block_size; nr_block_offset++) {
+          for (size_t kr_block_offset = 0; kr_block_offset < kr_block_size; kr_block_offset++) {
+            *packed_w++ =
+              k[((nr_block_start + nr_block_offset) * ks + ki) * kc + (kr_block_start + kr_block_offset)];
+          }
+          packed_w += kr - kr_block_size;
+        }
+        packed_w += (nr - nr_block_size) * kr;
+      }
+    }
+  }
+}
