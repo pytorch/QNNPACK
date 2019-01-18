@@ -88,6 +88,7 @@ def main(args):
         with build.options(isa=arm.neon if build.target.is_arm else None):
             qnnpack_objects += [
                 build.cc("sconv/6x8-psimd.c"),
+                build.cc("sdwconv/up4x9-psimd.c"),
                 build.cc("sgemm/6x8-psimd.c"),
             ]
 
