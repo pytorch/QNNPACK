@@ -10,7 +10,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#ifdef _MSC_VER
+#include <windows.h>
+#else
 #include <pthread.h>
+#endif
 
 #include <cpuinfo.h>
 #include <qnnpack.h>
@@ -29,7 +33,12 @@
 #include <qnnpack/x8lut.h>
 #include <qnnpack/x8zip.h>
 
+#ifdef _MSC_VER
+static INIT_ONCE init_guard;
+BOOL CALLBACK init_win(PINIT_ONCE InitOnce, PVOID Parameter, PVOID *lpContex);
+#else
 static pthread_once_t init_guard = PTHREAD_ONCE_INIT;
+#endif
 
 struct qnnp_parameters qnnp_params = {
   .initialized = false
@@ -236,7 +245,11 @@ enum qnnp_status qnnp_initialize(void) {
   if (!cpuinfo_initialize()) {
     return qnnp_status_out_of_memory;
   }
+#ifdef _MSC_VER
+  InitOnceExecuteOnce(&init_guard, init_win, NULL, NULL);
+#else
   pthread_once(&init_guard, &init);
+#endif
   if (qnnp_params.initialized) {
     return qnnp_status_success;
   } else {
@@ -248,3 +261,10 @@ enum qnnp_status qnnp_deinitialize(void) {
   cpuinfo_deinitialize();
   return qnnp_status_success;
 }
+
+#ifdef _MSC_VER
+BOOL CALLBACK init_win(PINIT_ONCE InitOnce, PVOID Parameter, PVOID *lpContex) {
+    init();
+    return TRUE;
+}
+#endif

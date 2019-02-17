@@ -17,7 +17,7 @@ void u8clamp_ukernel__sse2(
     size_t n,
     const uint8_t* x,
     uint8_t* y,
-    const union qnnp_u8_clamping_params params[restrict static 1])
+    const union qnnp_u8_clamping_params params[RESTRICT_STATIC 1])
 {
   assert(n != 0);
 

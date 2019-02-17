@@ -18,6 +18,9 @@
 #include <qnnpack/math.h>
 #include <qnnpack/params.h>
 
+#ifdef _MSC_VER
+#include <malloc.h>
+#endif
 
 struct q8gemm_context {
   size_t k;
@@ -34,7 +37,7 @@ struct q8gemm_context {
 };
 
 static void compute_q8gemm(
-    const struct q8gemm_context context[restrict static 1],
+    const struct q8gemm_context context[RESTRICT_STATIC 1],
     size_t group_index,
     size_t pixel_index,
     size_t mr_block_start,
@@ -79,7 +82,7 @@ struct q8sum_rows_context {
 };
 
 static void compute_sum_rows(
-    const struct q8sum_rows_context context[restrict static 1],
+    const struct q8sum_rows_context context[RESTRICT_STATIC 1],
     size_t group_index,
     size_t batch_index,
     size_t block_start,
@@ -124,7 +127,7 @@ struct q8gemm_xzp_context {
 };
 
 static void compute_q8gemm_xzp(
-    const struct q8gemm_xzp_context context[restrict static 1],
+    const struct q8gemm_xzp_context context[RESTRICT_STATIC 1],
     size_t group_index,
     size_t pixel_index,
     size_t mr_block_start,
@@ -178,7 +181,7 @@ struct q8conv_context {
 };
 
 static void compute_q8conv(
-    const struct q8conv_context context[restrict static 1],
+    const struct q8conv_context context[RESTRICT_STATIC 1],
     size_t group_index,
     size_t image_index,
     size_t mr_block_start,
@@ -233,7 +236,7 @@ struct q8dwconv_context {
 };
 
 static void compute_dwconv_unipass(
-    const struct q8dwconv_context context[restrict static 1],
+    const struct q8dwconv_context context[RESTRICT_STATIC 1],
     size_t image,
     size_t output_y)
 {
@@ -251,12 +254,18 @@ static void compute_dwconv_unipass(
 }
 
 static void compute_dwconv_multiipass(
-    const struct q8dwconv_context context[restrict static 1],
+    const struct q8dwconv_context context[RESTRICT_STATIC 1],
     size_t image,
     size_t output_y)
 {
   const size_t output_height = context->output_height;
-  QNNP_ALIGN(16) int32_t multipass_acc[context->group_stride];
+  QNNP_ALIGN(16)
+  #ifdef _MSC_VER
+    int32_t* multipass_acc = _malloca(context->group_stride);
+  #else
+    int32_t multipass_acc[context->group_stride];
+  #endif
+
 
   context->multipass_ukernel(
     context->groups,
@@ -268,6 +277,10 @@ static void compute_dwconv_multiipass(
     context->indirection_buffer_col_stride,
     context->output_col_increment,
     &context->quantization_params);
+
+  #ifdef _MSC_VER
+    _freea(multipass_acc);
+  #endif
 }
 
 struct max_pooling_context {
@@ -287,7 +300,7 @@ struct max_pooling_context {
 };
 
 static void compute_max_pooling(
-    const struct max_pooling_context context[restrict static 1],
+    const struct max_pooling_context context[RESTRICT_STATIC 1],
     size_t batch_index,
     size_t output_y)
 {
@@ -326,7 +339,7 @@ struct average_pooling_context {
 };
 
 static void compute_average_pooling_unipass(
-    const struct average_pooling_context context[restrict static 1],
+    const struct average_pooling_context context[RESTRICT_STATIC 1],
     size_t batch_index,
     size_t output_y)
 {
@@ -344,7 +357,7 @@ static void compute_average_pooling_unipass(
 }
 
 static void compute_average_pooling_multipass(
-    const struct average_pooling_context context[restrict static 1],
+    const struct average_pooling_context context[RESTRICT_STATIC 1],
     size_t batch_index,
     size_t output_y)
 {
@@ -353,13 +366,22 @@ static void compute_average_pooling_multipass(
       batch_index * context->indirect_input_batch_stride + output_y * context->indirect_input_height_stride);
   void* output =
     (void*) ((uintptr_t) context->output + batch_index * context->output_batch_stride + output_y * context->output_height_stride);
-  QNNP_ALIGN(16) int32_t multipass_buffer[context->packed_channels];
+  QNNP_ALIGN(16)
+  #ifdef _MSC_VER
+    int32_t* multipass_buffer = _malloca(context->packed_channels);
+  #else
+    int32_t multipass_buffer[context->packed_channels];
+  #endif
 
   context->multipass_ukernel(
     context->output_width, context->pooling_size, context->channels,
     (const uint8_t**) indirect_input, context->zero, multipass_buffer, output,
     context->input_increment, context->output_increment,
     &context->quantization_params);
+
+  #ifdef _MSC_VER
+    _freea(multipass_buffer);
+  #endif
 }
 
 struct global_average_pooling_context {
@@ -380,7 +402,7 @@ struct global_average_pooling_context {
 };
 
 static void compute_global_average_pooling_unipass(
-    const struct global_average_pooling_context context[restrict static 1],
+    const struct global_average_pooling_context context[RESTRICT_STATIC 1],
     size_t batch_index)
 {
   const void* input =
@@ -399,14 +421,20 @@ static void compute_global_average_pooling_unipass(
 }
 
 static void compute_global_average_pooling_multipass(
-    const struct global_average_pooling_context context[restrict static 1],
+    const struct global_average_pooling_context context[RESTRICT_STATIC 1],
     size_t batch_index)
 {
   const void* input =
     (const void*) ((uintptr_t) context->input + batch_index * context->input_batch_stride);
   void* output =
     (void*) ((uintptr_t) context->output + batch_index * context->output_batch_stride);
-  QNNP_ALIGN(16) int32_t multipass_buffer[context->packed_channels];
+  QNNP_ALIGN(16)
+  #ifdef _MSC_VER
+    int32_t* multipass_buffer = _malloca(context->packed_channels);
+  #else
+    int32_t multipass_buffer[context->packed_channels];
+  #endif
+
 
   context->multipass_ukernel(
     context->input_elements,
@@ -417,6 +445,10 @@ static void compute_global_average_pooling_multipass(
     multipass_buffer,
     output,
     &context->quantization_params);
+
+    #ifdef _MSC_VER
+      _freea(multipass_buffer);
+    #endif
 }
 
 struct q8add_strided_context {
@@ -432,7 +464,7 @@ struct q8add_strided_context {
 };
 
 static void compute_q8add_strided(
-    const struct q8add_strided_context context[restrict static 1],
+    const struct q8add_strided_context context[RESTRICT_STATIC 1],
     size_t batch_offset,
     size_t batch_range /* always 1 */)
 {
@@ -458,7 +490,7 @@ struct q8add_contiguous_context {
 };
 
 static void compute_q8add_contiguous(
-    const struct q8add_contiguous_context context[restrict static 1],
+    const struct q8add_contiguous_context context[RESTRICT_STATIC 1],
     size_t offset,
     size_t size)
 {
@@ -482,7 +514,7 @@ struct channel_shuffle_context {
 };
 
 static void compute_channel_shuffle_fixed(
-    const struct channel_shuffle_context context[restrict static 1],
+    const struct channel_shuffle_context context[RESTRICT_STATIC 1],
     size_t index)
 {
   const void* x = (const void*) ((uintptr_t) context->x + index * context->x_stride);
@@ -492,7 +524,7 @@ static void compute_channel_shuffle_fixed(
 }
 
 static void compute_channel_shuffle_variable(
-    const struct channel_shuffle_context context[restrict static 1],
+    const struct channel_shuffle_context context[RESTRICT_STATIC 1],
     size_t index)
 {
   const void* x = (const void*) ((uintptr_t) context->x + index * context->x_stride);
@@ -512,7 +544,7 @@ struct lut_strided_context {
 };
 
 static void compute_lut_strided(
-    const struct lut_strided_context context[restrict static 1],
+    const struct lut_strided_context context[RESTRICT_STATIC 1],
     size_t batch_index)
 {
   const void* x = (const void*) ((uintptr_t) context->x + context->x_stride * batch_index);
@@ -531,7 +563,7 @@ struct lut_contiguous_context {
 };
 
 static void compute_lut_contiguous(
-    const struct lut_contiguous_context context[restrict static 1],
+    const struct lut_contiguous_context context[RESTRICT_STATIC 1],
     size_t offset,
     size_t size)
 {
@@ -552,7 +584,7 @@ struct clamp_strided_context {
 };
 
 static void compute_clamp_strided(
-    const struct clamp_strided_context context[restrict static 1],
+    const struct clamp_strided_context context[RESTRICT_STATIC 1],
     size_t batch_index)
 {
   const void* x = (const void*) ((uintptr_t) context->x + context->x_stride * batch_index);
@@ -570,7 +602,7 @@ struct clamp_contiguous_context {
 };
 
 static void compute_clamp_contiguous(
-    const struct clamp_contiguous_context context[restrict static 1],
+    const struct clamp_contiguous_context context[RESTRICT_STATIC 1],
     size_t offset,
     size_t size)
 {
@@ -591,7 +623,7 @@ struct u8softargmax_context {
 };
 
 static void compute_u8softargmax(
-    const struct u8softargmax_context context[restrict static 1],
+    const struct u8softargmax_context context[RESTRICT_STATIC 1],
     size_t batch_index)
 {
   const uint8_t* x = (const uint8_t*) ((uintptr_t) context->x + context->x_stride * batch_index);
