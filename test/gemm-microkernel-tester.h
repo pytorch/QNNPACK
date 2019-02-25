@@ -948,5 +948,5 @@ class GemmMicrokernelTester {
   uint8_t bZeroPoint_{127};
   uint8_t qmin_{0};
   uint8_t qmax_{255};
-  size_t iterations_{1};
+  size_t iterations_{15};
 };

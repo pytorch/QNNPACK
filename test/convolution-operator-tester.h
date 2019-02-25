@@ -348,19 +348,15 @@ class ConvolutionOperatorTester {
     auto s32rng = std::bind(std::uniform_int_distribution<int32_t>(-10000, 10000), rng);
     auto u8rng = std::bind(std::uniform_int_distribution<uint8_t>(), rng);
 
-    std::vector<uint8_t> input(
-        batchSize() * ((inputHeight() * inputWidth() - 1) * inputPixelStride() + groups() * groupInputChannels()) + 8);
-    std::vector<uint8_t> kernel(
-        groups() * groupOutputChannels() * kernelHeight() * kernelWidth() * groupInputChannels());
+    std::vector<uint8_t> input(batchSize() * ((inputHeight() * inputWidth() - 1) * inputPixelStride() + groups() * groupInputChannels()) + 8);
+    std::vector<uint8_t> kernel(groups() * groupOutputChannels() * kernelHeight() * kernelWidth() * groupInputChannels());
     std::vector<int32_t> bias(groups() * groupOutputChannels());
-    std::vector<uint8_t> output(
-        batchSize() * ((outputHeight() * outputWidth() - 1) * outputPixelStride() + groups() * groupOutputChannels()));
+    std::vector<uint8_t> output(batchSize() * ((outputHeight() * outputWidth() - 1) * outputPixelStride() + groups() * groupOutputChannels()));
     std::vector<int32_t> accumulators(batchSize() * outputHeight() * outputWidth() * groups() * groupOutputChannels());
 
     const uint8_t* inputPtr = input.data() + 8;
     const uint8_t inputZeroPoint = 127;
     const uint8_t kernelZeroPoint = 127;
-    const float kernelScale = 1.0f;
 
     for (size_t iteration = 0; iteration < iterations(); iteration++) {
       std::generate(input.begin(), input.end(), std::ref(u8rng));
@@ -374,9 +370,8 @@ class ConvolutionOperatorTester {
           for (size_t ox = 0; ox < outputWidth(); ox++) {
             for (size_t g = 0; g < groups(); g++) {
               for (size_t oc = 0; oc < groupOutputChannels(); oc++) {
-                accumulators
-                    [(((i * outputHeight() + oy) * outputWidth() + ox) * groups() + g) * groupOutputChannels() + oc] =
-                        bias[g * groupOutputChannels() + oc];
+                accumulators[(((i * outputHeight() + oy) * outputWidth() + ox) * groups() + g) * groupOutputChannels() + oc] =
+                  bias[g * groupOutputChannels() + oc];
               }
             }
           }
@@ -394,20 +389,9 @@ class ConvolutionOperatorTester {
                     for (size_t g = 0; g < groups(); g++) {
                       for (size_t oc = 0; oc < groupOutputChannels(); oc++) {
                         for (size_t ic = 0; ic < groupInputChannels(); ic++) {
-                          accumulators
-                              [(((i * outputHeight() + oy) * outputWidth() + ox) * groups() + g) *
-                                   groupOutputChannels() +
-                               oc] +=
-                              (int32_t(inputPtr
-                                           [((i * inputHeight() + iy) * inputWidth() + ix) * inputPixelStride() +
-                                            g * groupInputChannels() + ic]) -
-                               int32_t(inputZeroPoint)) *
-                              (int32_t(kernel
-                                           [(((g * groupOutputChannels() + oc) * kernelHeight() + ky) * kernelWidth() +
-                                             kx) *
-                                                groupInputChannels() +
-                                            ic]) -
-                               int32_t(kernelZeroPoint));
+                          accumulators[(((i * outputHeight() + oy) * outputWidth() + ox) * groups() + g) * groupOutputChannels() + oc] +=
+                            (int32_t(inputPtr[((i * inputHeight() + iy) * inputWidth() + ix) * inputPixelStride() + g * groupInputChannels() + ic]) - int32_t(inputZeroPoint)) *
+                            (int32_t(kernel[(((g * groupOutputChannels() + oc) * kernelHeight() + ky) * kernelWidth() + kx) * groupInputChannels() + ic]) - int32_t(kernelZeroPoint));
                         }
                       }
                     }
@@ -422,60 +406,44 @@ class ConvolutionOperatorTester {
       const int32_t accumulatorsMax = *std::max_element(accumulators.cbegin(), accumulators.cend());
 
       const double outputScale = double(uint32_t(accumulatorsMax - accumulatorsMin)) / 255.0;
-      const uint8_t outputZeroPoint = uint8_t(std::max(
-          std::min(
-              lrint(127.5 - 0.5 * double(accumulatorsMin + accumulatorsMax) / outputScale),
-              long(std::numeric_limits<uint8_t>::max())),
-          long(std::numeric_limits<uint8_t>::min())));
+      const uint8_t outputZeroPoint = uint8_t(std::max(std::min(
+        lrint(127.5 - 0.5 * double(accumulatorsMin + accumulatorsMax) / outputScale),
+        long(std::numeric_limits<uint8_t>::max())), long(std::numeric_limits<uint8_t>::min())));
 
       ASSERT_EQ(qnnp_status_success, qnnp_initialize());
       qnnp_operator_t convolution = nullptr;
 
-      ASSERT_EQ(
-          qnnp_status_success,
-          qnnp_create_convolution2d_nhwc_q8(
-              paddingTop(),
-              paddingRight(),
-              paddingBottom(),
-              paddingLeft(),
-              kernelHeight(),
-              kernelWidth(),
-              subsamplingHeight(),
-              subsamplingWidth(),
-              dilationHeight(),
-              dilationWidth(),
-              groups(),
-              groupInputChannels(),
-              groupOutputChannels(),
-              inputZeroPoint,
-              1.0f /* input scale */,
-              kernelZeroPoint,
-              kernelScale,
-              kernel.data(),
-              bias.data(),
-              outputZeroPoint,
-              outputScale,
-              qmin(),
-              qmax(),
-              0,
-              &convolution));
 
-      ASSERT_EQ(
-          qnnp_status_success,
-          qnnp_setup_convolution2d_nhwc_q8(
-              convolution,
-              batchSize(),
-              inputHeight(),
-              inputWidth(),
-              inputPtr,
-              inputPixelStride(),
-              output.data(),
-              outputPixelStride(),
-              nullptr /* thread pool */));
+      ASSERT_EQ(qnnp_status_success,
+        qnnp_create_convolution2d_nhwc_q8(
+          paddingTop(), paddingRight(), paddingBottom(), paddingLeft(),
+          kernelHeight(), kernelWidth(),
+          subsamplingHeight(), subsamplingWidth(),
+          dilationHeight(), dilationWidth(),
+          groups(), groupInputChannels(), groupOutputChannels(),
+          inputZeroPoint, 1.0f /* input scale */,
+          kernelZeroPoint, 1.0f /* kernel scale */,
+          kernel.data(), bias.data(),
+          outputZeroPoint, outputScale, qmin(), qmax(),
+          0, &convolution));
 
-      ASSERT_EQ(qnnp_status_success, qnnp_run_operator(convolution, nullptr /* thread pool */));
+      ASSERT_EQ(qnnp_status_success,
+        qnnp_setup_convolution2d_nhwc_q8(
+          convolution,
+          batchSize(),
+          inputHeight(),
+          inputWidth(),
+          inputPtr,
+          inputPixelStride(),
+          output.data(),
+          outputPixelStride(),
+          nullptr /* thread pool */));
 
-      ASSERT_EQ(qnnp_status_success, qnnp_delete_operator(convolution));
+      ASSERT_EQ(qnnp_status_success,
+        qnnp_run_operator(convolution, nullptr /* thread pool */));
+
+      ASSERT_EQ(qnnp_status_success,
+        qnnp_delete_operator(convolution));
       convolution = nullptr;
 
       for (size_t i = 0; i < batchSize(); i++) {
@@ -484,188 +452,14 @@ class ConvolutionOperatorTester {
             for (size_t g = 0; g < groups(); g++) {
               for (size_t c = 0; c < groupOutputChannels(); c++) {
                 const double scaledAccumulator =
-                    accumulators
-                        [(((i * outputHeight() + y) * outputWidth() + x) * groups() + g) * groupOutputChannels() + c] *
-                    kernelScale / outputScale;
-                const double clampedAccumulator = std::max(
-                    std::min(scaledAccumulator, double(qmax()) - double(outputZeroPoint)),
-                    double(qmin()) - double(outputZeroPoint));
+                  accumulators[(((i * outputHeight() + y) * outputWidth() + x) * groups() + g) * groupOutputChannels() + c] / outputScale;
+                const double clampedAccumulator = std::max(std::min(scaledAccumulator,
+                  double(qmax()) - double(outputZeroPoint)),
+                  double(qmin()) - double(outputZeroPoint));
                 ASSERT_NEAR(
-                    clampedAccumulator,
-                    (int32_t(output
-                                 [((i * outputHeight() + y) * outputWidth() + x) * outputPixelStride() +
-                                  g * groupOutputChannels() + c]) -
-                     outputZeroPoint),
-                    0.9)
-                    << "(x, y) = (" << x << ", " << y << "), group = " << g << ", channel = " << c;
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
-  void testQ8_perChannel() const {
-    std::random_device randomDevice;
-    auto rng = std::mt19937(randomDevice());
-    auto s32rng = std::bind(std::uniform_int_distribution<int32_t>(-10000, 10000), rng);
-    auto u8rng = std::bind(std::uniform_int_distribution<uint8_t>(), rng);
-
-    std::vector<uint8_t> input(
-        batchSize() * ((inputHeight() * inputWidth() - 1) * inputPixelStride() + groups() * groupInputChannels()) + 8);
-    std::vector<uint8_t> kernel(
-        groups() * groupOutputChannels() * kernelHeight() * kernelWidth() * groupInputChannels());
-    std::vector<int32_t> bias(groups() * groupOutputChannels());
-    std::vector<uint8_t> output(
-        batchSize() * ((outputHeight() * outputWidth() - 1) * outputPixelStride() + groups() * groupOutputChannels()));
-    std::vector<int32_t> accumulators(batchSize() * outputHeight() * outputWidth() * groups() * groupOutputChannels());
-
-    const uint8_t* inputPtr = input.data() + 8;
-    const uint8_t inputZeroPoint = 127;
-    const uint8_t kernelZeroPointFixed = 127;
-    const float kernelScaleFixed = 1.0f;
-    std::vector<float> kernelScale(groups() * groupOutputChannels());
-    std::vector<uint8_t> kernelZeroPoint(groups() * groupOutputChannels());
-    std::fill(kernelScale.begin(), kernelScale.end(), kernelScaleFixed);
-    std::fill(kernelZeroPoint.begin(), kernelZeroPoint.end(), kernelZeroPointFixed);
-
-    for (size_t iteration = 0; iteration < iterations(); iteration++) {
-      std::generate(input.begin(), input.end(), std::ref(u8rng));
-      std::generate(kernel.begin(), kernel.end(), std::ref(u8rng));
-      std::generate(bias.begin(), bias.end(), std::ref(s32rng));
-      std::fill(output.begin(), output.end(), 0xA5);
-      std::fill(accumulators.begin(), accumulators.end(), 0);
-
-      for (size_t i = 0; i < batchSize(); i++) {
-        for (size_t oy = 0; oy < outputHeight(); oy++) {
-          for (size_t ox = 0; ox < outputWidth(); ox++) {
-            for (size_t g = 0; g < groups(); g++) {
-              for (size_t oc = 0; oc < groupOutputChannels(); oc++) {
-                accumulators
-                    [(((i * outputHeight() + oy) * outputWidth() + ox) * groups() + g) * groupOutputChannels() + oc] =
-                        bias[g * groupOutputChannels() + oc];
-              }
-            }
-          }
-        }
-      }
-      for (size_t i = 0; i < batchSize(); i++) {
-        for (size_t oy = 0; oy < outputHeight(); oy++) {
-          for (size_t ox = 0; ox < outputWidth(); ox++) {
-            for (size_t ky = 0; ky < kernelHeight(); ky++) {
-              const size_t iy = oy * subsamplingHeight() + ky * dilationHeight() - paddingTop();
-              if (iy < inputHeight()) {
-                for (size_t kx = 0; kx < kernelWidth(); kx++) {
-                  const size_t ix = ox * subsamplingWidth() + kx * dilationWidth() - paddingLeft();
-                  if (ix < inputWidth()) {
-                    for (size_t g = 0; g < groups(); g++) {
-                      for (size_t oc = 0; oc < groupOutputChannels(); oc++) {
-                        for (size_t ic = 0; ic < groupInputChannels(); ic++) {
-                          accumulators
-                              [(((i * outputHeight() + oy) * outputWidth() + ox) * groups() + g) *
-                                   groupOutputChannels() +
-                               oc] +=
-                              (int32_t(inputPtr
-                                           [((i * inputHeight() + iy) * inputWidth() + ix) * inputPixelStride() +
-                                            g * groupInputChannels() + ic]) -
-                               int32_t(inputZeroPoint)) *
-                              (int32_t(kernel
-                                           [(((g * groupOutputChannels() + oc) * kernelHeight() + ky) * kernelWidth() +
-                                             kx) *
-                                                groupInputChannels() +
-                                            ic]) -
-                               int32_t(kernelZeroPoint[g * groupOutputChannels() + oc]));
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-      const int32_t accumulatorsMin = *std::min_element(accumulators.cbegin(), accumulators.cend());
-      const int32_t accumulatorsMax = *std::max_element(accumulators.cbegin(), accumulators.cend());
-
-      const double outputScale = double(uint32_t(accumulatorsMax - accumulatorsMin)) / 255.0;
-      const uint8_t outputZeroPoint = uint8_t(std::max(
-          std::min(
-              lrint(127.5 - 0.5 * double(accumulatorsMin + accumulatorsMax) / outputScale),
-              long(std::numeric_limits<uint8_t>::max())),
-          long(std::numeric_limits<uint8_t>::min())));
-
-      ASSERT_EQ(qnnp_status_success, qnnp_initialize());
-      qnnp_operator_t convolution = nullptr;
-
-      ASSERT_EQ(
-          qnnp_status_success,
-          qnnp_create_convolution2d_nhwc_q8(
-              paddingTop(),
-              paddingRight(),
-              paddingBottom(),
-              paddingLeft(),
-              kernelHeight(),
-              kernelWidth(),
-              subsamplingHeight(),
-              subsamplingWidth(),
-              dilationHeight(),
-              dilationWidth(),
-              groups(),
-              groupInputChannels(),
-              groupOutputChannels(),
-              inputZeroPoint,
-              1.0f /* input scale */,
-              kernelZeroPointFixed,
-              kernelScaleFixed,
-              kernel.data(),
-              bias.data(),
-              outputZeroPoint,
-              outputScale,
-              qmin(),
-              qmax(),
-              0,
-              &convolution));
-
-      ASSERT_EQ(
-          qnnp_status_success,
-          qnnp_setup_convolution2d_nhwc_q8(
-              convolution,
-              batchSize(),
-              inputHeight(),
-              inputWidth(),
-              inputPtr,
-              inputPixelStride(),
-              output.data(),
-              outputPixelStride(),
-              nullptr /* thread pool */));
-
-      ASSERT_EQ(qnnp_status_success, qnnp_run_operator(convolution, nullptr /* thread pool */));
-
-      ASSERT_EQ(qnnp_status_success, qnnp_delete_operator(convolution));
-      convolution = nullptr;
-
-      for (size_t i = 0; i < batchSize(); i++) {
-        for (size_t y = 0; y < outputHeight(); y++) {
-          for (size_t x = 0; x < outputWidth(); x++) {
-            for (size_t g = 0; g < groups(); g++) {
-              for (size_t c = 0; c < groupOutputChannels(); c++) {
-                const double scaledAccumulator =
-                    accumulators
-                        [(((i * outputHeight() + y) * outputWidth() + x) * groups() + g) * groupOutputChannels() + c] *
-                    kernelScale[g * groupOutputChannels() + c] / outputScale;
-                const double clampedAccumulator = std::max(
-                    std::min(scaledAccumulator, double(qmax()) - double(outputZeroPoint)),
-                    double(qmin()) - double(outputZeroPoint));
-                ASSERT_NEAR(
-                    clampedAccumulator,
-                    (int32_t(output
-                                 [((i * outputHeight() + y) * outputWidth() + x) * outputPixelStride() +
-                                  g * groupOutputChannels() + c]) -
-                     outputZeroPoint),
-                    0.9)
-                    << "(x, y) = (" << x << ", " << y << "), group = " << g << ", channel = " << c;
+                  clampedAccumulator,
+                  (int32_t(output[((i * outputHeight() + y) * outputWidth() + x) * outputPixelStride() + g * groupOutputChannels() + c]) - outputZeroPoint),
+                  0.9) << "(x, y) = (" << x << ", " << y << "), group = " << g << ", channel = " << c;
               }
             }
           }
