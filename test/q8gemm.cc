@@ -2074,7 +2074,7 @@
       .m(4)
       .n(8)
       .k(8)
-      .test(q8gemm_per_channel_ukernel_4x8__neon);
+      .test(q8gemm_ukernel_4x8__neon_per_channel);
   }
 
   TEST(Q8GEMM_4x8__NEON, k_eq_8_strided_a_per_channel) {
@@ -2088,7 +2088,7 @@
       .n(8)
       .k(8)
       .aStride(37)
-      .test(q8gemm_per_channel_ukernel_4x8__neon);
+      .test(q8gemm_ukernel_4x8__neon_per_channel);
   }
 
   TEST(Q8GEMM_4x8__NEON, k_eq_8_strided_c_per_channel) {
@@ -2102,7 +2102,7 @@
       .n(8)
       .k(8)
       .cStride(17)
-      .test(q8gemm_per_channel_ukernel_4x8__neon);
+      .test(q8gemm_ukernel_4x8__neon_per_channel);
   }
 
   TEST(Q8GEMM_4x8__NEON, k_eq_8_qmin128_per_channel) {
@@ -2116,7 +2116,7 @@
       .n(8)
       .k(8)
       .qmin(128)
-      .test(q8gemm_per_channel_ukernel_4x8__neon);
+      .test(q8gemm_ukernel_4x8__neon_per_channel);
   }
 
   TEST(Q8GEMM_4x8__NEON, k_eq_8_qmax128_per_channel) {
@@ -2130,7 +2130,7 @@
       .n(8)
       .k(8)
       .qmax(128)
-      .test(q8gemm_per_channel_ukernel_4x8__neon);
+      .test(q8gemm_ukernel_4x8__neon_per_channel);
   }
 
   TEST(Q8GEMM_4x8__NEON, k_eq_8_azp0_per_channel) {
@@ -2144,7 +2144,7 @@
       .n(8)
       .k(8)
       .aZeroPoint(0)
-      .test(q8gemm_per_channel_ukernel_4x8__neon);
+      .test(q8gemm_ukernel_4x8__neon_per_channel);
   }
 
   TEST(Q8GEMM_4x8__NEON, k_eq_8_bzp0_per_channel) {
@@ -2158,7 +2158,7 @@
       .n(8)
       .k(8)
       .bZeroPoint(0)
-      .test(q8gemm_per_channel_ukernel_4x8__neon);
+      .test(q8gemm_ukernel_4x8__neon_per_channel);
   }
 
   TEST(Q8GEMM_4x8__NEON, k_eq_8_nozp_per_channel) {
@@ -2173,7 +2173,7 @@
       .k(8)
       .aZeroPoint(0)
       .bZeroPoint(0)
-      .test(q8gemm_per_channel_ukernel_4x8__neon);
+      .test(q8gemm_ukernel_4x8__neon_per_channel);
   }
 
   TEST(Q8GEMM_4x8__NEON, k_gt_8_per_channel) {
@@ -2187,7 +2187,7 @@
         .m(4)
         .n(8)
         .k(k)
-        .test(q8gemm_per_channel_ukernel_4x8__neon);
+        .test(q8gemm_ukernel_4x8__neon_per_channel);
     }
   }
 
@@ -2203,7 +2203,7 @@
         .n(8)
         .k(k)
         .aStride(37)
-        .test(q8gemm_per_channel_ukernel_4x8__neon);
+        .test(q8gemm_ukernel_4x8__neon_per_channel);
     }
   }
 
@@ -2219,7 +2219,7 @@
         .n(8)
         .k(k)
         .cStride(17)
-        .test(q8gemm_per_channel_ukernel_4x8__neon);
+        .test(q8gemm_ukernel_4x8__neon_per_channel);
     }
   }
 
@@ -2235,7 +2235,7 @@
         .n(8)
         .k(k)
         .aZeroPoint(0)
-        .test(q8gemm_per_channel_ukernel_4x8__neon);
+        .test(q8gemm_ukernel_4x8__neon_per_channel);
     }
   }
 
@@ -2251,7 +2251,7 @@
         .n(8)
         .k(k)
         .bZeroPoint(0)
-        .test(q8gemm_per_channel_ukernel_4x8__neon);
+        .test(q8gemm_ukernel_4x8__neon_per_channel);
     }
   }
 
@@ -2268,7 +2268,7 @@
         .k(k)
         .aZeroPoint(0)
         .bZeroPoint(0)
-        .test(q8gemm_per_channel_ukernel_4x8__neon);
+        .test(q8gemm_ukernel_4x8__neon_per_channel);
     }
   }
 
@@ -2286,7 +2286,7 @@
             .n(n)
             .k(k)
             .iterations(3)
-            .test(q8gemm_per_channel_ukernel_4x8__neon);
+            .test(q8gemm_ukernel_4x8__neon_per_channel);
         }
       }
     }
@@ -2303,7 +2303,7 @@
         .m(4)
         .n(8)
         .k(k)
-        .test(q8gemm_per_channel_ukernel_4x8__neon);
+        .test(q8gemm_ukernel_4x8__neon_per_channel);
     }
   }
 
@@ -2319,7 +2319,7 @@
         .n(8)
         .k(k)
         .aStride(171)
-        .test(q8gemm_per_channel_ukernel_4x8__neon);
+        .test(q8gemm_ukernel_4x8__neon_per_channel);
     }
   }
 
@@ -2335,7 +2335,7 @@
         .n(8)
         .k(k)
         .cStride(17)
-        .test(q8gemm_per_channel_ukernel_4x8__neon);
+        .test(q8gemm_ukernel_4x8__neon_per_channel);
     }
   }
 
@@ -2353,7 +2353,7 @@
             .n(n)
             .k(k)
             .iterations(3)
-            .test(q8gemm_per_channel_ukernel_4x8__neon);
+            .test(q8gemm_ukernel_4x8__neon_per_channel);
         }
       }
     }

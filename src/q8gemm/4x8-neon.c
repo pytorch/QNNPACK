@@ -363,7 +363,7 @@ void q8gemm_ukernel_4x8__neon(
   }
 }
 
-void q8gemm_per_channel_ukernel_4x8__neon(
+void q8gemm_ukernel_4x8__neon_per_channel(
     size_t mr,
     size_t nr,
     size_t k,
