@@ -11,7 +11,7 @@
 #include <qnnpack/q8gemm.h>
 
 
-void q8gemm_ukernel_4x8__neon(
+void q8gemm_ukernel_4x8__neon_per_channel(
     size_t mr,
     size_t nr,
     size_t k,
@@ -20,7 +20,8 @@ void q8gemm_ukernel_4x8__neon(
     const void* restrict w,
     uint8_t* restrict c,
     size_t c_stride,
-    const union qnnp_conv_quantization_params quantization_params[restrict static 1])
+    const union qnnp_conv_quantization_params quantization_params[restrict static 1],
+    size_t kernel_quantization_params_offset)
 {
   int32x4_t vacc0x0123 = vld1q_s32(w); w = (const void*) ((uintptr_t) w + 16);
   int32x4_t vacc0x4567 = vld1q_s32(w); w = (const void*) ((uintptr_t) w + 16);
@@ -45,7 +46,7 @@ void q8gemm_ukernel_4x8__neon(
     a3 = a2;
   }
 
-  const uint8x8_t vb_zero_point = vld1_dup_u8((const uint8_t*) &quantization_params->neon.kernel_zero_point);
+  const uint8x8_t vb_zero_point = vld1_u8((const uint8_t*) &quantization_params->neon.kernel_zero_point_v[kernel_quantization_params_offset]);
   for (; k >= 8; k -= 8) {
     const uint8x8_t va0 = vld1_u8(a0); a0 += 8;
     const int16x8_t vxa0 = vreinterpretq_s16_u16(vmovl_u8(va0));
@@ -261,35 +262,38 @@ void q8gemm_ukernel_4x8__neon(
     }
   }
 
-  const int32x4_t vmultiplier = vld1q_dup_s32(&quantization_params->neon.multiplier);
-  vacc0x0123 = vqrdmulhq_s32(vacc0x0123, vmultiplier);
-  vacc0x4567 = vqrdmulhq_s32(vacc0x4567, vmultiplier);
-  vacc1x0123 = vqrdmulhq_s32(vacc1x0123, vmultiplier);
-  vacc1x4567 = vqrdmulhq_s32(vacc1x4567, vmultiplier);
-  vacc2x0123 = vqrdmulhq_s32(vacc2x0123, vmultiplier);
-  vacc2x4567 = vqrdmulhq_s32(vacc2x4567, vmultiplier);
-  vacc3x0123 = vqrdmulhq_s32(vacc3x0123, vmultiplier);
-  vacc3x4567 = vqrdmulhq_s32(vacc3x4567, vmultiplier);
+  const int32x4_t vmultiplier0x0123 = vld1q_s32(&quantization_params->neon.multiplier_v[kernel_quantization_params_offset]);
+  const int32x4_t vmultiplier0x4567 = vld1q_s32(&quantization_params->neon.multiplier_v[kernel_quantization_params_offset + 4]);
+  vacc0x0123 = vqrdmulhq_s32(vacc0x0123, vmultiplier0x0123);
+  vacc0x4567 = vqrdmulhq_s32(vacc0x4567, vmultiplier0x4567);
+  vacc1x0123 = vqrdmulhq_s32(vacc1x0123, vmultiplier0x0123);
+  vacc1x4567 = vqrdmulhq_s32(vacc1x4567, vmultiplier0x4567);
+  vacc2x0123 = vqrdmulhq_s32(vacc2x0123, vmultiplier0x0123);
+  vacc2x4567 = vqrdmulhq_s32(vacc2x4567, vmultiplier0x4567);
+  vacc3x0123 = vqrdmulhq_s32(vacc3x0123, vmultiplier0x0123);
+  vacc3x4567 = vqrdmulhq_s32(vacc3x4567, vmultiplier0x4567);
 
-  const int32x4_t vright_shift = vld1q_dup_s32(&quantization_params->neon.right_shift);
-  const int32x4_t vzero_shift_mask = vreinterpretq_s32_u32(vceqq_s32(vright_shift, vmovq_n_s32(0)));
-  vacc0x0123 = vsraq_n_s32(vacc0x0123, vbicq_s32(vacc0x0123, vzero_shift_mask), 31);
-  vacc0x4567 = vsraq_n_s32(vacc0x4567, vbicq_s32(vacc0x4567, vzero_shift_mask), 31);
-  vacc1x0123 = vsraq_n_s32(vacc1x0123, vbicq_s32(vacc1x0123, vzero_shift_mask), 31);
-  vacc1x4567 = vsraq_n_s32(vacc1x4567, vbicq_s32(vacc1x4567, vzero_shift_mask), 31);
-  vacc2x0123 = vsraq_n_s32(vacc2x0123, vbicq_s32(vacc2x0123, vzero_shift_mask), 31);
-  vacc2x4567 = vsraq_n_s32(vacc2x4567, vbicq_s32(vacc2x4567, vzero_shift_mask), 31);
-  vacc3x0123 = vsraq_n_s32(vacc3x0123, vbicq_s32(vacc3x0123, vzero_shift_mask), 31);
-  vacc3x4567 = vsraq_n_s32(vacc3x4567, vbicq_s32(vacc3x4567, vzero_shift_mask), 31);
+  const int32x4_t vright_shift_0x0123 = vld1q_s32(&quantization_params->neon.right_shift_v[kernel_quantization_params_offset]);
+  const int32x4_t vright_shift_0x4567 = vld1q_s32(&quantization_params->neon.right_shift_v[kernel_quantization_params_offset + 4]);
+  const int32x4_t vzero_shift_mask_0x0123 = vreinterpretq_s32_u32(vceqq_s32(vright_shift_0x0123, vmovq_n_s32(0)));
+  const int32x4_t vzero_shift_mask_0x4567 = vreinterpretq_s32_u32(vceqq_s32(vright_shift_0x4567, vmovq_n_s32(0)));
+  vacc0x0123 = vsraq_n_s32(vacc0x0123, vbicq_s32(vacc0x0123, vzero_shift_mask_0x0123), 31);
+  vacc0x4567 = vsraq_n_s32(vacc0x4567, vbicq_s32(vacc0x4567, vzero_shift_mask_0x4567), 31);
+  vacc1x0123 = vsraq_n_s32(vacc1x0123, vbicq_s32(vacc1x0123, vzero_shift_mask_0x0123), 31);
+  vacc1x4567 = vsraq_n_s32(vacc1x4567, vbicq_s32(vacc1x4567, vzero_shift_mask_0x4567), 31);
+  vacc2x0123 = vsraq_n_s32(vacc2x0123, vbicq_s32(vacc2x0123, vzero_shift_mask_0x0123), 31);
+  vacc2x4567 = vsraq_n_s32(vacc2x4567, vbicq_s32(vacc2x4567, vzero_shift_mask_0x4567), 31);
+  vacc3x0123 = vsraq_n_s32(vacc3x0123, vbicq_s32(vacc3x0123, vzero_shift_mask_0x0123), 31);
+  vacc3x4567 = vsraq_n_s32(vacc3x4567, vbicq_s32(vacc3x4567, vzero_shift_mask_0x4567), 31);
 
-  vacc0x0123 = vrshlq_s32(vacc0x0123, vright_shift);
-  vacc0x4567 = vrshlq_s32(vacc0x4567, vright_shift);
-  vacc1x0123 = vrshlq_s32(vacc1x0123, vright_shift);
-  vacc1x4567 = vrshlq_s32(vacc1x4567, vright_shift);
-  vacc2x0123 = vrshlq_s32(vacc2x0123, vright_shift);
-  vacc2x4567 = vrshlq_s32(vacc2x4567, vright_shift);
-  vacc3x0123 = vrshlq_s32(vacc3x0123, vright_shift);
-  vacc3x4567 = vrshlq_s32(vacc3x4567, vright_shift);
+  vacc0x0123 = vrshlq_s32(vacc0x0123, vright_shift_0x0123);
+  vacc0x4567 = vrshlq_s32(vacc0x4567, vright_shift_0x4567);
+  vacc1x0123 = vrshlq_s32(vacc1x0123, vright_shift_0x0123);
+  vacc1x4567 = vrshlq_s32(vacc1x4567, vright_shift_0x4567);
+  vacc2x0123 = vrshlq_s32(vacc2x0123, vright_shift_0x0123);
+  vacc2x4567 = vrshlq_s32(vacc2x4567, vright_shift_0x4567);
+  vacc3x0123 = vrshlq_s32(vacc3x0123, vright_shift_0x0123);
+  vacc3x4567 = vrshlq_s32(vacc3x4567, vright_shift_0x4567);
 
   const int16x8_t voutput_zero_point = vld1q_dup_s16(&quantization_params->neon.output_zero_point);
 #ifdef __aarch64__

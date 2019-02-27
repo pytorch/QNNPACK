@@ -107,6 +107,7 @@ def main(args):
                     build.cc("q8gavgpool/up8xm-neon.c"),
                     build.cc("q8gemm/4x-sumrows-neon.c"),
                     build.cc("q8gemm/4x8-neon.c"),
+                    build.cc("q8gemm/4x8-neon_per_channel.c"),
                     build.cc("q8gemm/4x8c2-xzp-neon.c"),
                     build.cc("q8gemm/6x4-neon.c"),
                     build.cc("q8gemm/8x8-neon.c"),
