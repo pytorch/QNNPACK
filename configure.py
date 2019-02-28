@@ -129,6 +129,7 @@ def main(args):
                     build.cc("q8conv/4x8-aarch32-neon.S"),
                     build.cc("q8dwconv/up8x9-aarch32-neon.S"),
                     build.cc("q8gemm/4x8-aarch32-neon.S"),
+                    build.cc("q8gemm/4x8-aarch32-neon-per-channel.S"),
                     build.cc("q8gemm/4x8c2-xzp-aarch32-neon.S"),
                 ]
             if build.target.is_arm64:

@@ -746,6 +746,40 @@ BENCHMARK_REGISTER_F(Q8GEMM_Op, 4x8__aarch32_neon)->Apply(MobileNetV1GemmArgumen
 BENCHMARK_REGISTER_F(Q8GEMM_Op, 4x8__aarch32_neon)->Apply(SqueezeNetV10GemmArguments);
 BENCHMARK_REGISTER_F(Q8GEMM_Op, 4x8__aarch32_neon)->Apply(GemmArguments);
 
+BENCHMARK_TEMPLATE_F(Q8GEMM_PER_CHANNEL_L1, 4x8__aarch32_neon_per_channel, 4, 8, 8, 1)(benchmark::State& state)
+{
+  for (auto _ : state) {
+    q8gemm_ukernel_4x8__aarch32_neon_per_channel(
+      mr(), nr(), kc(),
+      a(), kc() * sizeof(uint8_t),
+      w(),
+      c(), mr() * sizeof(uint8_t),
+      quantizationParams(), 0);
+  }
+}
+
+BENCHMARK_TEMPLATE_DEFINE_F(Q8GEMM_PER_CHANNEL_Op, 4x8__aarch32_neon_per_channel, 4, 8, 8, 1)(benchmark::State& state)
+{
+  for (auto _ : state) {
+    for (uint32_t m = 0; m < mc(); m += mr()) {
+      const uint32_t mrr = min(mc() - m, mr());
+      for (uint32_t n = 0; n < nc(); n += nr()) {
+        const uint32_t nrr = min(nc() - n, nr());
+        q8gemm_ukernel_4x8__aarch32_neon_per_channel(
+          mrr, nrr, kc(),
+          a() + m * kc(), kc() * sizeof(uint8_t),
+          w() + n * (kcStride() * sizeof(uint8_t) + sizeof(int32_t)),
+          c() + m * nc() + n, nc() * sizeof(uint8_t),
+          quantizationParams(), 0);
+      }
+    }
+  }
+}
+BENCHMARK_REGISTER_F(Q8GEMM_PER_CHANNEL_Op, 4x8__aarch32_neon_per_channel)->Apply(ShuffleNetV1G1GemmArguments);
+BENCHMARK_REGISTER_F(Q8GEMM_PER_CHANNEL_Op, 4x8__aarch32_neon_per_channel)->Apply(MobileNetV1GemmArguments);
+BENCHMARK_REGISTER_F(Q8GEMM_PER_CHANNEL_Op, 4x8__aarch32_neon_per_channel)->Apply(SqueezeNetV10GemmArguments);
+BENCHMARK_REGISTER_F(Q8GEMM_PER_CHANNEL_Op, 4x8__aarch32_neon_per_channel)->Apply(GemmArguments);
+
 BENCHMARK_TEMPLATE_F(Q8GEMM_XZP_L1, 4x8c2__aarch32_neon, 4, 8, 8, 2)(benchmark::State& state)
 {
   for (auto _ : state) {

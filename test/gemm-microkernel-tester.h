@@ -16,6 +16,7 @@
 #include <functional>
 #include <random>
 #include <vector>
+#include <stdio.h>
 
 #include <fp16.h>
 
@@ -310,6 +311,8 @@ class GemmMicrokernelTester {
       kernelZeroPointPerChannel[i] =
         static_cast<uint8_t>(std::min(255, std::max(0, bZeroPoint() + (int)(i - nr()/2))));
       kernelAndInputScalePerChannel[i] = scale_min + i * (scale_max -  scale_min) / nr();
+      // kernelZeroPointPerChannel[i] = 127;
+      // kernelAndInputScalePerChannel[i] = 1.0f;
     }
 
     const uint8_t* aPtr = a.data() + 8;

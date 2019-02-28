@@ -58,6 +58,8 @@ DECLARE_Q8GEMM_UKERNEL_FUNCTION(q8gemm_ukernel_4x4c2__sse2)
 
 DECLARE_Q8GEMM_PER_CHANNEL_UKERNEL_FUNCTION(q8gemm_ukernel_4x8__neon_per_channel)
 
+DECLARE_Q8GEMM_PER_CHANNEL_UKERNEL_FUNCTION(q8gemm_ukernel_4x8__aarch32_neon_per_channel)
+
 #define DECLARE_Q8GEMM_XZP_UKERNEL_FUNCTION(fn_name) \
   QNNP_INTERNAL void fn_name(                        \
       size_t mr,                                     \
