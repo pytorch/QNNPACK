@@ -37,8 +37,8 @@ BEGIN_FUNCTION q8gemm_ukernel_4x8__aarch32_neon_per_channel
 	# - r7 = quantization_params
 	LDR r7, [sp, 100]
 
-  # load kernel_quantization_params_offset
-  LDR r5, [sp, 104]
+	# load kernel_quantization_params_offset
+	LDR r5, [sp, 104]
 
 	# Load bias0123, bias4567
 	VLDM ip!, {d16-d19}
@@ -48,19 +48,19 @@ BEGIN_FUNCTION q8gemm_ukernel_4x8__aarch32_neon_per_channel
 	LDR r6, [sp, 84]
 	CMP r0, 2
 
-  # a1 = a0 + a_stride
+	# a1 = a0 + a_stride
 	ADD r4, r3, r6
 
 	# Load b_zero_point from kernel_zero_point_v:
 	# - d15 = b_zero_point
-  MOV r8, 16
-  ADD r8, r7, r8
-  LDR r8, [r8, r5]
+	MOV r8, 16
+	ADD r8, r7, r8
+	LDR r8, [r8, r5]
 	VLD1.8 {d15}, [r8]
 	MOVLO r4, r3
 
-  # Move kernel_quantization_params_offset to r8 to use later
-  MOV r8, r5
+	# Move kernel_quantization_params_offset to r8 to use later
+	MOV r8, r5
 
 	ADD r7, r7, 4
 	ADD r5, r4, r6
@@ -641,61 +641,61 @@ BEGIN_FUNCTION q8gemm_ukernel_4x8__aarch32_neon_per_channel
 
 	.p2align 4
 2:
-  # Load multiplier:
-  # - d12 = vmultiplier ( vmultiplier0x0123 )
-  ADD r7, 16
-  LDR r8, [sp, 104]
-  LDR r8, [r7, r8]
-  VLD1.32 {d12, d13}, [r8]!
-  SUB r7, 12
+	# Load multiplier:
+	# - d12 = vmultiplier ( vmultiplier0x0123 )
+	ADD r7, 16
+	LDR r8, [sp, 104]
+	LDR r8, [r7, r8]
+	VLD1.32 {d12, d13}, [r8]!
+	SUB r7, 12
 
 	VQRDMULH.S32  q8, q8, q6
 	VQRDMULH.S32 q10, q10, q6
-  VQRDMULH.S32 q12, q12, q6
-  VQRDMULH.S32 q14, q14, q6
+	VQRDMULH.S32 q12, q12, q6
+	VQRDMULH.S32 q14, q14, q6
 
-  VLD1.32 {d12, d13}, [r8]
+	VLD1.32 {d12, d13}, [r8]
 
-  VQRDMULH.S32  q9, q9, q6
-  VQRDMULH.S32 q11, q11, q6
-  VQRDMULH.S32 q13, q13, q6
+	VQRDMULH.S32  q9, q9, q6
+	VQRDMULH.S32 q11, q11, q6
+	VQRDMULH.S32 q13, q13, q6
 	VQRDMULH.S32 q15, q15, q6
 
-  # Load right_shift
+	# Load right_shift
 	# - q4 = d8:d9   = vright_shift_0x0123
-  ADD r7, 16
-  LDR r8, [sp, 104]
-  LDR r8, [r7, r8]
+	ADD r7, 16
+	LDR r8, [sp, 104]
+	LDR r8, [r7, r8]
 	VLD1.32 {d8, d9}, [r8]!
-  SUB r7, 12
+	SUB r7, 12
 
   # Compute vzero_shift_mask
 	# - q5 = vzero_shift_mask_0x0123
 	VCEQ.S32 q5, q4, 0
 
-  VBIC q0,  q8, q5
-  VBIC q1,  q10, q5
-  VBIC q2,  q12, q5
-  VBIC q3,  q14, q5
+	VBIC q0,  q8, q5
+	VBIC q1,  q10, q5
+	VBIC q2,  q12, q5
+	VBIC q3,  q14, q5
 
-  VSRA.S32  q8, q0, 31
-  VSRA.S32  q10, q1, 31
-  VSRA.S32  q12, q2, 31
-  VSRA.S32  q14, q3, 31
+	VSRA.S32  q8, q0, 31
+	VSRA.S32  q10, q1, 31
+	VSRA.S32  q12, q2, 31
+	VSRA.S32  q14, q3, 31
 
-  VRSHL.S32  q8,  q8, q4
-  VRSHL.S32  q10,  q10, q4
-  VRSHL.S32  q12,  q12, q4
-  VRSHL.S32  q14,  q14, q4
+	VRSHL.S32  q8,  q8, q4
+	VRSHL.S32  q10,  q10, q4
+	VRSHL.S32  q12,  q12, q4
+	VRSHL.S32  q14,  q14, q4
 
-  # - q4 = d8:d9 = vright_shift_0x4567
-  VLD1.32 {d8, d9}, [r8]
+	# - q4 = d8:d9 = vright_shift_0x4567
+	VLD1.32 {d8, d9}, [r8]
 
-  # Compute vzero_shift_mask
+	# Compute vzero_shift_mask
 	# - q5 = vzero_shift_mask_0x4567
 	VCEQ.S32 q5, q4, 0
 
-  VBIC q0, q9, q5
+	VBIC q0, q9, q5
 	VBIC q1, q11, q5
 	VBIC q2, q13, q5
 	VBIC q3, q15, q5
@@ -705,12 +705,12 @@ BEGIN_FUNCTION q8gemm_ukernel_4x8__aarch32_neon_per_channel
 	VSRA.S32 q13, q2, 31
 	VSRA.S32 q15, q3, 31
 
-  VRSHL.S32  q9,  q9, q4
-  VRSHL.S32 q11, q11, q4
-  VRSHL.S32 q13, q13, q4
-  VRSHL.S32 q15, q15, q4
+	VRSHL.S32  q9,  q9, q4
+	VRSHL.S32 q11, q11, q4
+	VRSHL.S32 q13, q13, q4
+	VRSHL.S32 q15, q15, q4
 
-  # Load output_zero_point
+	# Load output_zero_point
 	# - q7 = d14:d15 = voutput_zero_point
 	VLD1.16 {d14[], d15[]}, [r7]!
 
