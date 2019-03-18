@@ -174,6 +174,15 @@ class GemmMicrokernelTester {
     return this->iterations_;
   }
 
+  inline GemmMicrokernelTester& use16bitAcc(bool val) {
+    this->use16bitAcc_ = val;
+    return *this;
+  }
+
+  inline bool use16bitAcc() const {
+    return this->use16bitAcc_;
+  }
+
   void test(q8gemm_ukernel_function qgemm) const {
     ASSERT_LE(m(), mr());
     ASSERT_LE(n(), nr());
@@ -291,6 +300,7 @@ class GemmMicrokernelTester {
     std::vector<uint8_t, AlignedAllocator<uint8_t, 32>> packedW(packedN() * packedK() + biasN() * sizeof(uint32_t) / sizeof(uint8_t));
     std::vector<uint8_t> c((m() - 1) * cStride() + n());
     std::vector<int32_t> acc(m() * n());
+    std::vector<int16_t> acc16(m() * n());
     std::vector<uint8_t> cRef(m() * n());
 
     // Per-Channel quantization parameters
@@ -331,17 +341,31 @@ class GemmMicrokernelTester {
 
       /* Compute 32-bit results and output quantization arguments */
       std::fill(acc.begin(), acc.end(), 0);
+      std::fill(acc16.begin(), acc16.end(), 0);
       for (size_t mIndex = 0; mIndex < m(); mIndex++) {
         for (size_t nIndex = 0; nIndex < n(); nIndex++) {
+          int32_t biasHelper = 0;
           for (size_t kIndex = 0; kIndex < k(); kIndex++) {
             ASSERT_LE(n(), packedN());
             ASSERT_LT(mIndex * n() + nIndex, acc.size());
             ASSERT_LT(mIndex * k() + kIndex, a.size());
-            acc[mIndex * n() + nIndex] +=
+            if (use16bitAcc()) {
+              acc16[mIndex * n() + nIndex] +=
+                (int16_t(aPtr[mIndex * aStride() + kIndex])) *
+                (int16_t(b[nIndex * k() + kIndex]) - int16_t(kernelZeroPointPerChannel[nIndex]));
+              biasHelper -= int32_t(b[nIndex * k() + kIndex]) * aZeroPoint();
+            } else {
+              acc[mIndex * n() + nIndex] +=
                 (int32_t(aPtr[mIndex * aStride() + kIndex]) - int32_t(aZeroPoint())) *
                 (int32_t(b[nIndex * k() + kIndex]) - int32_t(kernelZeroPointPerChannel[nIndex]));
+            }
           }
-          acc[mIndex * n() + nIndex] += bias[nIndex];
+          if (use16bitAcc()) {
+            biasHelper += k() * kernelZeroPointPerChannel[nIndex] * aZeroPoint();
+            acc[mIndex * n() + nIndex] = int32_t(acc16[mIndex * n() + nIndex]) + bias[nIndex] + biasHelper;
+          } else {
+            acc[mIndex * n() + nIndex] += bias[nIndex];
+          }
         }
       }
 
@@ -949,4 +973,5 @@ class GemmMicrokernelTester {
   uint8_t qmin_{0};
   uint8_t qmax_{255};
   size_t iterations_{15};
+  bool use16bitAcc_{false};
 };
