@@ -70,7 +70,9 @@ BEGIN_FUNCTION q8dwconv_ukernel_up8x9__aarch32_neon
 	# - d21 = voutput_min
 	VLD1.8 {d21[]}, [r12]
 
+#ifndef IGNORE_CODE_ALIGN_DIRECTIVES
 	.p2align 3
+#endif
 0:
 	# Load input stride
 	# - r3 = input_stride
@@ -105,7 +107,9 @@ BEGIN_FUNCTION q8dwconv_ukernel_up8x9__aarch32_neon
 
 	BLO 2f
 
+#ifndef IGNORE_CODE_ALIGN_DIRECTIVES
 	.p2align 4
+#endif
 1:
 	VLDM r3!, {d0-d3}
 

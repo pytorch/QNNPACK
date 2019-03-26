@@ -10,7 +10,9 @@
 #ifdef __ELF__
 	.macro BEGIN_FUNCTION name
 		.text
+#ifndef IGNORE_CODE_ALIGN_DIRECTIVES
 		.align 2
+#endif		
 		.global \name
 		.type \name, %function
 		\name:
@@ -22,7 +24,9 @@
 #elif defined(__MACH__)
 	.macro BEGIN_FUNCTION name
 		.text
+#ifndef IGNORE_CODE_ALIGN_DIRECTIVES
 		.align 2
+#endif
 		.global _\name
 		.private_extern _\name
 		_\name:

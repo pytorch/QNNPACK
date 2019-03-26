@@ -110,7 +110,9 @@ BEGIN_FUNCTION q8gemm_ukernel_8x8__aarch64_neon
         SUBS x2, x2, 8
         B.LO 1f
 
+#ifndef IGNORE_CODE_ALIGN_DIRECTIVES
         .p2align 5
+#endif
 0:
         // b0-7 (channel 0)
         LD1 {v27.8b}, [x5], 8
@@ -516,7 +518,9 @@ BEGIN_FUNCTION q8gemm_ukernel_8x8__aarch64_neon
         SMLAL v22.4s, v27.4h, v7.h[6]   // vacc7x0123 += vb0123 * va7[6]
         SMLAL2 v23.4s, v27.8h, v7.h[6]  // vacc7x4567 += vb4567 * va7[6]
 
+#ifndef IGNORE_CODE_ALIGN_DIRECTIVES
         .p2align 4
+#endif
 2:
         // Load right_shift:
         // - v27 = vright_shift
@@ -703,7 +707,9 @@ BEGIN_FUNCTION q8gemm_ukernel_8x8__aarch64_neon
 
         RET
 
+#ifndef IGNORE_CODE_ALIGN_DIRECTIVES
         .p2align 3
+#endif
 4:
         CMP x1, 4
         B.LO 5f
