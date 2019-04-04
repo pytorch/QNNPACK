@@ -142,9 +142,7 @@ BEGIN_FUNCTION q8gemm_xzp_ukernel_4x8c2__aarch32_neon
 
   BLO 1f
 
-#ifndef IGNORE_CODE_ALIGN_DIRECTIVES
 .p2align 5
-#endif
 0:
   # load a
   # d0 := va0x01234567
@@ -454,9 +452,7 @@ BEGIN_FUNCTION q8gemm_xzp_ukernel_4x8c2__aarch32_neon
   VMULL.U8 q5, d3, d15
   VPADAL.U16 q15, q5
 
-#ifndef IGNORE_CODE_ALIGN_DIRECTIVES
   .p2align 4
-#endif
 4:
   # Load params:
   # - ip = params
@@ -575,9 +571,7 @@ BEGIN_FUNCTION q8gemm_xzp_ukernel_4x8c2__aarch32_neon
   POP {r4, r5, r6, r7, r8, r9, r10, r11}
   BX lr
 
-#ifndef IGNORE_CODE_ALIGN_DIRECTIVES
   .p2align 3
-#endif
 5:
   CMP r1, 4
   BLO 6f
