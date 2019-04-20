@@ -23,7 +23,7 @@ void q8avgpool_ukernel_mp8x9p8q__sse2(
     uint8_t* output,
     size_t input_increment,
     size_t output_increment,
-    const union qnnp_avgpool_quantization_params quantization_params[restrict static 1])
+    const union qnnp_avgpool_quantization_params quantization_params[RESTRICT_STATIC 1])
 {
   assert(n != 0);
   assert(ks > 9);

@@ -21,7 +21,11 @@
   #define QNNP_UNREACHABLE do { } while (0)
 #endif
 
+#if defined(_MSC_VER)
+#define QNNP_ALIGN(alignment) __declspec(align(alignment))
+#else
 #define QNNP_ALIGN(alignment) __attribute__((__aligned__(alignment)))
+#endif
 
 #define QNNP_COUNT_OF(array) (sizeof(array) / sizeof(0[array]))
 
@@ -57,4 +61,15 @@
   #else
     #define QNNP_PRIVATE
   #endif
+#endif
+
+#if defined(_MSC_VER)
+#define RESTRICT_STATIC
+#define restrict
+#else
+#define RESTRICT_STATIC restrict static
+#endif
+
+#if defined(_MSC_VER)
+#define __builtin_prefetch
 #endif

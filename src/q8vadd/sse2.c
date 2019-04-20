@@ -18,7 +18,7 @@ void q8vadd_ukernel__sse2(
     const uint8_t* a,
     const uint8_t* b,
     uint8_t* y,
-    const union qnnp_add_quantization_params quantization_params[restrict static 1])
+    const union qnnp_add_quantization_params quantization_params[RESTRICT_STATIC 1])
 {
   if QNNP_LIKELY(n >= 8) {
     const __m128i vzero_point_product = _mm_load_si128((const __m128i*) &quantization_params->sse2.zero_point_product);

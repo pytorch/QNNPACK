@@ -19,7 +19,7 @@ void q8dwconv_ukernel_up8x9__sse2(
     uint8_t* output,
     size_t input_stride,
     size_t output_increment,
-    const union qnnp_conv_quantization_params quantization_params[restrict static 1])
+    const union qnnp_conv_quantization_params quantization_params[RESTRICT_STATIC 1])
 {
   const __m128i vkernel_zero_point = _mm_load_si128((const __m128i*) quantization_params->sse2.kernel_zero_point);
   const __m128i vzero = _mm_setzero_si128();

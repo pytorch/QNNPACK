@@ -14,7 +14,7 @@
 void x8lut_ukernel__scalar(
     size_t n,
     const uint8_t* x,
-    const uint8_t t[restrict static 256],
+    const uint8_t t[RESTRICT_STATIC 256],
     uint8_t* y)
 {
   assert(n != 0);
