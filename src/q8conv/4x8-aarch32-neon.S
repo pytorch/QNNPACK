@@ -62,9 +62,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 	# - d12 = vmultiplier
 	VLD1.32 {d12[]}, [r9]!
 
-#ifndef IGNORE_CODE_ALIGN_DIRECTIVES
 	.p2align 5
-#endif
 0:
 	SUBS r10, r2, 8
 
@@ -630,9 +628,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 	# vacc3x4567 += vb4567 * va3[6]
 	VMLAL.S16 q15, d9, d7[2]
 
-#ifndef IGNORE_CODE_ALIGN_DIRECTIVES
 	.p2align 4
-#endif
 3:
 	SUBS r3, r3, 1
 	BNE 0b
@@ -746,9 +742,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 	POP {r4, r5, r6, r7, r8, r9, r10, r11}
 	BX lr
 
-#ifndef IGNORE_CODE_ALIGN_DIRECTIVES
 	.p2align 3
-#endif
 5:
 	CMP r1, 4
 	BLO 6f

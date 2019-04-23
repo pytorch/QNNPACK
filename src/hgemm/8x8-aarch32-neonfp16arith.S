@@ -94,9 +94,7 @@ BEGIN_FUNCTION hgemm_ukernel_8x8__aarch32_neonfp16arith
 	SUBS r2, r2, 4
 	BLO 1f
 
-#ifndef IGNORE_CODE_ALIGN_DIRECTIVES
 	.p2align 5
-#endif
 0:
 	# Load a0
 	# - d0 = a0
@@ -355,9 +353,7 @@ BEGIN_FUNCTION hgemm_ukernel_8x8__aarch32_neonfp16arith
 	# vacc7x01234567 += vb01234567 * va7[2];
 	.word 0xF3DCE167 @ VMLA.F16 q15, q6, d7[2]
 
-#ifndef IGNORE_CODE_ALIGN_DIRECTIVES
 	.p2align 4
-#endif
 2:
 	# Load params:
 	# - ip = params
@@ -445,9 +441,7 @@ BEGIN_FUNCTION hgemm_ukernel_8x8__aarch32_neonfp16arith
 	POP {r4, r5, r6, r7, r8, r9, r10, r11}
 	BX lr
 
-#ifndef IGNORE_CODE_ALIGN_DIRECTIVES
 	.p2align 3
-#endif
 4:
 	CMP r1, 4
 	BLO 5f

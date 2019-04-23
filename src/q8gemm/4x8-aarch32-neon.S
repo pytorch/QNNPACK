@@ -76,9 +76,7 @@ BEGIN_FUNCTION q8gemm_ukernel_4x8__aarch32_neon
 	VLD1.32 {d12[]}, [r7]!
 	BLO 1f
 
-#ifndef IGNORE_CODE_ALIGN_DIRECTIVES
 	.p2align 5
-#endif
 0:
 	# Load a0
 	# - d1 = a0
@@ -632,9 +630,7 @@ BEGIN_FUNCTION q8gemm_ukernel_4x8__aarch32_neon
 	# vacc3x4567 += vb4567 * va3[6]
 	VMLAL.S16 q15, d9, d7[2]
 
-#ifndef IGNORE_CODE_ALIGN_DIRECTIVES
 	.p2align 4
-#endif
 2:
 	# Load right_shift
 	# - q4 = d8:d9 = vright_shift
@@ -745,9 +741,7 @@ BEGIN_FUNCTION q8gemm_ukernel_4x8__aarch32_neon
 	POP {r4, r5, r6, r7}
 	BX lr
 
-#ifndef IGNORE_CODE_ALIGN_DIRECTIVES
 	.p2align 3
-#endif
 4:
 	CMP r1, 4
 	BLO 5f
