@@ -11,6 +11,17 @@
 #include "deconvolution-operator-tester.h"
 
 
+TEST(DECONVOLUTION_OP, zero_batch) {
+  DeconvolutionOperatorTester()
+    .inputSize(5, 5)
+    .kernelSize(1, 1)
+    .groupInputChannels(2)
+    .groupOutputChannels(2)
+    .iterations(1)
+    .batchSize(0)
+    .testQ8();
+}
+
 TEST(DECONVOLUTION_OP, 1x1) {
   DeconvolutionOperatorTester()
     .inputSize(27, 29)

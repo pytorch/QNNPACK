@@ -13,6 +13,14 @@
 #include <qnnpack/params.h>
 
 
+TEST(SIGMOID_OP, zero_batch) {
+  SigmoidOperatorTester()
+    .batchSize(0)
+    .channels(8)
+    .iterations(1)
+    .testQ8();
+}
+
 TEST(SIGMOID_OP, unit_batch) {
   for (size_t channels = 1; channels < 100; channels += 15) {
     SigmoidOperatorTester()

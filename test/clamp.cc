@@ -11,6 +11,14 @@
 #include "clamp-operator-tester.h"
 
 
+TEST(CLAMP_OP, zero_batch) {
+  ClampOperatorTester()
+    .batchSize(0)
+    .channels(2)
+    .iterations(1)
+    .testU8();
+}
+
 TEST(CLAMP_OP, unit_batch) {
   for (size_t channels = 1; channels < 100; channels++) {
     ClampOperatorTester()

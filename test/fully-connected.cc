@@ -11,6 +11,15 @@
 #include "fully-connected-operator-tester.h"
 
 
+TEST(FULLY_CONNECTED_OP, zero_batch) {
+  FullyConnectedOperatorTester()
+    .batchSize(0)
+    .inputChannels(2)
+    .outputChannels(2)
+    .iterations(1)
+    .testQ8();
+}
+
 TEST(FULLY_CONNECTED_OP, unit_batch) {
   FullyConnectedOperatorTester()
     .batchSize(1)

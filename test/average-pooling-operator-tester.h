@@ -125,7 +125,6 @@ class AveragePoolingOperatorTester {
   }
 
   inline AveragePoolingOperatorTester& batchSize(size_t batchSize) {
-    assert(batchSize != 0);
     this->batchSize_ = batchSize;
     return *this;
   }

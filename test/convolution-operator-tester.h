@@ -145,7 +145,6 @@ class ConvolutionOperatorTester {
   }
 
   inline ConvolutionOperatorTester& batchSize(size_t batchSize) {
-    assert(batchSize >= 1);
     this->batchSize_ = batchSize;
     return *this;
   }
@@ -402,8 +401,11 @@ class ConvolutionOperatorTester {
           }
         }
       }
-      const int32_t accumulatorsMin = *std::min_element(accumulators.cbegin(), accumulators.cend());
-      const int32_t accumulatorsMax = *std::max_element(accumulators.cbegin(), accumulators.cend());
+      // Create dummy min/max for empty inputs.
+      // These are only used to compute scale and zero point,
+      // and real callers will just pull those values from the model.
+      const int32_t accumulatorsMin = accumulators.empty() ?   0 : *std::min_element(accumulators.cbegin(), accumulators.cend());
+      const int32_t accumulatorsMax = accumulators.empty() ? 900 : *std::max_element(accumulators.cbegin(), accumulators.cend());
 
       const double outputScale = double(uint32_t(accumulatorsMax - accumulatorsMin)) / 255.0;
       const uint8_t outputZeroPoint = uint8_t(std::max(std::min(

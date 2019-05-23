@@ -13,6 +13,18 @@
 #include <qnnpack/params.h>
 
 
+TEST(MAX_POOLING_OP, zero_batch) {
+  ASSERT_EQ(qnnp_status_success, qnnp_initialize());
+  MaxPoolingOperatorTester()
+    .batchSize(0)
+    .inputHeight(2)
+    .inputWidth(6)
+    .poolingHeight(1)
+    .poolingWidth(8)
+    .channels(8)
+    .testU8();
+}
+
 TEST(MAX_POOLING_OP, unit_batch_many_channels_small_1xM_pool) {
   ASSERT_EQ(qnnp_status_success, qnnp_initialize());
   for (size_t channels = qnnp_params.u8maxpool.kr; channels <= 3 * qnnp_params.u8maxpool.kr; channels++) {

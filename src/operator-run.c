@@ -606,6 +606,11 @@ static void compute_u8softargmax(
 
 enum qnnp_status qnnp_run_operator(qnnp_operator_t op, pthreadpool_t threadpool)
 {
+  // For any ukernel type, there is no work to do if the batch size is 0.
+  if (op->batch_size == 0) {
+    return qnnp_status_success;
+  }
+
   switch (op->ukernel_type) {
     case qnnp_ukernel_type_dwconv:
     {

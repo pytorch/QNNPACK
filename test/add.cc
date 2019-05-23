@@ -11,6 +11,14 @@
 #include "add-operator-tester.h"
 
 
+TEST(ADD_OP, zero_batch) {
+  AddOperatorTester()
+    .batchSize(0)
+    .channels(2)
+    .iterations(1)
+    .testQ8();
+}
+
 TEST(ADD_OP, unit_batch) {
   for (size_t channels = 1; channels < 100; channels += 15) {
     AddOperatorTester()

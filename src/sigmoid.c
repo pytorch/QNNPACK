@@ -136,8 +136,8 @@ enum qnnp_status qnnp_setup_sigmoid_nc_q8(
   }
 
   if (batch_size == 0) {
-    qnnp_log_error("failed to setup Sigmoid operator with batch size %zu: batch size must be non-zero", batch_size);
-    return qnnp_status_invalid_parameter;
+    sigmoid->batch_size = 0;
+    return qnnp_status_success;
   }
 
   sigmoid->batch_size = batch_size;

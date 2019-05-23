@@ -13,6 +13,15 @@
 #include <qnnpack/params.h>
 
 
+TEST(GLOBAL_AVERAGE_POOLING_OP, zero_batch) {
+  ASSERT_EQ(qnnp_status_success, qnnp_initialize());
+  GlobalAveragePoolingOperatorTester()
+    .batchSize(0)
+    .width(1)
+    .channels(8)
+    .testQ8();
+}
+
 TEST(GLOBAL_AVERAGE_POOLING_OP, unit_batch_many_channels_small_width) {
   ASSERT_EQ(qnnp_status_success, qnnp_initialize());
   for (size_t channels = qnnp_params.q8gavgpool.nr; channels <= 3 * qnnp_params.q8gavgpool.nr; channels++) {

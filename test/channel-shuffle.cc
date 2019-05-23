@@ -11,6 +11,15 @@
 #include "channel-shuffle-operator-tester.h"
 
 
+TEST(CHANNEL_SHUFFLE_OP, zero_batch) {
+  ChannelShuffleOperatorTester()
+    .batchSize(0)
+    .groups(2)
+    .groupChannels(4)
+    .iterations(1)
+    .testX8();
+}
+
 TEST(CHANNEL_SHUFFLE_OP, two_groups_unit_batch) {
   for (size_t groupChannels = 1; groupChannels < 100; groupChannels += 15) {
     ChannelShuffleOperatorTester()

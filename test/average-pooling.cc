@@ -13,6 +13,18 @@
 #include "average-pooling-operator-tester.h"
 
 
+TEST(AVERAGE_POOLING_OP, zero_batch) {
+  ASSERT_EQ(qnnp_status_success, qnnp_initialize());
+  AveragePoolingOperatorTester()
+    .batchSize(0)
+    .inputHeight(2)
+    .inputWidth(4)
+    .poolingHeight(1)
+    .poolingWidth(2)
+    .channels(4)
+    .testQ8();
+}
+
 TEST(AVERAGE_POOLING_OP, unit_batch_many_channels_small_1xM_pool) {
   ASSERT_EQ(qnnp_status_success, qnnp_initialize());
   for (size_t channels = qnnp_params.q8avgpool.kr; channels <= 3 * qnnp_params.q8avgpool.kr; channels++) {

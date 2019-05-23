@@ -151,8 +151,8 @@ enum qnnp_status qnnp_setup_max_pooling2d_nhwc_u8(
   }
 
   if (batch_size == 0) {
-    qnnp_log_error("failed to setup max pooling with batch size %zu: batch size must be non-zero", batch_size);
-    return qnnp_status_invalid_parameter;
+    max_pooling->batch_size = 0;
+    return qnnp_status_success;
   }
 
   if (input_width == 0 || input_height == 0) {

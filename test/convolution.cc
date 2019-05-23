@@ -13,6 +13,17 @@
 #include "convolution-operator-tester.h"
 
 
+TEST(CONVOLUTION_OP, zero_batch) {
+  ConvolutionOperatorTester()
+    .batchSize(0)
+    .inputSize(5, 5)
+    .kernelSize(1, 1)
+    .groupInputChannels(2)
+    .groupOutputChannels(2)
+    .iterations(1)
+    .testQ8();
+}
+
 TEST(CONVOLUTION_OP, 1x1) {
   ConvolutionOperatorTester()
     .inputSize(27, 29)

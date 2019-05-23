@@ -226,8 +226,8 @@ enum qnnp_status qnnp_setup_deconvolution2d_nhwc_q8(
   }
 
   if (batch_size == 0) {
-    qnnp_log_error("failed to setup deconvolution with batch size %zu: batch size must be non-zero", batch_size);
-    return qnnp_status_invalid_parameter;
+    deconvolution->batch_size = 0;
+    return qnnp_status_success;
   }
 
   if (input_width == 0 || input_height == 0) {

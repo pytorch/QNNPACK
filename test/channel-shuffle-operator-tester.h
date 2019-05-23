@@ -76,7 +76,6 @@ class ChannelShuffleOperatorTester {
   }
 
   inline ChannelShuffleOperatorTester& batchSize(size_t batchSize) {
-    assert(batchSize != 0);
     this->batchSize_ = batchSize;
     return *this;
   }

@@ -63,7 +63,6 @@ class LeakyReLUOperatorTester {
   }
 
   inline LeakyReLUOperatorTester& batchSize(size_t batchSize) {
-    assert(batchSize != 0);
     this->batchSize_ = batchSize;
     return *this;
   }

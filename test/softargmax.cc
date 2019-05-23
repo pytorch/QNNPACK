@@ -13,6 +13,14 @@
 #include <qnnpack/params.h>
 
 
+TEST(SOFTARGMAX_OP, zero_batch) {
+  SoftArgMaxOperatorTester()
+    .batchSize(0)
+    .channels(1)
+    .iterations(1)
+    .testQ8();
+}
+
 TEST(SOFTARGMAX_OP, single_class) {
   SoftArgMaxOperatorTester()
     .batchSize(1)

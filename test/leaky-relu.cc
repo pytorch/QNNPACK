@@ -11,6 +11,14 @@
 #include "leaky-relu-operator-tester.h"
 
 
+TEST(LEAKY_RELU_OP, zero_batch) {
+  LeakyReLUOperatorTester()
+    .batchSize(0)
+    .channels(2)
+    .iterations(1)
+    .testQ8();
+}
+
 TEST(LEAKY_RELU_OP, unit_batch) {
   for (size_t channels = 1; channels < 100; channels++) {
     LeakyReLUOperatorTester()

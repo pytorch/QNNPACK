@@ -83,8 +83,8 @@ enum qnnp_status qnnp_setup_clamp_nc_u8(
   }
 
   if (batch_size == 0) {
-    qnnp_log_error("failed to setup Clamp operator with batch size %zu: batch size must be non-zero", batch_size);
-    return qnnp_status_invalid_parameter;
+    clamp->batch_size = 0;
+    return qnnp_status_success;
   }
 
   clamp->batch_size = batch_size;
