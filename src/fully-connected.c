@@ -129,7 +129,7 @@ error:
 }
 
 enum qnnp_status qnnp_setup_fully_connected_nc_q8(
-    qnnp_operator_t convolution,
+    qnnp_operator_t fully_connected,
     size_t batch_size,
     const uint8_t* input,
     size_t input_stride,
@@ -146,16 +146,16 @@ enum qnnp_status qnnp_setup_fully_connected_nc_q8(
     return qnnp_status_invalid_parameter;
   }
 
-  convolution->batch_size = 1;
-  convolution->input_height = batch_size;
-  convolution->input_width = 1;
-  convolution->input = input;
-  convolution->input_pixel_stride = input_stride;
+  fully_connected->batch_size = 1;
+  fully_connected->input_height = batch_size;
+  fully_connected->input_width = 1;
+  fully_connected->input = input;
+  fully_connected->input_pixel_stride = input_stride;
 
-  convolution->output_height = batch_size;
-  convolution->output_width = 1;
-  convolution->output = output;
-  convolution->output_pixel_stride = output_stride;
+  fully_connected->output_height = batch_size;
+  fully_connected->output_width = 1;
+  fully_connected->output = output;
+  fully_connected->output_pixel_stride = output_stride;
 
   return qnnp_status_success;
 }
