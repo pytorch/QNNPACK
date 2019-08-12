@@ -201,10 +201,16 @@ class GemmMicrokernelTester {
       std::fill(c.begin(), c.end(), 0xA5);
 
       std::fill(packedW.begin(), packedW.end(), bZeroPoint());
+#if 1 /* QNNPACK_QUANTIZE_AT_RUNTIME */
+      pack_q8gemm_wq(n(), k(),
+        nr(), np(), kr(),
+        b.data(), bias.data(), packedW.data());
+#else
       pack_q8gemm_w(n(), k(),
         nr(), np(), kr(),
         aZeroPoint(), bZeroPoint(),
         b.data(), bias.data(), packedW.data());
+#endif
 
       ASSERT_NE(*std::max_element(a.cbegin(), a.cend()), *std::min_element(a.cbegin(), a.cend()));
       ASSERT_NE(*std::max_element(b.cbegin(), b.cend()), *std::min_element(b.cbegin(), b.cend()));

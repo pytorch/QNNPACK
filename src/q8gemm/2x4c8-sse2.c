@@ -10,6 +10,16 @@
 
 #include <qnnpack/q8gemm.h>
 
+static inline __m128i quantize(const __m128i a, const __m128i zp)
+{
+#if 1 /* QNNPACK_QUANTIZE_AT_RUNTIME */
+  // Run-time quantization
+  return _mm_sub_epi16(a, zp);
+#else
+  // Design-time quantization (no-op)
+  return a;
+#endif
+}
 
 static inline __m128i sse_reduce4_i32(__m128i x, __m128i y, __m128i z, __m128i w) {
 #if defined(__SSSE3__) && !defined(__ANDROID__)
@@ -76,14 +86,15 @@ void q8gemm_ukernel_2x4c8__sse2(
   }
   const size_t b_stride = nr * 8;
 
+  const __m128i va_zero_point = _mm_load_si128((const __m128i*) quantization_params->sse2.input_zero_point);
   const __m128i vb_zero_point = _mm_load_si128((const __m128i*) quantization_params->sse2.kernel_zero_point);
   const __m128i vzero = _mm_setzero_si128();
   for (; k >= 8; k -= 8) {
     const __m128i va0 = _mm_loadl_epi64((const __m128i*) a0);
-    const __m128i vxa0 = _mm_unpacklo_epi8(va0, vzero);
+    const __m128i vxa0 = quantize(_mm_unpacklo_epi8(va0, vzero), va_zero_point);
     a0 += 8;
     const __m128i va1 = _mm_loadl_epi64((const __m128i*) a1);
-    const __m128i vxa1 = _mm_unpacklo_epi8(va1, vzero);
+    const __m128i vxa1 = quantize(_mm_unpacklo_epi8(va1, vzero), va_zero_point);
     a1 += 8;
 
     const __m128i vb0 = _mm_loadl_epi64((const __m128i*) b0);
@@ -112,10 +123,13 @@ void q8gemm_ukernel_2x4c8__sse2(
     const size_t a_predecrement = 8 - k;
     const __m128i va_shift = _mm_cvtsi32_si128(8 * a_predecrement);
 
+    const __m128i va_zero_point_partial = _mm_unpacklo_epi8(
+        _mm_srl_epi64(_mm_packus_epi16(va_zero_point, va_zero_point), va_shift), vzero);
+
     const __m128i va0 = _mm_srl_epi64(_mm_loadl_epi64((const __m128i*) (a0 - a_predecrement)), va_shift);
-    const __m128i vxa0 = _mm_unpacklo_epi8(va0, vzero);
+    const __m128i vxa0 = quantize(_mm_unpacklo_epi8(va0, vzero), va_zero_point_partial);
     const __m128i va1 = _mm_srl_epi64(_mm_loadl_epi64((const __m128i*) (a1 - a_predecrement)), va_shift);
-    const __m128i vxa1 = _mm_unpacklo_epi8(va1, vzero);
+    const __m128i vxa1 = quantize(_mm_unpacklo_epi8(va1, vzero), va_zero_point_partial);
 
     const __m128i vb0 = _mm_loadl_epi64((const __m128i*) b0);
     const __m128i vxb0 = _mm_sub_epi16(_mm_unpacklo_epi8(vb0, vzero), vb_zero_point);
@@ -184,7 +198,7 @@ void q8gemm_ukernel_2x4c8__sse2(
   const __m128i vq31prod1x0123 = _mm_shuffle_epi32(vq31prod1x0213, _MM_SHUFFLE(3, 1, 2, 0));
 
   const __m128i vremainder_mask = _mm_load_si128((const __m128i*) quantization_params->sse2.remainder_mask);
-  
+
   const __m128i vrem0x0123 =
     _mm_add_epi32(_mm_and_si128(vq31prod0x0123, vremainder_mask), _mm_cmpgt_epi32(_mm_setzero_si128(), vq31prod0x0123));
   const __m128i vrem1x0123 =
@@ -193,9 +207,9 @@ void q8gemm_ukernel_2x4c8__sse2(
   const __m128i vremainder_threshold = _mm_load_si128((const __m128i*) quantization_params->sse2.remainder_threshold);
   const __m128i vshift = _mm_load_si128((const __m128i*) quantization_params->sse2.shift);
 
-  vacc0x0123 = 
+  vacc0x0123 =
     _mm_sub_epi32(_mm_sra_epi32(vq31prod0x0123, vshift), _mm_cmpgt_epi32(vrem0x0123, vremainder_threshold));
-  vacc1x0123 = 
+  vacc1x0123 =
     _mm_sub_epi32(_mm_sra_epi32(vq31prod1x0123, vshift), _mm_cmpgt_epi32(vrem1x0123, vremainder_threshold));
 
   const __m128i voutput_zero_point = _mm_load_si128((const __m128i*) quantization_params->sse2.output_zero_point);
