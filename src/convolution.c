@@ -207,7 +207,9 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
           pack_q8dw_w(
             kernel_height, kernel_width,
             groups, cr,
+          #if !QNNPACK_RUNTIME_QUANTIZATION
             input_zero_point, kernel_zero_point,
+          #endif
             kernel, bias, convolution->packed_weights);
           break;
         case 25:
@@ -263,7 +265,9 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
         pack_swizzle_q8gemm_b(
           group_output_channels, group_input_channels,
           nr, kr, sr,
+        #if !QNNPACK_RUNTIME_QUANTIZATION
           input_zero_point, kernel_zero_point,
+        #endif
           kernel + group * group_output_channels * group_input_channels,
           bias + group * group_output_channels,
           (void*) ((uintptr_t) convolution->packed_weights + group * packed_group_weights_size));
@@ -293,7 +297,9 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
             pack_q8gemm_w(
                 group_output_channels, group_input_channels,
                 nr, nr, kr,
+              #if !QNNPACK_RUNTIME_QUANTIZATION
                 input_zero_point, kernel_zero_point,
+              #endif
                 kernel + group * group_output_channels * group_input_channels,
                 bias + group * group_output_channels,
                 (void*) ((uintptr_t) convolution->packed_weights + group * packed_group_weights_size));
@@ -304,7 +310,9 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
             pack_q8conv_w(
                 group_output_channels, kernel_size, group_input_channels,
                 nr, kr,
+              #if !QNNPACK_RUNTIME_QUANTIZATION
                 input_zero_point, kernel_zero_point,
+              #endif
                 kernel + group * group_output_channels * kernel_size * group_input_channels,
                 bias + group * group_output_channels,
                 (void*) ((uintptr_t) convolution->packed_weights + group * packed_group_weights_size));

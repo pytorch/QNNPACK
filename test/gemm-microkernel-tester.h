@@ -201,16 +201,13 @@ class GemmMicrokernelTester {
       std::fill(c.begin(), c.end(), 0xA5);
 
       std::fill(packedW.begin(), packedW.end(), bZeroPoint());
-#if 1 /* QNNPACK_QUANTIZE_AT_RUNTIME */
-      pack_q8gemm_wq(n(), k(),
-        nr(), np(), kr(),
-        b.data(), bias.data(), packedW.data());
-#else
+
       pack_q8gemm_w(n(), k(),
         nr(), np(), kr(),
+      #if !QNNPACK_RUNTIME_QUANTIZATION
         aZeroPoint(), bZeroPoint(),
+      #endif
         b.data(), bias.data(), packedW.data());
-#endif
 
       ASSERT_NE(*std::max_element(a.cbegin(), a.cend()), *std::min_element(a.cbegin(), a.cend()));
       ASSERT_NE(*std::max_element(b.cbegin(), b.cend()), *std::min_element(b.cbegin(), b.cend()));
@@ -310,14 +307,11 @@ class GemmMicrokernelTester {
 
       std::fill(packedW.begin(), packedW.end(), bZeroPoint());
 
-#if 1 /* QNNPACK_QUANTIZE_AT_RUNTIME */
-      pack_q8conv_wq(n(), ks(), k(), np(), kr(),
-        b.data(), bias.data(), packedW.data());
-#else
       pack_q8conv_w(n(), ks(), k(), np(), kr(),
+      #if !QNNPACK_RUNTIME_QUANTIZATION
         aZeroPoint(), bZeroPoint(),
+      #endif
         b.data(), bias.data(), packedW.data());
-#endif
 
       ASSERT_NE(*std::max_element(a.cbegin(), a.cend()), *std::min_element(a.cbegin(), a.cend()));
       ASSERT_NE(*std::max_element(b.cbegin(), b.cend()), *std::min_element(b.cbegin(), b.cend()));
@@ -455,7 +449,9 @@ class GemmMicrokernelTester {
       pack_swizzle_q8gemm_b(
         n(), k(),
         np(), kr(), 8,
+      #if !QNNPACK_RUNTIME_QUANTIZATION
         aZeroPoint(), bZeroPoint(),
+      #endif
         b.data(), bias.data(), packedW.data());
 
       ASSERT_NE(*std::max_element(a.cbegin(), a.cend()), *std::min_element(a.cbegin(), a.cend()));

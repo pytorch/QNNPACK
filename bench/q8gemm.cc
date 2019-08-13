@@ -95,7 +95,9 @@ class Q8GEMM : public benchmark::Fixture {
     pack_q8gemm_w(
       nc(), kc(),
       nr(), np(), kr(),
+    #if !QNNPACK_RUNTIME_QUANTIZATION
       127, 127,
+    #endif
       k(), b(), w());
     c_.resize(mc() * nc());
     std::fill(c_.begin(), c_.end(), 0xA5);
@@ -260,7 +262,9 @@ class Q8GEMM_XZP : public Q8GEMM {
     pack_swizzle_q8gemm_b(
       nc(), kc(),
       np(), kr(), 8,
+    #if !QNNPACK_RUNTIME_QUANTIZATION
       127, 127,
+    #endif
       k(), b(), w());
     c_.resize(mc() * nc());
     std::fill(c_.begin(), c_.end(), 0xA5);

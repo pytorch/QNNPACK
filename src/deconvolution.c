@@ -152,7 +152,9 @@ enum qnnp_status qnnp_create_deconvolution2d_nhwc_q8(
     pack_q8deconv_w(
       group_output_channels, kernel_size, group_input_channels,
       nr, kr,
+    #if !QNNPACK_RUNTIME_QUANTIZATION
       input_zero_point, kernel_zero_point,
+    #endif
       kernel + group * group_output_channels * kernel_size * group_input_channels,
       bias + group * group_output_channels,
       (void*) ((uintptr_t) deconvolution->packed_weights + group * packed_group_weights_size));

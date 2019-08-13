@@ -102,7 +102,9 @@ enum qnnp_status qnnp_create_fully_connected_nc_q8(
   pack_q8gemm_w(
     output_channels, input_channels,
     nr, nr, kr,
+  #if !QNNPACK_RUNTIME_QUANTIZATION
     input_zero_point, kernel_zero_point,
+  #endif
     kernel, bias,
     fully_connected->packed_weights);
 

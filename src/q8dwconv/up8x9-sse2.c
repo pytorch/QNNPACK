@@ -12,7 +12,7 @@
 
 static inline __m128i quantize(const __m128i a, const __m128i zp)
 {
-#if 1 /* QNNPACK_QUANTIZE_AT_RUNTIME */
+#if QNNPACK_RUNTIME_QUANTIZATION
   // Run-time quantization
   return _mm_sub_epi16(a, zp);
 #else

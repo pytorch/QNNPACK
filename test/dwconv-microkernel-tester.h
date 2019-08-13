@@ -196,16 +196,12 @@ class DWConvMicrokernelTester {
 
       std::fill(packedWeights.begin(), packedWeights.end(), 0xA5);
 
-#if 1 /* QNNPACK_QUANTIZE_AT_RUNTIME */
-      pack_q8dw_wq(
-        kernelHeight(), kernelWidth(), channels(), cr(),
-        kernel.data(), bias.data(), packedWeights.data());
-#else
       pack_q8dw_w(
         kernelHeight(), kernelWidth(), channels(), cr(),
+      #if !QNNPACK_RUNTIME_QUANTIZATION
         inputZeroPoint(), kernelZeroPoint(),
+      #endif
         kernel.data(), bias.data(), packedWeights.data());
-#endif
 
       for (size_t i = 0; i < kernelSize() + (width() * subsampling() - 1) * kernelHeight(); i++) {
         indirectInput[i] = inputPtr + i * inputStride();
