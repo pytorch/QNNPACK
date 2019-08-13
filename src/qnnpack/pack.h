@@ -202,6 +202,39 @@ static inline void pack_q8dw_w(
   }
 }
 
+inline void pack_q8dw_wq(
+  const size_t h,
+  const size_t w,
+  const size_t c,
+  const size_t cr,
+  const uint8_t* const k,
+  const int32_t* const b,
+  void* const packed_w)
+{
+  union {
+    void * const as_void_ptr;
+    uint8_t * as_uint8_ptr;
+    int32_t * as_int32_ptr;
+  } packed = { packed_w };
+
+  for (size_t cr_block_start = 0; cr_block_start < c; cr_block_start += cr) {
+    const size_t cr_block_size = min(c - cr_block_start, cr);
+    for (size_t cr_block_offset = 0; cr_block_offset < cr_block_size; cr_block_offset++) {
+      *(packed.as_int32_ptr++) = b[cr_block_start + cr_block_offset];
+    }
+    packed.as_int32_ptr += (cr - cr_block_size);
+    for (size_t x = 0; x < w; x++) {
+      for (size_t y = 0; y < h; y++) {
+        for (size_t cr_block_offset = 0; cr_block_offset < cr_block_size; cr_block_offset++) {
+          const uint8_t kv = k[((cr_block_start + cr_block_offset) * h + y) * w + x];
+          *(packed.as_uint8_ptr++) = kv;
+        }
+        packed.as_uint8_ptr += (cr - cr_block_size);
+      }
+    }
+  }
+}
+
 static inline void pack_q8dw_w_dilation(
   size_t h,
   size_t w,
