@@ -69,6 +69,7 @@ void q8gemm_ukernel_8x8__neon(
     a7 = a6;
   }
 
+  const uint8x8_t va_zero_point = vld1_dup_u8((const uint8_t*) &quantization_params->neon.input_zero_point);
   const uint8x8_t vb_zero_point = vld1_dup_u8((const uint8_t*) &quantization_params->neon.kernel_zero_point);
   for (; k >= 8; k -= 8) {
     const uint8x8_t va0 = vld1_u8(a0);

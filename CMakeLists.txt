@@ -20,6 +20,8 @@ OPTION(QNNPACK_BUILD_BENCHMARKS "Build QNNPACK benchmarks" ON)
 
 # TODO (Ashkan): Remove.  This is for testing purposes only.
 ADD_DEFINITIONS(-DQNNPACK_RUNTIME_QUANTIZATION=1)
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer -fsanitize=address")
+SET(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -fno-omit-frame-pointer -fsanitize=address")
 
 # ---[ CMake options
 IF(QNNPACK_BUILD_TESTS)
