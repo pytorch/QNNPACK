@@ -54,7 +54,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 	# q14 := vacc3x0123
 	VMOV.I32 q14, q8
 	# Load b_zero_point:
-	# - d15 = b_zero_point	
+	# - d15 = b_zero_point
 	VLD1.8 {d15[]}, [r9], r4
 	# q15 := vacc3x4567
 	VMOV.I32 q15, q9
@@ -711,7 +711,7 @@ BEGIN_FUNCTION q8conv_ukernel_4x8__aarch32_neon
 	VQADD.S16  q9,  q9, q7
 	CMP r0, 2
 	VQADD.S16 q10, q10, q7
-	VQADD.S16 q11, q11, q7	
+	VQADD.S16 q11, q11, q7
 	MOVLO r4, r2
 
 	VQMOVUN.S16 d16,  q8

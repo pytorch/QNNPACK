@@ -10,11 +10,11 @@
 
 #include <immintrin.h>
 
-QNNP_INLINE __m128i quantize(const __m128i a, const __m128i zp)
+QNNP_INLINE __m128i sub_zero_point(const __m128i va, const __m128i vzp)
 {
 #if QNNPACK_RUNTIME_QUANTIZATION
   // Run-time quantization
-  return _mm_sub_epi16(a, zp);
+  return _mm_sub_epi16(va, vzp);
 #else
   // Design-time quantization (no-op)
   return a;

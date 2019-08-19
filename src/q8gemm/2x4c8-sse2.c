@@ -9,17 +9,8 @@
 #include <immintrin.h>
 
 #include <qnnpack/q8gemm.h>
+#include <requantization/runtime-sse2.h>
 
-static inline __m128i quantize(const __m128i a, const __m128i zp)
-{
-#if QNNPACK_RUNTIME_QUANTIZATION
-  // Run-time quantization
-  return _mm_sub_epi16(a, zp);
-#else
-  // Design-time quantization (no-op)
-  return a;
-#endif
-}
 
 static inline __m128i sse_reduce4_i32(__m128i x, __m128i y, __m128i z, __m128i w) {
 #if defined(__SSSE3__) && !defined(__ANDROID__)
@@ -91,10 +82,10 @@ void q8gemm_ukernel_2x4c8__sse2(
   const __m128i vzero = _mm_setzero_si128();
   for (; k >= 8; k -= 8) {
     const __m128i va0 = _mm_loadl_epi64((const __m128i*) a0);
-    const __m128i vxa0 = quantize(_mm_unpacklo_epi8(va0, vzero), va_zero_point);
+    const __m128i vxa0 = sub_zero_point(_mm_unpacklo_epi8(va0, vzero), va_zero_point);
     a0 += 8;
     const __m128i va1 = _mm_loadl_epi64((const __m128i*) a1);
-    const __m128i vxa1 = quantize(_mm_unpacklo_epi8(va1, vzero), va_zero_point);
+    const __m128i vxa1 = sub_zero_point(_mm_unpacklo_epi8(va1, vzero), va_zero_point);
     a1 += 8;
 
     const __m128i vb0 = _mm_loadl_epi64((const __m128i*) b0);
@@ -127,9 +118,9 @@ void q8gemm_ukernel_2x4c8__sse2(
         _mm_srl_epi64(_mm_packus_epi16(va_zero_point, va_zero_point), va_shift), vzero);
 
     const __m128i va0 = _mm_srl_epi64(_mm_loadl_epi64((const __m128i*) (a0 - a_predecrement)), va_shift);
-    const __m128i vxa0 = quantize(_mm_unpacklo_epi8(va0, vzero), va_zero_point_partial);
+    const __m128i vxa0 = sub_zero_point(_mm_unpacklo_epi8(va0, vzero), va_zero_point_partial);
     const __m128i va1 = _mm_srl_epi64(_mm_loadl_epi64((const __m128i*) (a1 - a_predecrement)), va_shift);
-    const __m128i vxa1 = quantize(_mm_unpacklo_epi8(va1, vzero), va_zero_point_partial);
+    const __m128i vxa1 = sub_zero_point(_mm_unpacklo_epi8(va1, vzero), va_zero_point_partial);
 
     const __m128i vb0 = _mm_loadl_epi64((const __m128i*) b0);
     const __m128i vxb0 = _mm_sub_epi16(_mm_unpacklo_epi8(vb0, vzero), vb_zero_point);
