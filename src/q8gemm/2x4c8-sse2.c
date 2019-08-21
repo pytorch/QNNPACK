@@ -43,7 +43,7 @@ void q8gemm_ukernel_2x4c8__sse2(
     const void* restrict w,
     uint8_t* restrict c,
     size_t c_stride,
-    const union qnnp_conv_quantization_params quantization_params[restrict static 1])
+    const union qnnp_conv_quantization_params quantization_params[RESTRICT_STATIC 1])
 {
   __m128i vacc00 = _mm_cvtsi32_si128((int) ((const int32_t*) w)[0]);
   __m128i vacc01 = _mm_cvtsi32_si128((int) ((const int32_t*) w)[1]);

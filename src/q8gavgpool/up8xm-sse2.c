@@ -20,7 +20,7 @@ void q8gavgpool_ukernel_up8xm__sse2(
     size_t input_stride,
     const uint8_t* zero,
     uint8_t* output,
-    const union qnnp_avgpool_quantization_params quantization_params[restrict static 1])
+    const union qnnp_avgpool_quantization_params quantization_params[RESTRICT_STATIC 1])
 {
   assert(m >= 1);
   assert(n < 8);
