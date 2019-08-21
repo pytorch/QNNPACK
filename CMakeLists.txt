@@ -18,8 +18,10 @@ SET_PROPERTY(CACHE QNNPACK_LIBRARY_TYPE PROPERTY STRINGS default static shared)
 OPTION(QNNPACK_BUILD_TESTS "Build QNNPACK unit tests" ON)
 OPTION(QNNPACK_BUILD_BENCHMARKS "Build QNNPACK benchmarks" ON)
 
-# TODO (Ashkan): Remove.  This is for testing purposes only.
-ADD_DEFINITIONS(-DQNNPACK_RUNTIME_QUANTIZATION=1)
+# Enable runtime requantization.  Disabled by default.
+ADD_DEFINITIONS(-DQNNPACK_RUNTIME_QUANTIZATION=0)
+
+# Debug
 # SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer -fsanitize=address")
 # SET(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -fno-omit-frame-pointer -fsanitize=address")
 

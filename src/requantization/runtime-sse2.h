@@ -17,6 +17,6 @@ QNNP_INLINE __m128i sub_zero_point(const __m128i va, const __m128i vzp)
   return _mm_sub_epi16(va, vzp);
 #else
   // Design-time quantization (no-op)
-  return a;
+  return va;
 #endif
 }

@@ -52,7 +52,7 @@ static inline void pack_q8gemm_wdq(
   }
 }
 
-inline void pack_q8gemm_wrq(
+static inline void pack_q8gemm_wrq(
   const size_t nc,
   const size_t kc,
   const uint32_t nr,
@@ -130,7 +130,7 @@ static inline void pack_q8conv_wdq(
   }
 }
 
-inline void pack_q8conv_wrq(
+static inline void pack_q8conv_wrq(
   const size_t n,
   const size_t ks,
   const size_t kc,
@@ -211,7 +211,7 @@ static inline void pack_q8deconv_wdq(
   }
 }
 
-inline void pack_q8deconv_wrq(
+static inline void pack_q8deconv_wrq(
   const size_t n,
   const size_t ks,
   const size_t kc,
@@ -284,7 +284,7 @@ static inline void pack_q8dw_wdq(
   }
 }
 
-inline void pack_q8dw_wrq(
+static inline void pack_q8dw_wrq(
   const size_t h,
   const size_t w,
   const size_t c,
@@ -376,10 +376,8 @@ static inline void pack_swizzle_q8gemm_bdq(
 
     for (size_t kr_block_start = 0; kr_block_start < (kc & -sr); kr_block_start += kr) {
       for (size_t nr_block_offset = 0; nr_block_offset < nr_block_size; nr_block_offset++) {
-        int32_t ksum = 0;
         for (size_t kr_block_offset = 0; kr_block_offset < kr; kr_block_offset++) {
           const uint8_t kv = k[(nr_block_start + nr_block_offset) * kc + (kr_block_start & -sr) + ((kr_block_start + nr_block_offset * kr) & (sr - 1)) + kr_block_offset];
-          ksum += (int32_t) kv;
           packed_b[nr_block_offset] -= (int32_t) kv * (int32_t) izp;
           *((uint8_t*) packed_w) = kv;
           packed_w = (void*) ((uintptr_t) packed_w + sizeof(uint8_t));
@@ -391,10 +389,8 @@ static inline void pack_swizzle_q8gemm_bdq(
     for (size_t kr_block_start = (kc & -sr); kr_block_start < kc; kr_block_start += kr) {
       const size_t kr_block_size = min(kc - kr_block_start, kr);
       for (size_t nr_block_offset = 0; nr_block_offset < nr_block_size; nr_block_offset++) {
-        int32_t ksum = 0;
         for (size_t kr_block_offset = 0; kr_block_offset < kr_block_size; kr_block_offset++) {
           const uint8_t kv = k[(nr_block_start + nr_block_offset) * kc + (kr_block_start + kr_block_offset)];
-          ksum += (int32_t) kv;
           packed_b[nr_block_offset] -= (int32_t) kv * (int32_t) izp;
           *((uint8_t*) packed_w) = kv;
           packed_w = (void*) ((uintptr_t) packed_w + sizeof(uint8_t));
@@ -406,7 +402,7 @@ static inline void pack_swizzle_q8gemm_bdq(
   }
 }
 
-inline void pack_swizzle_q8gemm_brq(
+static inline void pack_swizzle_q8gemm_brq(
   const size_t n,
   const size_t kc,
   const uint32_t nr,
