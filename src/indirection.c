@@ -59,7 +59,7 @@ void qnnp_indirection_init_conv2d(
                 const size_t input_x = output_x * stride_width + kernel_x * dilation_width - input_padding_left;
                 const size_t index = (group * batch_size + image) * tiled_output_size * kernel_size + output_tile_start * kernel_size + (kernel_y * kernel_width + kernel_x) * output_tile_size + output_tile_offset;
                 if (input_x < input_width) {
-                  indirection_buffer[index] = input + ((image * input_height + input_y) * input_width + input_x) * input_pixel_stride + group * group_input_channels;
+                  indirection_buffer[index] = (char*)input + ((image * input_height + input_y) * input_width + input_x) * input_pixel_stride + group * group_input_channels;
                 } else {
                   indirection_buffer[index] = zero;
                 }
@@ -112,7 +112,7 @@ void qnnp_indirection_init_dwconv2d(
               const size_t input_x = output_x * stride_width + kernel_x * dilation_width - input_padding_left;
               const size_t index = (image * output_height + output_y) * step_height + output_x * step_width * kernel_height + kernel_x * kernel_height + kernel_y;
               if (input_x < input_width) {
-                indirection_buffer[index] = input + ((image * input_height + input_y) * input_width + input_x) * input_pixel_stride;
+                indirection_buffer[index] = (char*)input + ((image * input_height + input_y) * input_width + input_x) * input_pixel_stride;
               } else {
                 indirection_buffer[index] = zero;
               }
@@ -177,7 +177,7 @@ void qnnp_indirection_init_deconv2d(
                 (group * batch_size + image) * tiled_output_size * kernel_size + output_tile_start * kernel_size + (kernel_y * kernel_width + kernel_x) * output_tile_size + output_tile_offset;
               if (input_y * stride_height == y && input_y < input_height && input_x * stride_width == x && input_x < input_width) {
                 indirection_buffer[index] =
-                  input + ((image * input_height + input_y) * input_width + input_x) * input_pixel_stride + group * group_input_channels;
+                  (char*)input + ((image * input_height + input_y) * input_width + input_x) * input_pixel_stride + group * group_input_channels;
               } else {
                 indirection_buffer[index] = zero;
               }
@@ -222,7 +222,7 @@ void qnnp_indirection_init_maxpool2d(
             const size_t input_x = doz(output_x * stride_width + pooling_x * dilation_width, input_padding_left);
             const size_t clamped_input_x = min(input_x, input_width - 1);
             const size_t index = (image * output_height + output_y) * step_height + output_x * step_width * pooling_height + pooling_x * pooling_height + pooling_y;
-            indirection_buffer[index] = input + ((image * input_height + clamped_input_y) * input_width + clamped_input_x) * input_pixel_stride;
+            indirection_buffer[index] = (char*)input + ((image * input_height + clamped_input_y) * input_width + clamped_input_x) * input_pixel_stride;
           }
         }
       }

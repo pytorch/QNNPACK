@@ -21,7 +21,7 @@ void u8maxpool_ukernel_16x9p8q__sse2(
     uint8_t* output,
     size_t input_increment,
     size_t output_increment,
-    const union qnnp_u8_clamping_params params[restrict static 1])
+    const union qnnp_u8_clamping_params params[RESTRICT_STATIC 1])
 {
   assert(n != 0);
   assert(ks != 0);

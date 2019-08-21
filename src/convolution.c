@@ -221,12 +221,12 @@ enum qnnp_status qnnp_create_convolution2d_nhwc_q8(
             kernel_height, kernel_width,
             groups, cr,
             0, kernel_height, 2, 4,
-            kernel, bias, convolution->packed_weights + (10 + sizeof(int32_t) / sizeof(uint8_t)) * c_stride, false);
+            kernel, bias, (char*)convolution->packed_weights + (10 + sizeof(int32_t) / sizeof(uint8_t)) * c_stride, false);
           pack_q8dw_w_dilation(
             kernel_height, kernel_width,
             groups, cr,
             0, kernel_height, 4, 5,
-            kernel, bias, convolution->packed_weights + (20 + sizeof(int32_t) / sizeof(uint8_t)) * c_stride, false);
+            kernel, bias, (char*)convolution->packed_weights + (20 + sizeof(int32_t) / sizeof(uint8_t)) * c_stride, false);
           break;
         default:
           QNNP_UNREACHABLE;
