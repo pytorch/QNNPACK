@@ -40,7 +40,7 @@ enum qnnp_status qnnp_create_clamp_nc_u8(
     goto error;
   }
 
-  if (output_min >= output_max) {
+  if (output_min > output_max) {
     qnnp_log_error(
       "failed to create Clamp operator with [%" PRIu8 ", %" PRIu8 "] output range: range min must be below range max",
       output_min, output_max);

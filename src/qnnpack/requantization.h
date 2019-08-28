@@ -306,7 +306,7 @@ static inline union qnnp_u8_clamping_params qnnp_compute_u8_clamping_params(
   uint8_t output_min,
   uint8_t output_max)
 {
-  assert(output_min < output_max);
+  assert(output_min <= output_max);
 
   union qnnp_u8_clamping_params params;
   #if CPUINFO_ARCH_X86 || CPUINFO_ARCH_X86_64
