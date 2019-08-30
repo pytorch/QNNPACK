@@ -174,6 +174,15 @@ class GemmMicrokernelTester {
     return this->iterations_;
   }
 
+  inline GemmMicrokernelTester& use16bitAcc(bool val) {
+    this->use16bitAcc_ = val;
+    return *this;
+  }
+
+  inline bool use16bitAcc() const {
+    return this->use16bitAcc_;
+  }
+
   void test(q8gemm_ukernel_function qgemm) const {
     ASSERT_LE(m(), mr());
     ASSERT_LE(n(), nr());
@@ -270,6 +279,143 @@ class GemmMicrokernelTester {
               << "), optimized = " << (uint32_t) c[mIndex * cStride() + nIndex] << ", Mr x Nr x Kr = " << mr() << " x "
               << nr() << " x " << kr() << ", M x N x K = " << m() << " x " << n() << " x " << k()
               << ", requantization scale = " << requantizationScale << ", output zero point = " << int32_t(cZeroPoint);
+        }
+      }
+    }
+  }
+
+  void test(q8gemm_per_channel_ukernel_function qgemm) const {
+    ASSERT_LE(m(), mr());
+    ASSERT_LE(n(), nr());
+    ASSERT_GE(k(), kr());
+
+    std::random_device randomDevice;
+    auto rng = std::mt19937(randomDevice());
+    auto s32rng = std::bind(std::uniform_int_distribution<int32_t>(-10000, 10000), rng);
+    auto u8rng = std::bind(std::uniform_int_distribution<uint8_t>(), rng);
+
+    std::vector<uint8_t> a((m() - 1) * aStride() + k() + 8);
+    std::vector<uint8_t> b(n() * k());
+    std::vector<int32_t> bias(n());
+    std::vector<uint8_t, AlignedAllocator<uint8_t, 32>> packedW(packedN() * packedK() + biasN() * sizeof(uint32_t) / sizeof(uint8_t));
+    std::vector<uint8_t> c((m() - 1) * cStride() + n());
+    std::vector<int32_t> acc(m() * n());
+    std::vector<int16_t> acc16(m() * n());
+    std::vector<uint8_t> cRef(m() * n());
+
+    // Per-Channel quantization parameters
+    std::vector<uint8_t> kernelZeroPointPerChannel(nr());
+    std::vector<float> kernelAndInputScalePerChannel(nr());
+    std::vector<float> requantizationScalePerChannel(nr());
+    std::vector<int32_t> multiplierPerChannel(nr());
+    std::vector<int32_t> rightShiftPerChannel(nr());
+
+    // 1) Fill zero-point per-channel around bZeroPoint() as center value.
+    // 2) Fill kernel-and-input per-channel using linear interpolation between min and max values.
+    //    (Maintain: requantization_scale < 1 ;
+    //               requantization_scale := input_scale * kernel_scale / output_scale)
+    const float scale_min = 0.5f;
+    const float scale_max = 0.99999f;
+    for (size_t i = 0; i < nr(); ++i) {
+      kernelZeroPointPerChannel[i] =
+        static_cast<uint8_t>(std::min(255, std::max(0, bZeroPoint() + (int)(i - nr()/2))));
+      kernelAndInputScalePerChannel[i] = scale_min + i * (scale_max -  scale_min) / nr();
+    }
+
+    const uint8_t* aPtr = a.data() + 8;
+
+    for (size_t iteration = 0; iteration < iterations(); iteration++) {
+      std::generate(a.begin(), a.end(), std::ref(u8rng));
+      std::generate(b.begin(), b.end(), std::ref(u8rng));
+      std::generate(bias.begin(), bias.end(), std::ref(s32rng));
+      std::fill(c.begin(), c.end(), 0xA5);
+
+      std::fill(packedW.begin(), packedW.end(), bZeroPoint());
+      pack_q8gemm_w_per_channel(n(), k(),
+        nr(), np(), kr(),
+        aZeroPoint(), kernelZeroPointPerChannel.data(),
+        b.data(), bias.data(), packedW.data());
+
+      ASSERT_NE(*std::max_element(a.cbegin(), a.cend()), *std::min_element(a.cbegin(), a.cend()));
+      ASSERT_NE(*std::max_element(b.cbegin(), b.cend()), *std::min_element(b.cbegin(), b.cend()));
+
+      /* Compute 32-bit results and output quantization arguments */
+      std::fill(acc.begin(), acc.end(), 0);
+      std::fill(acc16.begin(), acc16.end(), 0);
+      for (size_t mIndex = 0; mIndex < m(); mIndex++) {
+        for (size_t nIndex = 0; nIndex < n(); nIndex++) {
+          int32_t biasHelper = 0;
+          for (size_t kIndex = 0; kIndex < k(); kIndex++) {
+            ASSERT_LE(n(), packedN());
+            ASSERT_LT(mIndex * n() + nIndex, acc.size());
+            ASSERT_LT(mIndex * k() + kIndex, a.size());
+            if (use16bitAcc()) {
+              acc16[mIndex * n() + nIndex] +=
+                (int16_t(aPtr[mIndex * aStride() + kIndex])) *
+                (int16_t(b[nIndex * k() + kIndex]) - int16_t(kernelZeroPointPerChannel[nIndex]));
+              biasHelper -= int32_t(b[nIndex * k() + kIndex]) * aZeroPoint();
+            } else {
+              acc[mIndex * n() + nIndex] +=
+                (int32_t(aPtr[mIndex * aStride() + kIndex]) - int32_t(aZeroPoint())) *
+                (int32_t(b[nIndex * k() + kIndex]) - int32_t(kernelZeroPointPerChannel[nIndex]));
+            }
+          }
+          if (use16bitAcc()) {
+            biasHelper += k() * kernelZeroPointPerChannel[nIndex] * aZeroPoint();
+            acc[mIndex * n() + nIndex] = int32_t(acc16[mIndex * n() + nIndex]) + bias[nIndex] + biasHelper;
+          } else {
+            acc[mIndex * n() + nIndex] += bias[nIndex];
+          }
+        }
+      }
+
+      const int32_t accMin = *std::min_element(acc.cbegin(), acc.cend());
+      const int32_t accMax = *std::max_element(acc.cbegin(), acc.cend());
+      if (m() * n() >= 3) {
+        ASSERT_NE(accMax, accMin)
+            << "Mr x Nr x Kr = " << mr() << " x " << nr() << " x " << kr()
+            << ", M x N x K = " << m() << " x " << n() << " x " << k();
+      }
+
+      const double cScale = uint32_t(accMax - accMin) >= 256 ? double(uint32_t(accMax - accMin)) / 255.0 : 1.00001;
+      const uint8_t cZeroPoint = uint8_t(std::max(std::min(
+        lrint(127.5 - 0.5 * double(accMin + accMax) / cScale),
+        long(std::numeric_limits<uint8_t>::max())), long(std::numeric_limits<uint8_t>::min())));
+
+      for (size_t nIndex = 0; nIndex < nr(); nIndex++) {
+        requantizationScalePerChannel[nIndex] = kernelAndInputScalePerChannel[nIndex] / float(cScale);
+      }
+      const union qnnp_conv_quantization_params quantizationParams =
+        qnnp_compute_conv_quantization_params_per_channel(
+          aZeroPoint(), nr(), kernelZeroPointPerChannel.data(),
+          requantizationScalePerChannel.data(), multiplierPerChannel.data(), rightShiftPerChannel.data(),  cZeroPoint, qmin(), qmax());
+
+      qgemm(
+        m(), n(), k(),
+        aPtr, aStride() * sizeof(uint8_t),
+        packedW.data(),
+        c.data(), cStride() * sizeof(uint8_t),
+        &quantizationParams, 0);
+
+      for (size_t mIndex = 0; mIndex < m(); mIndex++) {
+        for (size_t nIndex = 0; nIndex < n(); nIndex++) {
+          const union qnnp_q31_requantization_params scalarRequantizationParams =
+            qnnp_compute_scalar_requantization_params(
+              requantizationScalePerChannel[nIndex], cZeroPoint, qmin(), qmax());
+          cRef[mIndex * n() + nIndex] = qnnp_q31_requantize(acc[mIndex * n() + nIndex], scalarRequantizationParams);
+        }
+      }
+
+      for (size_t mIndex = 0; mIndex < m(); mIndex++) {
+        for (size_t nIndex = 0; nIndex < n(); nIndex++) {
+          ASSERT_LE(uint32_t(c[mIndex * cStride() + nIndex]), uint32_t(qmax()));
+          ASSERT_GE(uint32_t(c[mIndex * cStride() + nIndex]), uint32_t(qmin()));
+          ASSERT_EQ(uint32_t(c[mIndex * cStride() + nIndex]), uint32_t(cRef[mIndex * n() + nIndex]))
+              << "at " << mIndex << ", " << nIndex << ": reference = " << (uint32_t) cRef[mIndex * n() + nIndex]
+              << " (accumulator = " << acc[mIndex * n() + nIndex]
+              << "), optimized = " << (uint32_t) c[mIndex * cStride() + nIndex] << ", Mr x Nr x Kr = " << mr() << " x "
+              << nr() << " x " << kr() << ", M x N x K = " << m() << " x " << n() << " x " << k()
+              << ", requantization scale = " << requantizationScalePerChannel[nIndex] << ", output zero point = " << int32_t(cZeroPoint);
         }
       }
     }
@@ -827,4 +973,5 @@ class GemmMicrokernelTester {
   uint8_t qmin_{0};
   uint8_t qmax_{255};
   size_t iterations_{15};
+  bool use16bitAcc_{false};
 };

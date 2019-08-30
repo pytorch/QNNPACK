@@ -107,6 +107,8 @@ def main(args):
                     build.cc("q8gavgpool/up8xm-neon.c"),
                     build.cc("q8gemm/4x-sumrows-neon.c"),
                     build.cc("q8gemm/4x8-neon.c"),
+                    build.cc("q8gemm/4x8-neon_per_channel.c"),
+                    build.cc("q8gemm/4x8-neon_per_channel_16bitAcc.c"),
                     build.cc("q8gemm/4x8c2-xzp-neon.c"),
                     build.cc("q8gemm/6x4-neon.c"),
                     build.cc("q8gemm/8x8-neon.c"),
@@ -128,6 +130,8 @@ def main(args):
                     build.cc("q8conv/4x8-aarch32-neon.S"),
                     build.cc("q8dwconv/up8x9-aarch32-neon.S"),
                     build.cc("q8gemm/4x8-aarch32-neon.S"),
+                    build.cc("q8gemm/4x8-aarch32-neon-per-channel.S"),
+                    build.cc("q8gemm/4x8-aarch32-neon-per-channel-16bitAcc.S"),
                     build.cc("q8gemm/4x8c2-xzp-aarch32-neon.S"),
                 ]
             if build.target.is_arm64:

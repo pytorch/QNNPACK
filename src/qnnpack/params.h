@@ -145,6 +145,9 @@ union qnnp_conv_quantization_params {
     int16_t output_zero_point;
     uint8_t output_max;
     uint8_t output_min;
+    uint8_t* kernel_zero_point_v;
+    int32_t* multiplier_v;
+    int32_t* right_shift_v;
   } neon;
 #endif /* CPUINFO_ARCH_ARM || CPUINFO_ARCH_ARM64 */
 #if CPUINFO_ARCH_X86 || CPUINFO_ARCH_X86_64
@@ -274,6 +277,18 @@ typedef void (*q8gemm_ukernel_function)(
     uint8_t* c,
     size_t c_stride,
     const union qnnp_conv_quantization_params* quantization_params);
+
+typedef void (*q8gemm_per_channel_ukernel_function)(
+    size_t mr,
+    size_t nr,
+    size_t k,
+    const uint8_t* a,
+    size_t a_stride,
+    const void* w,
+    uint8_t* c,
+    size_t c_stride,
+    const union qnnp_conv_quantization_params* quantization_params,
+    size_t kernel_quantization_params_offset);
 
 typedef void (*q8conv_ukernel_function)(
     size_t mr,

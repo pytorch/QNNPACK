@@ -10,7 +10,7 @@
 
 .syntax unified
 
-# void q8gemm_ukernel_4x8__aarch32_neon(
+# void q8gemm_ukernel_4x8__aarch32_neon_per_channel(
 #     size_t mr,
 #     size_t nr,
 #     size_t k,
@@ -19,8 +19,9 @@
 #     const void*restrict w,
 #     uint8_t*restrict c,
 #     size_t c_stride,
-#     const union qnnp_conv_quantization_params quantization_params[restrict static 1])
-BEGIN_FUNCTION q8gemm_ukernel_4x8__aarch32_neon
+#     const union qnnp_conv_quantization_params quantization_params[restrict static 1],
+#     size_t kernel_quantization_params_offset)
+BEGIN_FUNCTION q8gemm_ukernel_4x8__aarch32_neon_per_channel
 	.arm
 #ifndef __APPLE__
 	.arch armv7-a
@@ -29,27 +30,37 @@ BEGIN_FUNCTION q8gemm_ukernel_4x8__aarch32_neon
 	# Load w
 	# - ip = w
 	LDR ip, [sp, 4]
-	PUSH {r4, r5, r6, r7}
+	PUSH {r4-r8}
 
 	VPUSH {d8-d15}
 	# Load quantization params
 	# - r7 = quantization_params
-	LDR r7, [sp, 96]
+	LDR r7, [sp, 100]
+
+	# load kernel_quantization_params_offset
+	LDR r5, [sp, 104]
 
 	# Load bias0123, bias4567
 	VLDM ip!, {d16-d19}
 
 	# Load a_stride
 	# - r6 = a_stride
-	LDR r6, [sp, 80]
+	LDR r6, [sp, 84]
 	CMP r0, 2
 
+	# a1 = a0 + a_stride
 	ADD r4, r3, r6
 
-	# Load b_zero_point:
+	# Load b_zero_point from kernel_zero_point_v:
 	# - d15 = b_zero_point
-	VLD1.8 {d15[]}, [r7]
+	MOV r8, 16
+	ADD r8, r7, r8
+	LDR r8, [r8, r5]
+	VLD1.8 {d15}, [r8]
 	MOVLO r4, r3
+
+	# Move kernel_quantization_params_offset to r8 to use later
+	MOV r8, r5
 
 	ADD r7, r7, 4
 	ADD r5, r4, r6
@@ -71,9 +82,7 @@ BEGIN_FUNCTION q8gemm_ukernel_4x8__aarch32_neon
 	SUBS r2, r2, 8
 	# q15 := vacc3x4567
 	VMOV.I32 q15, q9
-	# Load multiplier:
-	# - d12 = vmultiplier
-	VLD1.32 {d12[]}, [r7]!
+
 	BLO 1f
 
 	.p2align 5
@@ -632,65 +641,87 @@ BEGIN_FUNCTION q8gemm_ukernel_4x8__aarch32_neon
 
 	.p2align 4
 2:
+	# Load multiplier:
+	# - d12 = vmultiplier ( vmultiplier0x0123 )
+	ADD r7, 16
+	LDR r8, [sp, 104]
+	LDR r8, [r7, r8]
+	VLD1.32 {d12, d13}, [r8]!
+	SUB r7, 12
+
+	VQRDMULH.S32  q8, q8, q6
+	VQRDMULH.S32 q10, q10, q6
+	VQRDMULH.S32 q12, q12, q6
+	VQRDMULH.S32 q14, q14, q6
+
+	VLD1.32 {d12, d13}, [r8]
+
+	VQRDMULH.S32  q9, q9, q6
+	VQRDMULH.S32 q11, q11, q6
+	VQRDMULH.S32 q13, q13, q6
+	VQRDMULH.S32 q15, q15, q6
+
 	# Load right_shift
-	# - q4 = d8:d9 = vright_shift
-	VLD1.32 {d8[], d9[]}, [r7]!
+	# - q4 = d8:d9   = vright_shift_0x0123
+	ADD r7, 16
+	LDR r8, [sp, 104]
+	LDR r8, [r7, r8]
+	VLD1.32 {d8, d9}, [r8]!
+	SUB r7, 12
 
-	VQRDMULH.S32  q8, q8, d12[0]
-	VQRDMULH.S32  q9, q9, d12[0]
-	VQRDMULH.S32 q10, q10, d12[0]
-	VQRDMULH.S32 q11, q11, d12[0]
-
-	# Compute vzero_shift_mask
-	# - q5 = vzero_shift_mask
+  # Compute vzero_shift_mask
+	# - q5 = vzero_shift_mask_0x0123
 	VCEQ.S32 q5, q4, 0
 
-	VQRDMULH.S32 q12, q12, d12[0]
-	VQRDMULH.S32 q13, q13, d12[0]
-	VQRDMULH.S32 q14, q14, d12[0]
-	VQRDMULH.S32 q15, q15, d12[0]
-
 	VBIC q0,  q8, q5
-	VBIC q1,  q9, q5
-	VBIC q2, q10, q5
-	VBIC q3, q11, q5
+	VBIC q1,  q10, q5
+	VBIC q2,  q12, q5
+	VBIC q3,  q14, q5
 
 	VSRA.S32  q8, q0, 31
-	VSRA.S32  q9, q1, 31
-	VSRA.S32 q10, q2, 31
-	VSRA.S32 q11, q3, 31
+	VSRA.S32  q10, q1, 31
+	VSRA.S32  q12, q2, 31
+	VSRA.S32  q14, q3, 31
 
-	# Load zero_point
-	# - q7 = d14:d15 = vzero_point
-	VLD1.16 {d14[], d15[]}, [r7]!
+	VRSHL.S32  q8,  q8, q4
+	VRSHL.S32  q10,  q10, q4
+	VRSHL.S32  q12,  q12, q4
+	VRSHL.S32  q14,  q14, q4
 
-	VBIC q0, q12, q5
-	VBIC q1, q13, q5
-	VBIC q2, q14, q5
+	# - q4 = d8:d9 = vright_shift_0x4567
+	VLD1.32 {d8, d9}, [r8]
+
+	# Compute vzero_shift_mask
+	# - q5 = vzero_shift_mask_0x4567
+	VCEQ.S32 q5, q4, 0
+
+	VBIC q0, q9, q5
+	VBIC q1, q11, q5
+	VBIC q2, q13, q5
 	VBIC q3, q15, q5
 
-	VSRA.S32 q12, q0, 31
-	VSRA.S32 q13, q1, 31
-	VSRA.S32 q14, q2, 31
+	VSRA.S32 q9, q0, 31
+	VSRA.S32 q11, q1, 31
+	VSRA.S32 q13, q2, 31
 	VSRA.S32 q15, q3, 31
+
+	VRSHL.S32  q9,  q9, q4
+	VRSHL.S32 q11, q11, q4
+	VRSHL.S32 q13, q13, q4
+	VRSHL.S32 q15, q15, q4
+
+	# Load output_zero_point
+	# - q7 = d14:d15 = voutput_zero_point
+	VLD1.16 {d14[], d15[]}, [r7]!
 
 	# Load max:
 	# - q5 = d10:d11 = vmax
 	VLD1.8 {d10[], d11[]}, [r7]!
 
-	VRSHL.S32  q8,  q8, q4
-	VRSHL.S32  q9,  q9, q4
-	VRSHL.S32 q10, q10, q4
-	VRSHL.S32 q11, q11, q4
-	VRSHL.S32 q12, q12, q4
-	VRSHL.S32 q13, q13, q4
-	VRSHL.S32 q14, q14, q4
-	VRSHL.S32 q15, q15, q4
-
 	# Load c, c_stride:
 	# - r2 = c
 	# - r2 = c_stride
-	LDRD r2, r3, [sp, 88]
+	LDRD r2, r3, [sp, 92]
 
 	VQMOVN.S32 d16,  q8
 	VQMOVN.S32 d17,  q9
@@ -738,7 +769,7 @@ BEGIN_FUNCTION q8gemm_ukernel_4x8__aarch32_neon
 	VST1.8 {d19}, [r3]
 
 	VPOP {d8-d15}
-	POP {r4, r5, r6, r7}
+	POP {r4-r8}
 	BX lr
 
 	.p2align 3
@@ -779,9 +810,9 @@ BEGIN_FUNCTION q8gemm_ukernel_4x8__aarch32_neon
 
 7:
 	VPOP {d8-d15}
-	POP {r4, r5, r6, r7}
+	POP {r4-r8}
 	BX lr
-END_FUNCTION q8gemm_ukernel_4x8__aarch32_neon
+END_FUNCTION q8gemm_ukernel_4x8__aarch32_neon_per_channel
 
 #ifdef __ELF__
 .section ".note.GNU-stack","",%progbits
